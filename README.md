@@ -15,6 +15,7 @@ npm install
 node tests/lancer.js                                         # moteur (Node, sans réseau)
 node tests/avec-emulateur.js tests/base/firestore.js         # base, contre l'émulateur Firebase
 node tests/avec-emulateur.js tests/navigateur/e2e.js         # de bout en bout dans Chrome (Playwright)
+node tests/navigateur/reel.js [adresse]                      # recette contre la vraie base (famille d'essai effacée à la fin)
 ```
 
 Le cœur maths (`js/`) est en JavaScript pur : le même fichier tourne dans l'app et dans les tests.
