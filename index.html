@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mission Maths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout : coque plein cadre en colonne. Barre de navigation fixe en haut, puis l'écran :
+   menus qui défilent, ou exercice (énoncé collé en haut, lignes qui défilent, clavier maths en bas). */
+:root{
+  --bg:#EEF2F8; --surface:#FFFFFF; --ink:#18213B; --muted:#56617E; --line:#D5DCEA;
+  --primary:#3446B0; --on-primary:#FFFFFF; --star:#A86A00; --star-soft:#FBEBCB;
+  --good:#23746F; --good-soft:#DDF1EE; --notyet:#6B5BA8; --notyet-soft:#ECE7F8;
+  --trap:#B3261E; --trap-soft:#FCE8E6;
+  --f-display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10162A; --surface:#1A2240; --ink:#E9EDF8; --muted:#A5AECA; --line:#2E3860;
+  --primary:#8E9AF2; --on-primary:#10162A; --star:#F2B24C; --star-soft:#3A3120;
+  --good:#5BC0B9; --good-soft:#173A3A; --notyet:#B5A8EE; --notyet-soft:#2B2650;
+  --trap:#FF8A80; --trap-soft:#3B1E1C; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#10162A; --surface:#1A2240; --ink:#E9EDF8; --muted:#A5AECA; --line:#2E3860;
+  --primary:#8E9AF2; --on-primary:#10162A; --star:#F2B24C; --star-soft:#3A3120;
+  --good:#5BC0B9; --good-soft:#173A3A; --notyet:#B5A8EE; --notyet-soft:#2B2650;
+  --trap:#FF8A80; --trap-soft:#3B1E1C; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;overflow:hidden}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.2;text-wrap:balance;margin:0}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.hidden{display:none!important}
+svg.i{width:20px;height:20px;flex:none}
+
+/* coque */
+#coque{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100%);display:flex;flex-direction:column}
+#barre{flex:none;display:flex;gap:8px;align-items:center;background:var(--surface);border-bottom:1.5px solid var(--line);
+  padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px))}
+#barre .in{display:flex;gap:8px;align-items:center;max-width:760px;margin:0 auto;width:100%}
+.nav{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;min-height:44px;padding:6px 12px;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.nav.fort{background:var(--primary);color:var(--on-primary);border-color:var(--primary);margin-left:auto}
+.nav:disabled{opacity:.45;cursor:default}
+.nav:not(:disabled):hover{border-color:var(--primary)}
+#app{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#focus{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* éléments communs */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top h1{font-size:clamp(1.3rem,5vw,1.6rem);flex:1 1 auto;min-width:0}
+.pill{font-size:.8rem;padding:4px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);white-space:nowrap;min-height:28px;display:inline-flex;align-items:center}
+button.pill{min-height:44px}
+.pill.warn{color:var(--notyet);border-color:var(--notyet)}
+.btn{border:0;border-radius:14px;padding:12px 18px;min-height:48px;background:var(--primary);color:var(--on-primary);font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.small{min-height:44px;padding:8px 14px;font-size:.92rem}
+.btn:disabled{opacity:.5;cursor:default}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;padding:8px;min-height:44px;font-size:.92rem;align-self:center}
+.muted{color:var(--muted)}
+.sub{font-size:.95rem;color:var(--muted)}
+.note{font-size:.85rem;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row label{font-size:.9rem;color:var(--muted)}
+.compte{background:var(--star-soft);color:var(--ink);border-radius:14px;padding:10px 14px;font-size:.95rem}
+.compte strong{color:var(--star);font-family:var(--f-display);font-size:1.15rem}
+.m{font-weight:700;font-variant-numeric:tabular-nums}
+.m .c{display:inline-block;white-space:nowrap}
+.mscroll{overflow-x:auto;max-width:100%}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:99;max-width:min(90vw,520px);font-size:.95rem}
+
+/* panneaux dépliables */
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:6px 16px;display:flex;flex-direction:column}
+.panel[open]{padding-bottom:16px;gap:12px}
+.panel.encours{border-color:var(--primary)}
+.panel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px}
+.panel>summary::-webkit-details-marker{display:none}
+.panel>summary::before{content:"";width:9px;height:9px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;flex:none;margin-left:2px}
+.panel[open]>summary::before{transform:rotate(45deg)}
+.panel>summary h2{font-size:1.08rem;flex:1;min-width:0}
+.pid{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
+.tag{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;flex:none}
+.tag.actuel{background:var(--primary);color:var(--on-primary)}
+.tag.soon{border:1px dashed var(--line);color:var(--muted)}
+.tag.fait{background:var(--good-soft);color:var(--good)}
+.tag.essai{background:var(--star-soft);color:var(--star)}
+.parcours{display:flex;flex-direction:column;gap:8px}
+.etape{display:flex;align-items:center;gap:12px;text-align:left;background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;min-height:56px;width:100%}
+.etape:hover{border-color:var(--primary)}
+.etape.suivante{border-color:var(--primary);background:var(--surface)}
+.etape .num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid var(--line);font-family:var(--f-display);flex:none}
+.etape.suivante .num{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.etape .txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.etape small{color:var(--muted);font-size:.85rem}
+.fiches{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* exercice */
+.xtete{flex:none;display:flex;align-items:center;gap:10px;max-width:792px;width:100%;margin:0 auto;padding:8px 16px 0}
+.xtete .titre{font-size:.85rem;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots{display:flex;gap:6px;flex:none}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.dot.done{background:var(--primary)}
+.dot.now{outline:3px solid var(--primary);outline-offset:2px;background:var(--surface)}
+.enonce{flex:none;background:var(--surface);border-bottom:1.5px solid var(--line);margin-top:8px}
+.enonce .in{max-width:792px;margin:0 auto;padding:10px 16px}
+.enonce .cons{font-size:.85rem;color:var(--muted)}
+.enonce .m{font-size:clamp(1.05rem,4.7vw,1.45rem);font-family:var(--f-display);font-weight:600}
+.enonce.compact .in{padding:6px 16px}
+.enonce.compact .cons{display:none}
+.enonce.compact .m{font-size:clamp(1rem,4.4vw,1.25rem)}
+#lignes{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#lignes .in{max-width:792px;margin:0 auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px}
+.ligne{display:flex;flex-direction:column;gap:4px}
+.etq{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.etq small{text-transform:none;letter-spacing:0;font-weight:400;font-size:.88rem;margin-left:6px}
+.ligne.fait .corps{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px}
+.ligne.fait .corps .mscroll{flex:1;min-width:0}
+.ligne.fait.ko .corps{border-color:var(--notyet);border-style:dashed}
+.ligne.saute .corps{border-style:dashed;color:var(--muted);font-size:.9rem}
+.coche{flex:none;font-weight:700;color:var(--good)}
+.ligne.ko .coche{color:var(--notyet)}
+.saisie{display:flex;gap:8px}
+.saisie input{flex:1;min-width:0;font-family:var(--f-display);font-size:1.25rem;font-weight:500;color:var(--ink);background:var(--surface);border:2px solid var(--primary);border-radius:12px;padding:8px 12px;min-height:50px}
+.outils{display:flex;gap:4px;flex-wrap:wrap}
+.outils .linkbtn{padding:6px 8px;align-self:auto}
+.fb{border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.fb h3{font-size:1.05rem}
+.fb.bon{background:var(--good-soft)} .fb.bon h3{color:var(--good)}
+.fb.faux{background:var(--notyet-soft)} .fb.faux h3{color:var(--notyet)}
+.fb.info{background:var(--star-soft)}
+.fb.lecture{background:var(--surface);border:1.5px dashed var(--line)}
+.fb .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.fb .regle{font-weight:700}
+.modele{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.modele .pas{display:flex;flex-direction:column;gap:2px}
+.modele .pas small{color:var(--muted);font-size:.85rem}
+@keyframes pop{0%{transform:scale(.96);opacity:.4}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .2s ease-out}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}}
+
+/* clavier maths */
+#clavier{flex:none;background:var(--surface);border-top:1.5px solid var(--line);padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+#clavier .in{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:520px;margin:0 auto}
+#clavier button{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-family:var(--f-display);font-size:1.3rem;font-weight:500;padding:0;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#clavier button.op{background:var(--surface)}
+#clavier button.ok{grid-column:span 2;background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-size:1.05rem;font-weight:600}
+#clavier button:active{border-color:var(--primary)}
+
+/* leçon */
+.bloc{background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.bloc h2{font-size:1.1rem;display:flex;align-items:center;gap:10px}
+.bloc h2 .num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:1.5px solid var(--line);font-size:.95rem;flex:none}
+.idee{font-size:1.15rem}
+.pas-a-pas{display:flex;flex-direction:column;gap:8px}
+details.pas{background:var(--bg);border-radius:12px;padding:0 12px}
+details.pas>summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-weight:700}
+details.pas>summary::-webkit-details-marker{display:none}
+details.pas>summary::before{content:"";width:8px;height:8px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(-45deg);flex:none}
+details.pas[open]>summary::before{transform:rotate(45deg)}
+details.pas[open]{padding-bottom:10px}
+.bloc.piege{border-color:var(--trap);background:var(--trap-soft)}
+.bloc.piege h2{color:var(--trap)}
+.bloc.piege h2 .num{border-color:var(--trap);background:transparent}
+.fauxligne{color:var(--trap);font-weight:700}
+.fauxligne .m{text-decoration:line-through;text-decoration-thickness:2px}
+.fiche{background:var(--star-soft);border-radius:14px;padding:12px 14px;font-weight:700}
+
+/* bilan */
+.resultat{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px}
+.resultat .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+
+/* parent */
+.synth{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.synth div{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column}
+.synth small{font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.synth strong{font-family:var(--f-display);font-weight:600;font-size:1.05rem}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:700;font-size:.75rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1.5px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+details.seance{background:var(--bg);border-radius:12px;padding:0 12px}
+details.seance>summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0}
+details.seance>summary::-webkit-details-marker{display:none}
+details.seance>summary::before{content:"";width:8px;height:8px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(-45deg);flex:none}
+details.seance[open]>summary::before{transform:rotate(45deg)}
+details.seance[open]{padding-bottom:12px}
+.seances{display:flex;flex-direction:column;gap:8px}
+.tent{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:4px}
+.tent .meta{font-size:.85rem;color:var(--muted)}
+.jl{margin:0;padding-left:22px;font-size:.92rem;display:flex;flex-direction:column;gap:2px}
+.jl .ko{color:var(--notyet)}
+input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;max-width:100%}
+.pinpad{display:grid;grid-template-columns:repeat(3,72px);gap:10px;justify-content:center}
+.pinpad button{height:60px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);font-family:var(--f-display);font-size:1.5rem}
+.pindots{display:flex;gap:12px;justify-content:center}
+.pindots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--primary)}
+.pindots i.on{background:var(--primary)}
+.center{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+</style>
+</head>
+<body>
+<div id="coque">
+  <header id="barre"><div class="in">
+    <button class="nav" id="bRetour" onclick="retour()" aria-label="Revenir au menu précédent"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Retour</button>
+    <button class="nav" id="bReprendre" onclick="reprendre()">Reprendre</button>
+    <button class="nav fort" id="bSuivant" onclick="sectionSuivante()">Section suivante</button>
+  </div></header>
+  <main id="app"><div class="wrap"><p class="muted">Chargement…</p></div></main>
+  <div id="focus" class="hidden"></div>
+</div>
+<div id="toast" class="hidden" role="status"></div>
+
+<script src="js/fraction.js?v=0.2.0"></script>
+<script src="js/expr.js?v=0.2.0"></script>
+<script src="js/saisie.js?v=0.2.0"></script>
+<script src="js/etapes.js?v=0.2.0"></script>
+<script src="js/diag.js?v=0.2.0"></script>
+<script src="js/outils.js?v=0.2.0"></script>
+<script src="js/gen/algebre.js?v=0.2.0"></script>
+<script src="js/lecon.js?v=0.2.0"></script>
+<script src="js/progression.js?v=0.2.0"></script>
+<script src="js/rapport.js?v=0.2.0"></script>
+<script src="js/file.js?v=0.2.0"></script>
+<script src="js/config.js?v=0.2.0"></script>
+<script src="js/base.js?v=0.2.0"></script>
+<script>
+"use strict";
+/* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
+   Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent). */
+const APP_VERSION = "0.2.0";
+const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
+const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
+const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
+
+/* Lot 1 : le banc d'essai tient lieu de palier. Les paliers P0 à P9 arrivent aux lots 2 à 4. */
+const BANC = { id: "T", nom: "Banc d'essai du moteur", resume: "Une leçon et un exercice type, pour vérifier le moteur avant les vrais paliers.", lecon: "LECO-N00-A",
+  ordre: ["lecon", "guide", "semi", "seul"],
+  series: { guide: [{ gen: "eq1ref", niveau: 3 }, { gen: "eq1par", niveau: 2 }], semi: [{ gen: "eq1par", niveau: 3 }], seul: [{ gen: "eq1par", niveau: 3 }] },
+  detail: { lecon: "Le moins devant une parenthèse · 4 min", guide: "2 exercices · chaque étape vérifiée", semi: "1 exercice · 2 étapes demandées", seul: "1 exercice · tu écris ta démarche" } };
+const SEMI = ["reduit", "solution"];
+const NOMS_MODE = { guide: "Guidé", semi: "Semi-guidé", seul: "Seul", lecon: "Leçon" };
+
+/* ---------- petits outils ---------- */
+const $ = s => document.querySelector(s);
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.remove("hidden"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add("hidden"), 3600); }
+const LS = {
+  lire(k) { try { const v = localStorage.getItem(k); return v == null ? null : JSON.parse(v); } catch (e) { return null; } },
+  ecrire(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* stockage indisponible : on continue en mémoire */ } }
+};
+/* ---------- famille : la clé arrive par le lien (#eleve=… ou #parent=…), puis l'appareil la garde ---------- */
+const B = MM.base;
+let FAM = B.lireLien(location.hash);
+if (FAM) LS.ecrire("mm.famille", FAM);
+else { const f = LS.lire("mm.famille"); FAM = f && B.cleValide(f.cle) && B.ROLES.includes(f.role) ? f : null; }
+const estParent = () => !!FAM && FAM.role === "parent";
+/* Ce qui appartient à une famille est rangé à part (un appareil relié à une autre clé ne mélange rien). */
+const LF = nom => "mm." + (FAM ? FAM.cle.slice(0, 8) + "." : "") + nom;
+/* Une ligne de maths affichée ; une équation peut passer à la ligne juste avant le signe =. */
+function maths(txt) {
+  const i = txt.indexOf(" = ");
+  if (i < 0) return `<span class="m"><span class="c">${esc(txt)}</span></span>`;
+  return `<span class="m"><span class="c">${esc(txt.slice(0, i))}</span> <span class="c">${esc(txt.slice(i + 1))}</span></span>`;
+}
+const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+const tactile = !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
+function avecDelai(p, ms) { return Promise.race([p, new Promise((_, non) => setTimeout(() => non({ code: "unavailable" }), ms))]); }
+
+/* ---------- état ---------- */
+let S = null;                     // document suivi/app : réglages, paliers, point de reprise
+let DB = null, REF = null, FILE = null;
+let mode = "init";                // init | attente | cloud | horsligne
+let docConfirme = false, docExiste = false, refuse = false, attenteLongue = false, syncEnCours = false;
+let vue = FAM ? "accueil" : "appairage";   // appairage | accueil | lecon | exo | bilan | pin | parent
+let X = null, Q = null, LC = null;   // série en cours, exercice en cours, leçon affichée
+let SEANCE = LS.lire(LF("seance"));
+let RAPPORT = null;
+const LECONS = {}, ouverts = new Set(["T"]);
+let clavierPC = LS.lire("mm.clavier") === true;
+
+function etatDefaut() {
+  const paliers = P.etatInitial();
+  paliers.T = { statut: "en_cours", meilleurExamen: null, valideLe: null, echecsRevision: 0, fait: {} };
+  return { schema: 1, app: "mission-maths", creeLe: Date.now(), majLe: Date.now(), parent: { pinHash: PIN_DEFAUT }, controle: { date: null },
+    eleve: { nom: "", palierActuel: "P0", reprise: null }, paliers, fiches: [],     // prénom : saisi par le parent, rangé dans la base, jamais dans le code
+    essai: { reprise: null, fait: {}, fiches: [] } };       // les essais des appareils parent, à part de la progression de l'élève
+}
+/* Garantit que tous les champs existent, quel que soit l'âge du document lu. */
+function completer(s) {
+  const d = etatDefaut();
+  s = s && typeof s === "object" ? clone(s) : {};
+  for (const k of ["schema", "app", "creeLe", "majLe"]) if (s[k] == null) s[k] = d[k];
+  s.parent = Object.assign({}, d.parent, s.parent); if (!s.parent.pinHash) s.parent.pinHash = PIN_DEFAUT;
+  s.controle = Object.assign({}, d.controle, s.controle);
+  s.eleve = Object.assign({}, d.eleve, s.eleve);
+  s.paliers = s.paliers && typeof s.paliers === "object" ? s.paliers : {};
+  for (const id of Object.keys(d.paliers)) { s.paliers[id] = Object.assign({}, d.paliers[id], s.paliers[id]); if (!s.paliers[id].fait) s.paliers[id].fait = {}; }
+  if (!Array.isArray(s.fiches)) s.fiches = [];
+  s.essai = Object.assign({ reprise: null, fait: {}, fiches: [] }, s.essai);
+  if (!s.essai.fait || typeof s.essai.fait !== "object") s.essai.fait = {};
+  if (!Array.isArray(s.essai.fiches)) s.essai.fiches = [];
+  return s;
+}
+/* Un appareil parent travaille dans une zone d'essai : ses exercices ne touchent pas la progression de l'élève. */
+const enEssai = () => estParent();
+const repriseCourante = () => enEssai() ? S.essai.reprise : S.eleve.reprise;
+const majReprise = r => ecrireApp(enEssai() ? { essai: { reprise: r } } : { eleve: { reprise: r } }, "reprise");
+const faitBanc = () => (enEssai() ? S.essai.fait : S.paliers.T && S.paliers.T.fait) || {};
+const fichesVues = () => enEssai() ? S.essai.fiches : S.fiches;
+function marquerFait(section, fiche) {
+  const vues = fichesVues(), neuve = fiche && !vues.includes(fiche) ? vues.concat([fiche]) : null;
+  if (enEssai()) ecrireApp({ essai: Object.assign({ fait: { [section]: true } }, neuve ? { fiches: neuve } : {}) });
+  else ecrireApp(Object.assign({ paliers: { T: { fait: { [section]: true } } } }, neuve ? { fiches: neuve } : {}));
+}
+
+/* ---------- synchro : base Firebase (js/base.js) + file hors ligne (js/file.js) ---------- */
+const stockageFile = { lire() { try { return localStorage.getItem(LF("file")); } catch (e) { return null; } }, ecrire(t) { try { localStorage.setItem(LF("file"), t); } catch (e) { /* mémoire seule */ } } };
+async function envoyerOp(op) {
+  if (!DB || !docConfirme) throw { code: "unavailable" };                     // on n'écrit qu'une fois la base vue
+  if (navigator.onLine === false) throw { code: "unavailable" };              // hors ligne : la file garde tout, rien ne s'empile ailleurs
+  try {
+    if (op.chemin === RACINE && !docExiste) { await avecDelai(REF.set(clone(S)), 15000); docExiste = true; return; }
+    const ref = DB.doc(op.chemin);
+    await avecDelai(op.type === "set" ? ref.set(op.donnees) : ref.update(op.donnees), 15000);
+    majRefus(false);
+  } catch (e) {
+    const code = e && e.code;
+    if (code === "introuvable" && op.chemin === RACINE) { docExiste = false; throw { code: "unavailable" }; }   // document effacé : recréé en entier au prochain envoi
+    if (code === "permission_denied") { majRefus(true); throw { code: "unavailable" }; }                      // l'écriture attend sur l'appareil
+    if (code === "quota_exceeded") { toast("La base a atteint sa limite du jour. Ton travail est gardé ici."); throw { code: "unavailable" }; }
+    throw { code: code || "unavailable" };
+  }
+}
+/* La base refuse l'accès (lien abîmé, règles changées) : on le dit sur l'écran en cours, le travail reste sur l'appareil. */
+function majRefus(v) { if (refuse === v) return; refuse = v; if (vue === "accueil" || vue === "parent") render(); else majPastille(); }
+function vidage() { if (!FILE) return Promise.resolve(); return FILE.vider().then(() => { majPastille(); }); }
+/* Écrit dans le document commun : appliqué tout de suite ici, envoyé dès que possible. */
+function ecrireApp(donnees, cle) {
+  O.fusionner(S, donnees); S.majLe = Date.now(); LS.ecrire(LF("etat"), S);
+  FILE.ajouter({ id: O.uid("u"), cle: cle || null, type: "update", chemin: RACINE, donnees: Object.assign({ majLe: S.majLe }, donnees) });
+  vidage();
+}
+function appliquerDistant(distant) {
+  const neuf = clone(distant);
+  for (const op of FILE.enAttente()) if (op.chemin === RACINE && op.type === "update") O.fusionner(neuf, op.donnees);   // nos écritures pas encore parties restent vraies
+  S = completer(neuf); LS.ecrire(LF("etat"), S);
+  if (vue === "accueil" || vue === "parent") render();      // jamais de re-dessin pendant un exercice
+  else majBarre();
+}
+/* Firebase est chargé depuis son adresse officielle (gstatic), version fixée dans js/config.js. */
+function chargerFirebase() {
+  const u = n => "https://www.gstatic.com/firebasejs/" + MM.config.firebaseVersion + "/firebase-" + n + ".js";
+  return Promise.all([import(u("app")), import(u("auth")), import(u("firestore"))]).then(([app, auth, firestore]) => ({ app, auth, firestore }));
+}
+async function initSync() {
+  if (!FAM || DB || syncEnCours) return;
+  syncEnCours = true;
+  let fb;
+  try { fb = await avecDelai(chargerFirebase(), 20000); }
+  catch (e) { syncEnCours = false; mode = "horsligne"; majPastille(); return; }   // réessayé au retour du réseau, et toutes les 30 s
+  DB = B.creer(fb, { config: MM.config.firebase, cle: FAM.cle, emulateur: window.__emulateur || null });
+  syncEnCours = false; mode = "attente"; REF = DB.doc(RACINE);
+  setTimeout(() => { if (!docConfirme) { attenteLongue = true; majPastille(); } }, 10000);
+  ecouter();
+}
+function ecouter() {
+  REF.onSnapshot(snap => {
+    if (snap.metadata.hasPendingWrites) return;                                  // écho de notre propre écriture
+    if (snap.metadata.fromCache) { if (snap.exists && !docConfirme) appliquerDistant(snap.data()); return; }   // copie locale : affichable, pas fiable pour créer
+    docConfirme = true; mode = "cloud"; attenteLongue = false;
+    if (snap.exists) { docExiste = true; appliquerDistant(snap.data()); vidage(); }
+    else { docExiste = false; creerDocument(); }
+    majPastille();
+  }, e => {
+    if (e && e.code === "permission_denied") majRefus(true);
+    else { setTimeout(ecouter, 30000); majPastille(); }                         // écoute coupée par une autre cause : on la relance
+  });
+}
+function creerDocument() {
+  avecDelai(REF.set(clone(S)), 15000).then(() => { docExiste = true; majRefus(false); vidage(); majPastille(); },
+    e => { if (e && e.code === "permission_denied") majRefus(true); else majPastille(); });
+}
+function pastille() {
+  const n = FILE ? FILE.taille() : 0;
+  if (refuse) return '<span class="pill warn" id="pastille">Accès refusé</span>';
+  if (n) return `<button class="pill warn" id="pastille" onclick="vidage()">${n} en attente · réessayer</button>`;
+  if (mode !== "cloud") return attenteLongue || mode === "horsligne" ? '<span class="pill warn" id="pastille">Hors ligne · travail gardé ici</span>' : '<span class="pill" id="pastille">Connexion…</span>';
+  return '<span class="pill" id="pastille">Synchronisé</span>';
+}
+function majPastille() { const el = $("#pastille"); if (el) el.outerHTML = pastille(); }
+
+/* ---------- séance de travail : durée active, trous de plus de 2 minutes exclus ---------- */
+let seanceEnvoyee = 0;
+function activite() {
+  const t = Date.now();
+  if (R.nouvelleSeanceRequise(SEANCE, t)) {
+    if (SEANCE && SEANCE.fin > seanceEnvoyee) envoyerSeance();
+    SEANCE = { id: O.uid("s"), debut: t, fin: t, dureeActive: 0, palier: X ? X.palier : BANC.id, nbQuestions: 0, parent: estParent() };
+    envoyerSeance();
+  } else R.pointer(SEANCE, t);
+  LS.ecrire(LF("seance"), SEANCE);
+}
+function envoyerSeance() {
+  if (!SEANCE || !FILE) return;
+  SEANCE.parent = estParent(); seanceEnvoyee = SEANCE.fin;
+  FILE.ajouter({ id: O.uid("w"), cle: "seance:" + SEANCE.id, type: "set", chemin: RACINE + "/sessions/" + SEANCE.id, donnees: clone(SEANCE) });
+  vidage();
+}
+function quitterPage() { if (SEANCE && SEANCE.fin > seanceEnvoyee) envoyerSeance(); }
+
+/* ---------- navigation ---------- */
+function montrer(quoi) { $("#app").classList.toggle("hidden", quoi !== "app"); $("#focus").classList.toggle("hidden", quoi !== "focus"); }
+function majBarre() {
+  const enTravail = vue === "exo", sansFamille = vue === "appairage" || (vue === "pin" && pinEtape === "creation");
+  $("#bRetour").disabled = vue === "accueil" || vue === "appairage";
+  $("#bReprendre").disabled = enTravail || vue === "pin" || !(S && repriseCourante());
+  $("#bSuivant").disabled = enTravail || vue === "pin";
+  if (sansFamille) { $("#bReprendre").disabled = true; $("#bSuivant").disabled = true; }
+}
+function render() {
+  if (vue === "appairage") { majBarre(); montrer("app"); return renderAppairage(); }
+  if (vue === "pin" && pinEtape === "creation") { majBarre(); montrer("app"); return renderPin(); }
+  if (!S) return;
+  if (vue !== "parent" && vue !== "pin") parentOK = false;        // l'espace parent se referme dès qu'on en sort
+  if (vue === "lecon" && !LC) vue = "accueil";
+  majBarre();
+  if (vue === "exo") return renderExo();
+  montrer("app");
+  if (vue === "lecon") return renderLecon();
+  if (vue === "bilan") return renderBilan();
+  if (vue === "pin") return renderPin();
+  if (vue === "parent") return renderParent();
+  renderAccueil();
+}
+function aller(v) { vue = v; render(); if (v !== "exo") $("#app").scrollTop = 0; }
+function retour() {
+  if (vue === "exo") { Q = null; return aller(X && X.section === "lecon" && LC ? "lecon" : "accueil"); }
+  if (vue === "pin") { pinBuf = ""; return aller(pinEtape === "creation" ? "appairage" : pinDepuisParent ? "parent" : "accueil"); }
+  aller("accueil");
+}
+function plier(ouvrir) { document.querySelectorAll("#app details.panel, #app details.pas").forEach(d => { d.open = ouvrir; }); }
+function suivrePanneaux() { document.querySelectorAll("#app details.panel").forEach(d => d.addEventListener("toggle", () => { d.open ? ouverts.add(d.dataset.k) : ouverts.delete(d.dataset.k); })); }
+function sectionSuivante() {
+  const s = P.sectionSuivante(faitBanc(), BANC.ordre);
+  if (!s) { toast("Tout est fait ici. Les paliers arrivent au prochain lot."); return; }
+  lancer(s);
+}
+function lancer(section) {
+  if (section === "lecon") return ouvrirLecon(BANC.lecon);
+  lancerSerie(section, BANC.series[section]);
+}
+function reprendre() {
+  const r = repriseCourante();
+  if (!r) { toast("Rien à reprendre pour l'instant."); return; }
+  if (r.section === "lecon" && !(r.exos && r.exos.length)) return ouvrirLecon(r.lecon || BANC.lecon);
+  X = { palier: r.palier, section: r.section, exos: clone(r.exos), i: r.i, resultats: clone(r.resultats || []), lecon: r.lecon || null, fiche: r.fiche || null };
+  ouvrirExo(r);
+}
+
+/* ---------- accueil élève : 11 paliers repliés, celui en cours ouvert ---------- */
+function joursAvantControle() {
+  const d = S.controle && S.controle.date; if (!d) return null;
+  const j = Math.round((new Date(d + "T00:00:00").getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
+  return j >= 0 ? j : null;
+}
+function renderAccueil() {
+  const fait = faitBanc(), suiv = P.sectionSuivante(fait, BANC.ordre), j = joursAvantControle();
+  const etape = (s, n) => `<button class="etape${s === suiv ? " suivante" : ""}" onclick="lancer('${s}')">
+      <span class="num">${n}</span><span class="txt"><strong>${P.NOMS_PARCOURS[s]}</strong><small>${esc(BANC.detail[s])}</small></span>
+      ${fait[s] ? '<span class="tag fait">Fait</span>' : s === suiv ? '<span class="tag actuel">À faire</span>' : ""}</button>`;
+  const palier = p => `<details class="panel" data-k="${p.id}"${ouverts.has(p.id) ? " open" : ""}>
+      <summary><h2><span class="pid">${p.id === "FINAL" ? "Final" : p.id}</span>${esc(p.nom)}</h2><span class="tag soon">Bientôt</span></summary>
+      <p class="sub">${esc(p.resume)}</p><p class="note">Ce contenu n'est pas encore livré.</p></details>`;
+  const textes = LS.lire("mm.fiches") || {}, fiches = fichesVues().map(id => textes[id]).filter(Boolean);
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>Salut${S.eleve.nom ? " " + esc(S.eleve.nom) : ""}</h1>${pastille()}</div>
+    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève.</p>' : ""}
+    ${j != null ? `<p class="compte">Prochain contrôle ${j === 0 ? "<strong>aujourd'hui</strong>" : `dans <strong>${j}</strong> jour${j > 1 ? "s" : ""}`}.</p>` : ""}
+    ${refuse ? '<p class="compte">Tes exercices restent sur cet appareil : demande à ton parent de te renvoyer ton lien.</p>' : ""}
+    <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
+    <details class="panel encours" data-k="T"${ouverts.has("T") ? " open" : ""}>
+      <summary><h2>${esc(BANC.nom)}</h2><span class="tag actuel">En cours</span></summary>
+      <p class="sub">${esc(BANC.resume)}</p>
+      <div class="parcours">${BANC.ordre.map((s, i) => etape(s, i + 1)).join("")}</div>
+    </details>
+    ${P.PALIERS.map(palier).join("")}
+    <details class="panel" data-k="memo"${ouverts.has("memo") ? " open" : ""}>
+      <summary><h2>Mémo</h2><span class="tag soon">${pluriel(fiches.length, "fiche")}</span></summary>
+      ${fiches.length ? `<ul class="fiches">${fiches.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : '<p class="sub">Chaque leçon terminée ajoute ici sa fiche réflexe.</p>'}
+    </details>
+    <button class="linkbtn" onclick="ouvrirParent()">Espace parent</button>
+    <p class="note">Mission Maths ${APP_VERSION} · lot 1 bis : l'app hors de Claude.</p></div>`;
+  suivrePanneaux();
+}
+
+/* ---------- module Leçons ---------- */
+async function chargerLecon(id) {
+  if (LECONS[id]) return LECONS[id];
+  let pack = null;
+  try { const idx = await (await fetch("lecons/index.json")).json(); const m = idx.lecons.find(x => x.pack_id === id); pack = await (await fetch(m.fichier)).json(); LS.ecrire("mm.lecon." + id, pack); }
+  catch (e) { pack = LS.lire("mm.lecon." + id); }                             // hors ligne : dernière copie lue
+  if (!pack) throw new Error("leçon introuvable");
+  const defauts = L.valider(pack);
+  if (defauts.length) throw new Error("leçon refusée : " + defauts[0]);
+  const fiches = LS.lire("mm.fiches") || {}; fiches[pack.lecon.fiche.id] = pack.lecon.fiche.texte; LS.ecrire("mm.fiches", fiches);
+  return (LECONS[id] = pack);
+}
+async function ouvrirLecon(id) {
+  let pack; try { pack = await chargerLecon(id); } catch (e) { toast("Leçon indisponible : vérifie ta connexion."); return; }
+  LC = L.preparer(pack); activite();
+  majReprise(repriseVide({ palier: BANC.id, section: "lecon", lecon: id }));
+  aller("lecon");
+}
+function renderLecon() {
+  const l = LC, x = l.piege.explication, fait = faitBanc().lecon;
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>${esc(l.titre)}</h1><span class="pill">Leçon · ${l.duree} min</span></div>
+    <section class="bloc"><h2><span class="num">1</span>L'idée</h2><p class="idee">${esc(l.idee)}</p></section>
+    <section class="bloc"><h2><span class="num">2</span>Un exemple, pas à pas</h2>
+      <p class="sub">${esc(l.exemple.consigne)}</p><div class="mscroll">${maths(l.exemple.enonce)}</div>
+      <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
+      <div class="pas-a-pas">${l.exemple.lignes.map((p, i) => `<details class="pas"><summary>Étape ${i + 1} · ${esc(p.nom)}</summary><div class="mscroll">${maths(p.ligne)}</div><p class="sub">${esc(p.pourquoi)}</p></details>`).join("")}</div>
+    </section>
+    <section class="bloc piege"><h2><span class="num">3</span>Le piège classique</h2>
+      <p>On part de&nbsp;:</p><div class="mscroll">${maths(l.piege.depart)}</div>
+      <p class="fauxligne">La ligne piégée&nbsp;:</p><div class="mscroll fauxligne">${maths(l.piege.faux)}</div>
+      <p>${esc(x.ou.replace(/^Mais dans/, "Dans").replace(/^Mais /, ""))} ${esc(x.regle)}</p>
+      <p>La bonne ligne&nbsp;:</p><div class="mscroll">${maths(l.piege.bon)}</div>
+      <p><strong>Pour l'éviter.</strong> ${esc(l.piege.parade)}</p>
+    </section>
+    <section class="bloc"><h2><span class="num">4</span>À toi</h2><p class="sub">2 questions rapides sur ce que tu viens de lire.</p>
+      <div class="row"><button class="btn" onclick="aToi()">${fait ? "Refaire les 2 questions" : "Faire les 2 questions"}</button></div></section>
+    <section class="bloc"><h2><span class="num">5</span>Fiche réflexe</h2><p class="fiche">${esc(l.fiche.texte)}</p>
+      <p class="note">${fichesVues().includes(l.fiche.id) ? "Elle est dans ton mémo." : "Elle ira dans ton mémo après les 2 questions."}</p></section>
+  </div>`;
+}
+function aToi() { lancerSerie("lecon", LC.aToi, { lecon: LC.pack, fiche: LC.fiche.id }); }
+
+/* ---------- module Saisie par étapes + diagnostic ---------- */
+function repriseVide(o) { return Object.assign({ palier: BANC.id, section: null, lecon: null, fiche: null, i: 0, exos: [], resultats: [], k: 0, acceptees: [], journal: [], libres: [], essais: 0, aide: false, maj: Date.now() }, o); }
+function lancerSerie(section, specs, opt) {
+  X = { palier: BANC.id, section, exos: specs.map(s => ({ gen: s.gen, niveau: s.niveau, graine: O.nouvelleGraine() })), i: 0, resultats: [], lecon: opt && opt.lecon || null, fiche: opt && opt.fiche || null };
+  ouvrirExo(null);
+}
+function ouvrirExo(repr) {
+  const sp = X.exos[X.i];
+  let exo; try { exo = GEN.creer(sp.gen, sp.niveau, sp.graine); } catch (e) { toast("Exercice indisponible."); return aller("accueil"); }
+  const m = X.section === "lecon" ? "guide" : X.section;
+  let etapes = exo.etapes;
+  if (m === "semi" && exo.type === "equation") { etapes = exo.etapes.filter(e => SEMI.includes(e.id)); if (!etapes.length || etapes[etapes.length - 1].id !== exo.etapes[exo.etapes.length - 1].id) etapes = etapes.concat(exo.etapes.slice(-1)); }
+  const depart = GEN.depart(exo);
+  activite();
+  Q = { exo, mode: m, type: exo.type, depart, etapes: m === "seul" ? [] : etapes, k: 0, prev: exo.type === "equation" ? depart : null,
+    acceptees: [], journal: [], libres: [], essais: 0, aide: false, fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null };
+  if (repr && repr.i === X.i) {
+    try {
+      Q.acceptees = clone(repr.acceptees || []); Q.journal = clone(repr.journal || []); Q.libres = clone(repr.libres || []);
+      Q.k = Math.min(repr.k || 0, Q.etapes.length ? Q.etapes.length - 1 : 0); Q.essais = repr.essais || 0; Q.aide = !!repr.aide;
+      const der = Q.acceptees.filter(a => a.texte).pop();
+      if (der && Q.type === "equation") Q.prev = E.lireEquation(der.texte);
+    } catch (e) { Q.acceptees = []; Q.journal = []; Q.libres = []; Q.k = 0; Q.prev = Q.type === "equation" ? depart : null; }
+  }
+  sauverReprise();
+  vue = "exo"; render();
+}
+function sauverReprise() {
+  const r = repriseVide({ palier: X.palier, section: X.section, lecon: X.lecon, fiche: X.fiche, i: X.i, exos: clone(X.exos), resultats: clone(X.resultats),
+    k: Q ? Q.k : 0, acceptees: Q ? clone(Q.acceptees) : [], journal: Q ? clone(Q.journal) : [], libres: Q ? clone(Q.libres) : [], essais: Q ? Q.essais : 0, aide: Q ? Q.aide : false });
+  majReprise(r);
+}
+const clavierVisible = () => tactile || clavierPC;
+function clavierHTML() {
+  const t = [["7"], ["8"], ["9"], ["(", "op"], [")", "op"], ["⌫", "op", "del", "Effacer"],
+    ["4"], ["5"], ["6"], ["x", "op"], ["²", "op", "²", "Au carré"], ["/", "op", "/", "Divisé par"],
+    ["1"], ["2"], ["3"], ["+", "op"], ["−", "op", "−", "Moins"], ["=", "op"],
+    ["0"], [",", "", ",", "Virgule"], ["←", "op", "g", "Curseur à gauche"], ["→", "op", "d", "Curseur à droite"], ["Valider", "ok", "ok"]];
+  return `<div id="clavier" role="group" aria-label="Clavier maths"><div class="in">${t.map(([l, c, k, a]) => `<button type="button" class="${c || ""}" data-k="${esc(k || l)}"${a ? ` aria-label="${a}"` : ""}>${esc(l)}</button>`).join("")}</div></div>`;
+}
+function touche(k) {
+  const c = $("#champ"); if (!c || c.disabled) return;
+  if (k === "ok") return validerLigne();
+  const s = c.selectionStart == null ? c.value.length : c.selectionStart, e = c.selectionEnd == null ? s : c.selectionEnd;
+  if (k === "del") { if (s !== e) c.setRangeText("", s, e, "end"); else if (s > 0) c.setRangeText("", s - 1, s, "end"); }
+  else if (k === "g") { const p = Math.max(0, s - 1); c.setSelectionRange(p, p); }
+  else if (k === "d") { const p = Math.min(c.value.length, e + 1); c.setSelectionRange(p, p); }
+  else c.setRangeText(k, s, e, "end");
+  Q.brouillon = c.value;
+  try { c.focus({ preventScroll: true }); } catch (x) { /* certains navigateurs refusent l'option */ }
+}
+function brancherClavier() {
+  const cl = $("#clavier"); if (!cl) return;
+  cl.addEventListener("pointerdown", ev => { const b = ev.target.closest("button"); if (!b) return; ev.preventDefault(); activite(); touche(b.dataset.k); });   // preventDefault : le champ garde le curseur
+  cl.addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && ev.detail === 0) touche(b.dataset.k); });                                // activation au clavier physique
+}
+function basculerClavier() { clavierPC = !clavierPC; LS.ecrire("mm.clavier", clavierPC); if (Q) { const c = $("#champ"); if (c) Q.brouillon = c.value; } renderExo(); }
+
+function ligneFaite(etq, texte, cls, marque) {
+  return `<div class="ligne fait ${cls || ""}"><span class="etq">${esc(etq)}</span><div class="corps"><div class="mscroll">${texte}</div><span class="coche" aria-hidden="true">${marque || "✓"}</span></div></div>`;
+}
+function fbHTML() {
+  const f = Q.fb; if (!f) return "";
+  if (f.t === "lecture") return `<div class="fb lecture pop"><p>${esc(f.message)}</p><p class="note">Ce n'est pas compté comme une erreur.</p></div>`;
+  if (f.t === "info") return `<div class="fb info pop"><p>${esc(f.message)}</p></div>`;
+  if (f.t === "bon") return `<div class="fb bon pop"><h3>${esc(f.message)}</h3>${f.note ? `<p>${esc(f.note)}</p>` : ""}</div>`;
+  const x = f.x;
+  return `<div class="fb faux pop"><h3>${esc(x.titre)}</h3>
+    <p>${esc(x.bon)}</p><p>${esc(x.ou)}</p><p class="regle">${esc(x.regle)}</p>${x.suite ? `<p>${esc(x.suite)}</p>` : ""}
+    ${f.montrer ? `<div class="modele"><span class="etq">La ligne attendue</span><div class="mscroll">${maths(f.attendu)}</div></div>` : ""}
+    <div class="actions">${f.montrer ? '<button class="btn small" onclick="prendreModele()">Continuer avec cette ligne</button>' : ""}
+      <span class="note" style="align-self:center">${f.montrer ? "Ou corrige ta ligne et valide." : "Corrige ta ligne, puis valide."}</span></div></div>`;
+}
+function corrigeHTML(ouvert) {
+  return `<details class="panel"${ouvert ? " open" : ""}><summary><h2>Démarche modèle à recopier</h2></summary>
+    <div class="modele">${Q.exo.corrige.map(p => `<div class="pas"><div class="mscroll">${maths(p.ligne)}</div><small>${esc(p.pourquoi)}</small></div>`).join("")}</div></details>`;
+}
+function renderExo() {
+  montrer("focus"); majBarre();
+  const exo = Q.exo, n = X.exos.length, cv = clavierVisible();
+  const dots = X.exos.map((_, k) => `<span class="dot ${k < X.i ? "done" : k === X.i ? "now" : ""}"></span>`).join("");
+  const nomEt = id => T.ETAPES[id] ? T.ETAPES[id].nom : "Ligne";
+  let corps = "";
+  if (Q.mode !== "seul") {
+    corps += Q.acceptees.map(a => a.saute ? `<div class="ligne fait saute"><span class="etq">${esc(nomEt(a.etape))}</span><div class="corps">Déjà fait dans ta ligne précédente.</div></div>`
+      : ligneFaite(nomEt(a.etape) + (a.inter ? " · en cours" : "") + (a.donnee ? " · ligne donnée" : ""), maths(a.texte))).join("");
+    if (!Q.fini) {
+      const et = Q.etapes[Q.k];
+      corps += `<div class="ligne active" id="active"><label class="etq" for="champ">${esc(et.nom)}<small>${esc(et.consigne)}</small></label>
+        <div class="saisie"><input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
+          ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>
+        <div class="outils"><button class="linkbtn" onclick="indice()">Un indice</button>${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div></div>`;
+    }
+  } else if (!Q.fini) {
+    corps += Q.libres.map((t, i) => ligneFaite("Ligne " + (i + 1), maths(t), "", "·")).join("");
+    corps += `<div class="ligne active" id="active"><label class="etq" for="champ">Ligne ${Q.libres.length + 1}<small>${Q.type === "equation" ? "Écris ta démarche. Termine par x = …" : "Écris ta réponse."}</small></label>
+      <div class="saisie"><input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
+        ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>
+      <div class="outils">${Q.libres.length ? '<button class="linkbtn" onclick="effacerDerniere()">Effacer ma dernière ligne</button>' : ""}${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div></div>`;
+  } else corps += verdictHTML();
+  const fin = Q.fini ? `<div class="fb ${Q.bilan.cls} pop"><h3>${esc(Q.bilan.titre)}</h3>${Q.bilan.texte ? `<p>${esc(Q.bilan.texte)}</p>` : ""}
+      <div class="actions"><button class="btn" id="suite" onclick="exoSuivant()">${X.i + 1 < n ? "Exercice suivant" : "Voir le bilan"}</button></div></div>${corrigeHTML(Q.mode === "seul")}` : "";
+  $("#focus").innerHTML = `
+    <div class="xtete"><span class="titre">${esc(P.NOMS_PARCOURS[X.section] || "À toi")} · exercice ${X.i + 1} sur ${n}</span><div class="dots" aria-hidden="true">${dots}</div></div>
+    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div></div></div>
+    <div id="lignes"><div class="in">${corps}<div id="fb" aria-live="polite">${Q.fini ? "" : fbHTML()}</div>${fin}</div></div>
+    ${cv && !Q.fini ? clavierHTML() : ""}`;
+  brancherClavier();
+  const c = $("#champ");
+  if (c) {
+    c.value = Q.brouillon || "";
+    c.addEventListener("input", () => { Q.brouillon = c.value; activite(); });
+    c.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); validerLigne(); } });
+    try { c.focus({ preventScroll: true }); } catch (x) { /* sans importance */ }
+  }
+  cadrer();
+}
+/* Le champ actif se place juste sous l'énoncé, avec la ligne précédente encore visible au-dessus. */
+function cadrer(versBas) {
+  const z = $("#lignes"); if (!z) return;
+  if (Q.fini) { z.scrollTop = 0; const s = $("#suite"); if (s) s.scrollIntoView({ block: "nearest" }); return; }
+  const a = $("#active"); if (!a) return;
+  const avant = a.previousElementSibling;
+  z.scrollTop = Math.max(0, (avant || a).offsetTop - z.offsetTop - 8);
+  if (versBas) { const f = $("#fb"); if (f && f.firstElementChild) f.firstElementChild.scrollIntoView({ block: "nearest" }); }
+}
+function majFb() { const f = $("#fb"); if (f) f.innerHTML = fbHTML(); cadrer(true); }
+
+const BRAVO = {
+  developpe: { moins: ["Tes signes sont bons. C'était LE piège.", "Le moins a bien touché chaque terme.", "Parenthèses parties, signes intacts."], sans: ["Parenthèses parties, sans casse.", "Chaque terme a bien été multiplié."] },
+  reduit: ["Les x avec les x, les nombres avec les nombres. Propre.", "Bien réduit. Une ligne courte, c'est plus sûr."],
+  regroupe: ["Balance équilibrée : les x d'un côté, les nombres de l'autre.", "Bien rangé. Le signe a changé en changeant de côté."],
+  solution: ["x est tout seul. Équation résolue.", "Bonne division. C'est la solution."]
+};
+let tourBravo = 0;
+function bravo(id, avant) {
+  let liste = BRAVO[id] || ["Ligne juste."];
+  if (id === "developpe") liste = avant && avant.some(t => t.inner && t.c.signe() < 0) ? liste.moins : liste.sans;
+  return liste[tourBravo++ % liste.length];
+}
+/* Pour une erreur hors catalogue, le rapport parent garde le calcul exact : « Erreur de calcul : 3 × (−5) = −15, pas −12 ». */
+function precisionDe(diag) { if (!diag || (diag.code && diag.code !== "CALC")) return null; const x = D.expliquer(diag); return x.resume ? x.titre + " : " + x.resume : null; }
+function validerLigne() {
+  const c = $("#champ"); if (!c || Q.fini) return;
+  const texte = c.value; Q.brouillon = texte; activite();
+  if (Q.mode === "seul") return ligneLibre(texte);
+  const et = Q.etapes[Q.k];
+  const avant = Q.type === "equation" ? [...Q.prev.g, ...Q.prev.d] : Q.depart;
+  const v = Q.type === "equation" ? T.jugerLigne(Q.prev, texte, et.forme) : T.jugerExpression(Q.depart, texte, et.forme);
+  if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
+  if (v.statut === "incomplet") {
+    if (Q.type === "equation" && E.ecrireEquation(Q.prev) !== v.ecrit) { Q.acceptees.push({ etape: et.id, texte: v.ecrit, inter: true }); Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true, incomplet: true }); Q.prev = v.eq; Q.brouillon = ""; sauverReprise(); Q.fb = { t: "info", message: v.message }; return renderExo(); }
+    Q.fb = { t: "info", message: v.message }; return majFb();
+  }
+  if (v.statut === "juste") { Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true }); return accepter(et, v, avant); }
+  Q.essais++; Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: false, code: v.code || null, precision: precisionDe(v.diag) });
+  // erreur reconnue (code du catalogue) ou localisée : il se corrige d'abord seul ; la ligne attendue n'arrive qu'au 2e essai
+  Q.fb = { t: "faux", x: D.expliquer(v.diag), attendu: v.attendu, montrer: !(v.code || (v.diag && v.diag.localise)) || Q.essais >= 2 };
+  sauverReprise(); majFb();
+}
+function accepter(et, v, avant, donnee) {
+  Q.acceptees.push({ etape: et.id, texte: v.ecrit, donnee: !!donnee });
+  if (Q.type === "equation") Q.prev = v.eq;
+  Q.essais = 0; Q.brouillon = "";
+  let k = Q.k + 1, sautees = 0;
+  if (Q.type === "equation") while (k < Q.etapes.length && T.FORMES[Q.etapes[k].forme](v.eq)) { Q.acceptees.push({ etape: Q.etapes[k].id, texte: null, saute: true }); k++; sautees++; }
+  Q.k = k;
+  Q.fb = donnee ? { t: "info", message: "Ligne recopiée. À toi pour la suite." }
+    : { t: "bon", message: bravo(et.id, avant), note: sautees ? "Tu as fait plusieurs étapes d'un coup. Sur ta copie, écris quand même chaque ligne." : v.aSimplifier ? "Pense à simplifier ta fraction : " + Q.exo.reponseTexte + "." : "" };
+  if (k >= Q.etapes.length) return finExo();
+  sauverReprise(); renderExo();
+}
+function prendreModele() {
+  const f = Q.fb; if (!f || !f.attendu) return;
+  activite(); Q.aide = true;
+  const et = Q.etapes[Q.k];
+  Q.journal.push({ etape: et.id, saisie: f.attendu, juste: true, donnee: true });
+  accepter(et, { ecrit: f.attendu, eq: Q.type === "equation" ? E.lireEquation(f.attendu) : null }, null, true);
+}
+function indice() { activite(); Q.aide = true; Q.fb = { t: "info", message: Q.etapes[Q.k].indice }; sauverReprise(); majFb(); }
+
+/* Mode seul : lignes libres, tout est jugé à la fin, chaque ligne à partir de la précédente. */
+function ligneLibre(texte) {
+  if (Q.type !== "equation") {
+    const v = T.jugerExpression(Q.depart, texte, Q.exo.etapes[0].forme);
+    if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
+    Q.libres.push(v.ecrit); Q.verdict = { expr: v }; Q.journal = [{ etape: "reponse", saisie: v.ecrit, juste: v.statut !== "faux", code: v.code || null, precision: v.statut === "faux" ? precisionDe(v.diag) : null }];
+    return finExo();
+  }
+  const lu = MM.saisie.lireEquation(texte);
+  if (!lu.ok) { Q.fb = { t: "lecture", message: lu.message }; return majFb(); }
+  Q.libres.push(E.ecrireEquation(lu.eq)); Q.brouillon = ""; Q.fb = null;
+  if (!T.FORMES.solution(lu.eq)) { sauverReprise(); return renderExo(); }
+  const r = T.evaluerDemarche(Q.depart, Q.libres);
+  Q.verdict = r;
+  Q.journal = r.lignes.map((l, i) => ({ etape: "ligne" + (i + 1), saisie: l.ecrit, juste: l.statut !== "faux", code: l.code || null, precision: l.statut === "faux" ? precisionDe(l.diag) : null }));
+  finExo();
+}
+function effacerDerniere() { activite(); Q.brouillon = Q.libres.pop() || ""; Q.fb = null; sauverReprise(); renderExo(); }
+function verdictHTML() {
+  const r = Q.verdict;
+  if (r.expr) return ligneFaite("Ta réponse", maths(r.expr.ecrit), r.expr.statut === "faux" ? "ko" : "", r.expr.statut === "faux" ? "✗" : "✓") + (r.expr.statut === "faux" ? explicationHTML(r.expr) : "");
+  let apresErreur = false;
+  return r.lignes.map((l, i) => {
+    const faux = l.statut === "faux";
+    const h = ligneFaite("Ligne " + (i + 1) + (faux ? "" : apresErreur ? " · juste à partir de ta ligne " + i : ""), maths(l.ecrit), faux ? "ko" : "", faux ? "✗" : "✓") + (faux ? explicationHTML(l) : "");
+    if (faux) apresErreur = true;
+    return h;
+  }).join("");
+}
+function explicationHTML(l) {
+  const x = D.expliquer(l.diag);
+  return `<div class="fb faux"><h3>${esc(x.titre)}</h3><p>${esc(x.bon)}</p><p>${esc(x.ou)}</p><p class="regle">${esc(x.regle)}</p>${x.suite ? `<p>${esc(x.suite)}</p>` : ""}
+    <div class="modele"><span class="etq">La ligne attendue</span><div class="mscroll">${maths(l.attendu)}</div></div></div>`;
+}
+
+function finExo() {
+  activite();
+  const exo = Q.exo, nbErreurs = Q.journal.filter(l => l.juste === false).length;
+  let resultatJuste = true, bilan;
+  if (Q.mode === "seul") {
+    const r = Q.verdict;
+    resultatJuste = r.expr ? r.expr.statut !== "faux" : r.resultatJuste;
+    const seule = !r.expr && r.lignes.length === 1 && !resultatJuste ? D.diagnostiquerReponse(exo.erreurs, MM.saisie.lireSolution(Q.libres[0]).valeur) : null;
+    if (resultatJuste && !nbErreurs) bilan = { cls: "bon", titre: "Tout est juste, de la première à la dernière ligne.", texte: r.expr || r.lignes.length > 1 ? "" : "Sur ta copie, écris aussi les lignes de calcul : elles rapportent des points." };
+    else if (resultatJuste) bilan = { cls: "info", titre: "Ton résultat est juste, mais une ligne ne tenait pas.", texte: "Regarde la ligne marquée." };
+    else if (seule) bilan = { cls: "faux", titre: "Ce n'est pas le bon résultat.", texte: "Il ressemble à cette erreur : " + D.CATALOGUE[seule.code].nom.toLowerCase() + ". " + D.CATALOGUE[seule.code].reflexe + " Résultat attendu : " + exo.reponseTexte + "." };
+    else if (nbErreurs === 1 && !r.expr) bilan = { cls: "faux", titre: "Une seule erreur, à la ligne " + (r.premiereErreur + 1) + ".", texte: "Le reste est juste à partir de ta ligne. Résultat attendu : " + exo.reponseTexte + "." };
+    else bilan = { cls: "faux", titre: nbErreurs > 1 ? nbErreurs + " lignes à revoir." : "Ce n'est pas le bon résultat.", texte: "Résultat attendu : " + exo.reponseTexte + "." };
+  } else if (!nbErreurs && !Q.aide) bilan = { cls: "bon", titre: "Exercice réussi sans une seule erreur.", texte: Q.fb && Q.fb.note || "" };
+  else bilan = { cls: "info", titre: "Exercice terminé.", texte: (nbErreurs ? pluriel(nbErreurs, "erreur") + " corrigée" + (nbErreurs > 1 ? "s" : "") + " en route. " : "") + (Q.aide ? "Tu as utilisé une aide." : "") };
+  const premier = Q.journal.find(l => l.juste === false && l.code);
+  const tent = { id: O.uid("t"), sid: SEANCE.id, t: Date.now(), palier: X.palier, section: X.section, generateur: exo.gen, niveau: exo.niveau, graine: exo.graine, enonce: exo.enonce,
+    mode: Q.mode, lignes: clone(Q.journal), juste: !nbErreurs && !Q.aide && resultatJuste, resultatJuste, codeErreur: premier ? premier.code : null, nbErreurs,
+    tempsMs: Math.max(0, SEANCE.dureeActive - Q.actif0), aideUtilisee: Q.aide, parent: estParent() };
+  FILE.ajouter({ id: O.uid("w"), type: "set", chemin: RACINE + "/tentatives/" + tent.id, donnees: tent });
+  SEANCE.nbQuestions++; SEANCE.palier = X.palier; LS.ecrire(LF("seance"), SEANCE); envoyerSeance();
+  X.resultats.push({ enonce: exo.enonce, nbErreurs, juste: tent.juste, resultatJuste, aide: Q.aide, codes: [...new Set(Q.journal.filter(l => l.code).map(l => l.code))], tempsMs: tent.tempsMs });
+  Q.fini = true; Q.bilan = bilan; Q.tentative = tent;
+  // le point de reprise passe à l'exercice suivant
+  const reste = X.i + 1 < X.exos.length;
+  majReprise(reste ? repriseVide({ palier: X.palier, section: X.section, lecon: X.lecon, fiche: X.fiche, i: X.i + 1, exos: clone(X.exos), resultats: clone(X.resultats) }) : null);
+  if (!reste) marquerFait(X.section, X.section === "lecon" ? X.fiche : null);
+  renderExo();
+}
+function exoSuivant() {
+  if (X.i + 1 < X.exos.length) { X.i++; return ouvrirExo(null); }
+  Q = null; aller("bilan");
+}
+function renderBilan() {
+  const sansFaute = X.resultats.filter(r => r.juste).length, suiv = P.sectionSuivante(faitBanc(), BANC.ordre);
+  const piege = X.resultats.length && X.resultats.every(r => !r.codes.includes("SIG-PAR") && !r.codes.includes("SIG-REL"));
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>${X.section === "lecon" ? "Leçon terminée" : "Série terminée"}</h1>${pastille()}</div>
+    <p>${sansFaute === X.resultats.length ? "Tout juste du premier coup." : sansFaute + " exercice" + (sansFaute > 1 ? "s" : "") + " sur " + X.resultats.length + " sans erreur ni aide."}
+      ${piege ? "Aucune faute de signe : c'était le piège numéro un." : ""}</p>
+    ${X.section === "lecon" ? `<p class="fiche">${esc((LS.lire("mm.fiches") || {})[X.fiche] || "")}</p><p class="note">Cette fiche est maintenant dans ton mémo.</p>` : ""}
+    ${X.resultats.map(r => `<div class="resultat"><span class="coche" aria-hidden="true">${r.juste ? "✓" : "·"}</span><div class="txt"><div class="mscroll">${maths(r.enonce)}</div>
+      <span class="note">${r.juste ? "Sans erreur" : r.nbErreurs ? pluriel(r.nbErreurs, "erreur") + (r.codes.length ? " : " + r.codes.map(c => D.CATALOGUE[c].nom.toLowerCase()).join(", ") : "") : "Avec une aide"} · ${R.texteDuree(r.tempsMs)}</span></div></div>`).join("")}
+    <div class="row">${suiv ? `<button class="btn" onclick="sectionSuivante()">Section suivante : ${esc(P.NOMS_PARCOURS[suiv].toLowerCase())}</button>` : ""}
+      <button class="btn ghost" onclick="lancer('${X.section}')">${X.section === "lecon" ? "Revoir la leçon" : "Refaire avec d'autres nombres"}</button></div>
+  </div>`;
+}
+
+/* ---------- appairage : un appareil sans clé de famille ---------- */
+let prenomCreation = "";
+function renderAppairage(msg) {
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>Mission Maths</h1></div>
+    <div class="bloc"><h2>Cet appareil n'est pas encore relié</h2>
+      <p>Ouvre le lien que ton parent t'a envoyé. Ton travail et tes progrès sont dedans.</p>
+      <p class="note">Un lien coupé (copié en partie) mène aussi ici : demande-le à nouveau.</p></div>
+    <details class="panel" data-k="creer"${ouverts.has("creer") ? " open" : ""}>
+      <summary><h2>Je suis le parent</h2></summary>
+      <p class="sub">Crée l'espace de la famille. À faire une seule fois, sur ton téléphone. Tu recevras ensuite le lien de l'élève.</p>
+      <div class="row"><label for="prenom">Prénom de l'élève</label><input type="text" id="prenom" maxlength="24" autocomplete="off" value="${esc(prenomCreation)}"></div>
+      ${msg ? `<p class="note" role="alert">${esc(msg)}</p>` : ""}
+      <div class="row"><button class="btn" onclick="creerFamille()">Créer l'espace famille</button></div>
+      <p class="note">Le code parent sera demandé. Espace déjà créé ? Rouvre plutôt ton lien parent : sinon tu repars de zéro.</p>
+    </details></div>`;
+  suivrePanneaux();
+}
+function creerFamille() {
+  prenomCreation = $("#prenom").value.trim();
+  if (!prenomCreation) { ouverts.add("creer"); return renderAppairage("Écris d'abord le prénom de l'élève."); }
+  pinBuf = ""; pinEtape = "creation"; aller("pin");
+}
+function finirCreation() {
+  const cle = B.nouvelleCle(n => crypto.getRandomValues(new Uint8Array(n)));
+  FAM = { cle, role: "parent" }; LS.ecrire("mm.famille", FAM);
+  history.replaceState(null, "", B.lien(location.href, cle, "parent"));     // le lien parent reste dans la barre d'adresse (favori, écran d'accueil)
+  demarrerFamille(etatDefaut());
+  ecrireApp({ eleve: { nom: prenomCreation } });                             // le prénom part dans la base, même si un autre appareil crée le document avant
+  parentOK = true; ouverts.add("liens"); entrerParent();
+}
+
+/* ---------- espace parent (code à 4 chiffres) ---------- */
+let pinBuf = "", pinEtape = "verif", pinPremier = "", pinDepuisParent = false, parentOK = false;
+const hachePin = pin => O.sha256("mission-maths:" + pin);
+function ouvrirParent() { if (parentOK) return entrerParent(); pinDepuisParent = false; pinBuf = ""; pinEtape = "verif"; aller("pin"); }
+function renderPin(msg) {
+  const titre = { verif: "Code parent", creation: "Code parent", neuf1: "Nouveau code à 4 chiffres", neuf2: "Confirme le nouveau code" }[pinEtape];
+  $("#app").innerHTML = `<div class="wrap"><div class="top"><h1>Espace parent</h1></div>
+    <div class="bloc center"><h2>${titre}</h2>
+    <div class="pindots" aria-label="${pinBuf.length} chiffre(s) saisi(s)">${[0, 1, 2, 3].map(i => `<i class="${i < pinBuf.length ? "on" : ""}"></i>`).join("")}</div>
+    ${msg ? `<p class="note" role="alert">${esc(msg)}</p>` : ""}
+    <div class="pinpad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"].map(k => k === "" ? "<span></span>" : `<button onclick="pinTouche('${k}')" aria-label="${k === "⌫" ? "Effacer" : k}">${k}</button>`).join("")}</div>
+    <p class="note">Le code évite les clics de l'élève. Ce n'est pas une protection forte.</p></div></div>`;
+}
+function pinTouche(k) {
+  if (k === "⌫") { pinBuf = pinBuf.slice(0, -1); return renderPin(); }
+  if (pinBuf.length >= 4) return;
+  pinBuf += k; renderPin();
+  if (pinBuf.length < 4) return;
+  const h = hachePin(pinBuf);
+  if (pinEtape === "creation") { pinBuf = ""; return h === PIN_DEFAUT ? finirCreation() : renderPin("Code incorrect."); }
+  if (pinEtape === "verif") { if (h === S.parent.pinHash) { parentOK = true; pinBuf = ""; return entrerParent(); } pinBuf = ""; return renderPin("Code incorrect."); }
+  if (pinEtape === "neuf1") { pinPremier = pinBuf; pinBuf = ""; pinEtape = "neuf2"; return renderPin(); }
+  if (pinBuf !== pinPremier) { pinBuf = ""; pinEtape = "neuf1"; return renderPin("Les deux codes sont différents. Recommence."); }
+  pinBuf = ""; ecrireApp({ parent: { pinHash: h } }); toast("Code parent changé."); aller("parent");
+}
+function changerCode() { pinDepuisParent = true; pinBuf = ""; pinEtape = "neuf1"; aller("pin"); }
+function entrerParent() { ouverts.delete("T"); aller("parent"); chargerRapport(); }
+function quitterParent() { parentOK = false; aller("accueil"); }
+
+async function chargerRapport() {
+  const parId = (liste, plus) => { const m = new Map(); for (const x of liste.concat(plus)) if (x && x.id) m.set(x.id, x); return [...m.values()]; };
+  const local = { seances: [], tentatives: [] };
+  for (const op of FILE.enAttente()) {
+    if (op.chemin.startsWith(RACINE + "/sessions/")) local.seances.push(op.donnees);
+    if (op.chemin.startsWith(RACINE + "/tentatives/")) local.tentatives.push(op.donnees);
+  }
+  if (SEANCE) local.seances.push(clone(SEANCE));
+  let distant = LS.lire(LF("rapport")) || { seances: [], tentatives: [] }, frais = false;
+  if (DB && docConfirme) {
+    try {
+      const [a, b] = await avecDelai(Promise.all([DB.collection(RACINE + "/sessions").orderBy("debut", "desc").limit(150).get(), DB.collection(RACINE + "/tentatives").orderBy("t", "desc").limit(800).get()]), 12000);
+      distant = { seances: a.docs.map(d => clone(d.data())), tentatives: b.docs.map(d => clone(d.data())) };
+      LS.ecrire(LF("rapport"), distant); frais = true;
+    } catch (e) { /* hors ligne : on montre la dernière lecture */ }
+  }
+  RAPPORT = { seances: parId(distant.seances, local.seances), tentatives: parId(distant.tentatives, local.tentatives), lu: Date.now(), frais };
+  if (vue === "parent") render();
+}
+const dateCourte = t => new Date(t).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function renderParent() {
+  const p = k => `data-k="${k}"${ouverts.has(k) ? " open" : ""}`;
+  const rap = RAPPORT, maintenant = Date.now();
+  const r = rap ? R.resume(rap.seances, rap.tentatives, maintenant) : null;
+  const quand = j => j === 0 ? "aujourd'hui" : j === 1 ? "hier" : "il y a " + j + " jours";
+  const synth = !r ? '<p class="muted">Lecture du suivi…</p>' : `<div class="synth">
+      <div><small>Dernière séance</small><strong>${r.derniere ? quand(r.joursSansSeance) + " · " + R.texteDuree(r.derniere.dureeActive || 0) : "aucune"}</strong></div>
+      <div><small>7 derniers jours</small><strong>${r.minutes7j} min · ${pluriel(r.seances7j, "séance")}</strong></div>
+      <div><small>Exercices (7 jours)</small><strong>${r.exercices7j ? r.justes7j + " sur " + r.exercices7j + " sans erreur" : "aucun"}</strong></div>
+      <div><small>Palier actuel</small><strong>${esc(BANC.nom)}</strong></div></div>`;
+  const ligneJ = l => `<li class="${l.juste === false ? "ko" : ""}">${maths(l.saisie || "")} ${l.juste === false ? "✗ " + esc(l.precision || (l.code && D.CATALOGUE[l.code] ? D.CATALOGUE[l.code].nom : "erreur non reconnue")) : l.donnee ? "(ligne donnée)" : "✓"}</li>`;
+  const tentH = t => `<div class="tent"><div class="mscroll">${maths(t.enonce || "")}</div>
+      <span class="meta">${esc(NOMS_MODE[t.mode] || t.mode)} · ${R.texteDuree(t.tempsMs || 0)} · ${t.juste ? "sans erreur" : t.nbErreurs ? pluriel(t.nbErreurs, "erreur") : "avec aide"}${t.aideUtilisee ? " · aide utilisée" : ""}${t.resultatJuste === false ? " · résultat faux" : ""}</span>
+      <ol class="jl">${(t.lignes || []).map(ligneJ).join("")}</ol></div>`;
+  const seances = rap ? R.parSeance(rap.seances, rap.tentatives) : [];
+  const seanceH = s => `<details class="seance"><summary><strong>${esc(dateCourte(s.debut))}</strong><span>${R.texteDuree(s.dureeActive || 0)} actives · ${pluriel(s.tentatives.length, "exercice")}</span>${s.parent ? '<span class="tag essai">Essai parent</span>' : ""}</summary>
+      ${s.tentatives.length ? s.tentatives.map(tentH).join("") : '<p class="note">Aucun exercice terminé pendant cette séance.</p>'}</details>`;
+  const erreurs = r && r.erreurs7j.length ? `<div class="tablewrap"><table><thead><tr><th>Erreur</th><th>Code</th><th>Fois</th></tr></thead><tbody>${r.erreurs7j.map(e => `<tr><td>${esc(D.CATALOGUE[e.code] ? D.CATALOGUE[e.code].nom : e.code)}<br><span class="note">${esc(D.CATALOGUE[e.code] ? D.CATALOGUE[e.code].exemple : "")}</span></td><td>${esc(e.code)}</td><td>${e.n}</td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">Aucune erreur enregistrée sur les 7 derniers jours.</p>';
+  const fait = S.paliers.T.fait || {};
+  const paliers = `<div class="tablewrap"><table><thead><tr><th>Palier</th><th>Statut</th><th>Meilleur examen</th></tr></thead><tbody>
+      <tr><td>${esc(BANC.nom)}</td><td>${BANC.ordre.filter(s => fait[s]).length} étape(s) sur ${BANC.ordre.length}</td><td>—</td></tr>
+      ${P.PALIERS.map(q => `<tr><td>${q.id === "FINAL" ? "Final" : q.id} · ${esc(q.nom)}</td><td>${esc(P.STATUTS[S.paliers[q.id].statut])} <span class="note">(contenu à venir)</span></td><td>${S.paliers[q.id].meilleurExamen == null ? "—" : S.paliers[q.id].meilleurExamen + " %"}</td></tr>`).join("")}</tbody></table></div>`;
+  const nAtt = FILE.taille(), nRej = FILE.rejets().length;
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>Espace parent</h1>${pastille()}</div>
+    ${synth}
+    <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button>
+      <button class="btn ghost small" onclick="chargerRapport()">Actualiser</button><span class="note">${rap ? (rap.frais ? "Lu à " : "Dernière lecture connue, affichée à ") + new Date(rap.lu).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : ""}</span></div>
+    <details class="panel" ${p("seances")}><summary><h2>Séances</h2><span class="tag soon">${seances.length}</span></summary>
+      ${seances.length ? `<div class="seances">${seances.map(seanceH).join("")}</div>` : '<p class="muted">Aucune séance pour l\'instant.</p>'}
+      ${r && r.essaisParent ? `<p class="note">Les ${r.essaisParent} séance(s) « Essai parent » viennent de ton compte et ne comptent pas dans les chiffres du haut.</p>` : ""}</details>
+    <details class="panel" ${p("erreurs")}><summary><h2>Erreurs des 7 derniers jours</h2></summary>${erreurs}</details>
+    <details class="panel" ${p("paliers")}><summary><h2>Paliers</h2></summary>${paliers}</details>
+    <details class="panel" ${p("reglages")}><summary><h2>Réglages</h2></summary>
+      <div class="row"><label for="nom">Prénom de l'élève</label><input type="text" id="nom" value="${esc(S.eleve.nom)}" maxlength="24"><button class="btn small" onclick="reglerNom()">Enregistrer</button></div>
+      <div class="row"><label for="dctl">Date du prochain contrôle</label><input type="date" id="dctl" value="${esc(S.controle.date || "")}"><button class="btn small" onclick="reglerDate()">Enregistrer</button>${S.controle.date ? '<button class="btn ghost small" onclick="effacerDate()">Effacer</button>' : ""}</div>
+      <div class="row"><button class="btn ghost small" onclick="changerCode()">Changer le code parent</button></div></details>
+    <details class="panel" ${p("liens")}><summary><h2>Liens et synchronisation</h2></summary>
+      <p><strong>Lien élève</strong> : à ouvrir une fois sur son téléphone et une fois sur son PC.</p>
+      <div class="row"><input type="text" id="lienEleve" readonly value="${esc(B.lien(location.href, FAM.cle, "eleve"))}" aria-label="Lien élève"><button class="btn small" onclick="copierLien('lienEleve')">Copier le lien élève</button></div>
+      <p class="note">N'ouvre pas ce lien sur tes appareils : tes essais compteraient comme les siens.</p>
+      <p><strong>Lien parent</strong> : pour tes autres appareils. Tes essais y restent à part.</p>
+      <div class="row"><input type="text" id="lienParent" readonly value="${esc(B.lien(location.href, FAM.cle, "parent"))}" aria-label="Lien parent"><button class="btn ghost small" onclick="copierLien('lienParent')">Copier le lien parent</button></div>
+      <p class="note">Ces liens sont la clé de la famille : qui les a voit et modifie la progression. Envoie-les seulement à ton fils et à toi.</p>
+      <p>Cet appareil : <strong>${estParent() ? "parent" : "élève"}</strong>. ${refuse ? "La base refuse l'accès : rouvre le bon lien." : mode === "cloud" ? "Le suivi commun est joint et à jour." : mode === "horsligne" || attenteLongue ? "Hors ligne : le travail reste sur l'appareil." : "Connexion au suivi commun en cours."}</p>
+      <p class="sub">${nAtt ? pluriel(nAtt, "écriture") + " en attente d'envoi." : "Aucune écriture en attente."} ${nRej ? pluriel(nRej, "écriture") + " refusée" + (nRej > 1 ? "s" : "") + " par la base." : ""}</p>
+      <div class="row">${nAtt ? '<button class="btn ghost small" onclick="vidage().then(render)">Envoyer maintenant</button>' : ""}${nRej ? '<button class="btn ghost small" onclick="FILE.reprendreRejets();vidage().then(render)">Renvoyer les écritures refusées</button>' : ""}</div></details>
+    <button class="linkbtn" onclick="quitterParent()">Quitter l'espace parent</button></div>`;
+  suivrePanneaux();
+}
+function copierLien(id) {
+  const el = $("#" + id), ok = () => toast("Lien copié. Colle-le dans un message.");
+  el.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(ok, () => { try { document.execCommand("copy"); ok(); } catch (e) { toast("Copie impossible : sélectionne le lien à la main."); } });
+  else { try { document.execCommand("copy"); ok(); } catch (e) { toast("Copie impossible : sélectionne le lien à la main."); } }
+}
+function reglerNom() { const v = $("#nom").value.trim(); if (!v) return; ecrireApp({ eleve: { nom: v } }); toast("Prénom enregistré."); render(); }
+function reglerDate() { const v = $("#dctl").value; if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { toast("Choisis une date dans le calendrier."); return; } ecrireApp({ controle: { date: v } }); toast("Date du contrôle enregistrée."); render(); }
+function effacerDate() { ecrireApp({ controle: { date: null } }); toast("Date effacée."); render(); }
+
+/* ---------- hauteur réellement visible (si un clavier natif s'ouvre malgré tout) ---------- */
+function majVue() {
+  const v = window.visualViewport; if (!v) return;
+  document.documentElement.style.setProperty("--vvh", v.height + "px");
+  document.documentElement.style.setProperty("--vvt", v.offsetTop + "px");
+  if (vue === "exo") cadrer();
+}
+if (window.visualViewport) { visualViewport.addEventListener("resize", majVue); visualViewport.addEventListener("scroll", majVue); }
+window.addEventListener("online", () => { if (FAM && !DB) initSync(); vidage(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") quitterPage(); else vidage(); });
+window.addEventListener("pagehide", quitterPage);
+setInterval(() => { if (FAM && !DB) initSync(); if (FILE && FILE.taille()) vidage(); }, 30000);
+/* Un autre lien collé dans le même onglet : on recharge pour repartir proprement avec cette clé et ce rôle. */
+window.addEventListener("hashchange", () => { const f = B.lireLien(location.hash); if (f && (!FAM || f.cle !== FAM.cle || f.role !== FAM.role)) location.reload(); });
+
+/* ---------- démarrage : l'app s'affiche tout de suite avec la dernière copie connue, la base arrive ensuite ---------- */
+async function demarrerFamille(initial) {
+  S = completer(initial || LS.lire(LF("etat")) || etatDefaut());
+  SEANCE = LS.lire(LF("seance"));
+  FILE = MM.file.creerFile(stockageFile, envoyerOp);
+  for (const op of FILE.enAttente()) if (op.chemin === RACINE && op.type === "update") O.fusionner(S, op.donnees);
+  S = completer(S); LS.ecrire(LF("etat"), S);
+  if (vue === "appairage" || vue === "pin") vue = "accueil";
+  render();
+  chargerLecon(BANC.lecon).then(() => { if (vue === "accueil") render(); }, () => {});
+  await initSync();
+  if (vue === "accueil" || vue === "parent") render(); else majPastille();
+}
+(function demarrer() {
+  majVue();
+  if (FAM) demarrerFamille(); else render();
+})();
+</script>
+</body>
+</html>
