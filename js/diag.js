@@ -243,6 +243,53 @@
     if (nE + nM === 1) return { loc: nM ? "manque" : "trop", cote: c, faux: r.restE[0] || null, bon: r.restM[0] || null, communs };
     return null;
   }
+  /* Plusieurs termes faux : on aligne sa ligne sur la ligne modèle la plus proche, terme à terme.
+     Chaque terme faux est rattaché à l'opération qui devait le produire ; les termes en trop ou oubliés sont nommés. */
+  const avecZero = ts => { const r = sansZero(ts); return r.length ? r : [mono(0, 0)]; };     // « x = 0 » : le 0 est un terme comme un autre
+  function nature(f, b) { return f.c.abs().egal(b.c.abs()) ? "signe" : f.c.signe() === b.c.signe() ? "valeur" : "tout"; }
+  function plusieurs(cands, S, estExpression, ch, prev, cur) {
+    let mieux = null;
+    for (const k of cands) for (const inv of estExpression ? [false] : [false, true]) {
+      const A = { g: avecZero(k.eq.g), d: avecZero(k.eq.d) }, fautes = [], manques = [], trops = [], communs = [];
+      for (const c of estExpression ? ["g"] : ["g", "d"]) {
+        const se = inv ? (c === "g" ? S.d : S.g) : S[c], r = apparier(se, A[c]), restM = r.restM.slice();
+        communs.push(...r.communs);
+        for (const crit of [(f, b) => f.d === b.d && f.c.abs().egal(b.c.abs()), (f, b) => f.d === b.d, () => true])
+          for (const f of r.restE.filter(x => !fautes.some(y => y.faux === x) && !trops.includes(x))) {
+            const j = restM.findIndex(b => crit(f, b));
+            if (j >= 0 && (crit.length === 2 || restM.length === r.restE.filter(x => !fautes.some(y => y.faux === x)).length)) fautes.push({ cote: c, faux: f, bon: restM.splice(j, 1)[0] });
+          }
+        trops.push(...r.restE.filter(x => !fautes.some(y => y.faux === x)));
+        manques.push(...restM.map(b => ({ cote: c, bon: b })));
+      }
+      const cout = fautes.length + trops.length + manques.length;
+      if (cout >= 2 && (!mieux || cout < mieux.cout)) mieux = { cout, k, fautes, manques, trops, communs };
+    }
+    if (!mieux || mieux.cout > 5) return null;
+    const { k } = mieux;
+    const rang = t => { const ts = S.g.concat(S.d); const i = ts.indexOf(t); return i < 0 ? 99 : i; };   // dans l'ordre de sa ligne
+    mieux.fautes.sort((a, b) => rang(a.faux) - rang(b.faux));
+    const fautes = mieux.fautes.map(x => Object.assign({ faux: x.faux, bon: x.bon }, x.faux.d === x.bon.d ? origine(k.sorte, ch, prev, x.cote, x.bon, null) : { op: "degre" }, { nature: nature(x.faux, x.bon) }));
+    const manques = mieux.manques.map(x => Object.assign({ bon: x.bon }, origine(k.sorte, ch, prev, x.cote, x.bon, null)));
+    const detail = { loc: "plusieurs", fautes, manques, trops: mieux.trops, communs: mieux.communs, expression: !!estExpression, test: testChiffre(k.sorte, prev, cur, estExpression) };
+    // le moins devant la parenthèse oublié sur tous ses termes : c'est SIG-PAR (« −7(x − 5) → 7x − 35 »)
+    const f1 = fautes[0] && fautes[0].f1;
+    if (f1 && f1.c.signe() < 0 && !manques.length && !mieux.trops.length && fautes.every(f => f.op === "produit" && f.f1 && f.f1.c.egal(f1.c) && f.f1.d === f1.d && f.faux.c.egal(f.bon.c.oppose()))) {
+      const t = prev.g.concat(prev.d).find(u => u.inner && u.c.egal(f1.c) && u.d === f1.d && u.inner.length === fautes.length);
+      if (t) return { code: "SIG-PAR", localise: true, detail: { tout: true, terme: E.ecrireTerme(t), facteur: t.c, t, fauxTermes: T.devTerme(t).map(u => mono(u.c.oppose(), u.d)), autres: [] } };
+    }
+    const calcul = fautes.length && !manques.length && !mieux.trops.length && fautes.every(f => ["produit", "somme", "division"].includes(f.op));
+    return { code: calcul ? "CALC" : null, localise: true, detail };
+  }
+  /* Le test chiffré de la 2e explication : quand le côté doit garder sa valeur (développer, réduire), on le calcule pour un x. */
+  function testChiffre(sorte, prev, cur, estExpression) {
+    if (!(estExpression || sorte === "dev" || sorte === "red")) return null;
+    for (const c of estExpression ? ["g"] : ["g", "d"]) {
+      const v = xTest(prev[c], cur[c]);
+      if (v != null) return { x: v, cote: estExpression ? null : c, avant: valeurEn(prev[c], v), tienne: valeurEn(cur[c], v) };
+    }
+    return null;
+  }
   function localiser(prev, cur, estExpression) {
     const ch = T.chaine(prev);
     const r0 = T.reduire(prev), axb = ts => ts.length === 1 && ts[0].d === 1, nb = ts => ts.length === 1 && ts[0].d === 0;
@@ -253,7 +300,6 @@
     cands = cands.filter(k => { const c = E.ecrireEquation(k.eq); if (vus.has(c)) return false; vus.add(c); return true; });
     const formeMax = estExpression ? (T.FORMES.reduit({ g: cur.g, d: [mono(0, 0)] }) ? "reduit" : "developpe") : (["solution", "regroupe", "reduit", "developpe"].find(f => T.FORMES[f](cur)) || "aucune");
     cands.sort((a, b) => PREFERENCE[formeMax].indexOf(a.sorte) - PREFERENCE[formeMax].indexOf(b.sorte));
-    const avecZero = ts => { const r = sansZero(ts); return r.length ? r : [mono(0, 0)]; };     // « x = 0 » : le 0 est un terme comme un autre
     const S = { g: avecZero(T.devCote(cur.g)), d: avecZero(T.devCote(cur.d)) };
     const essais = [];
     for (const k of cands) for (const inv of estExpression ? [false] : [false, true]) {
@@ -268,6 +314,10 @@
       const calcul = ["produit", "somme", "division"].includes(detail.op);       // table, addition, division : code CALC
       return { code: calcul ? "CALC" : null, localise: true, detail };
     }
+    // plusieurs termes faux (recette du 23/11) : on les retrouve tous, chacun avec l'opération qui le produit
+    // … sauf un saut direct à une solution « x = … » quand la division n'est pas encore possible : rien de fiable à pointer
+    const m = estExpression || !T.FORMES.solution(cur) || cands.some(k => k.sorte === "sol") ? plusieurs(cands, S, estExpression, ch, prev, cur) : null;
+    if (m) return m;
     // sinon, au moins dire quel côté tient encore
     const pg = poly(cur.g), pd = poly(cur.d);
     if (!estExpression) for (const k of cands) {
@@ -292,6 +342,8 @@
     if (x.loc === "remplace" && x.op === "somme") return autrement(r, "Range : les plus ensemble, les moins ensemble. Puis fais la différence.");
     if (x.loc === "remplace" && x.op === "division") return autrement(r, "Pose la division au brouillon, puis simplifie la fraction.");
     if (x.loc === "manque" || x.loc === "trop") return autrement(r, "Compte les termes de la ligne d'avant, puis ceux de ta ligne.");
+    if (x.loc === "plusieurs" && x.test) return autrement(r, "Teste avec x = " + x.test.x + " : " + (x.test.cote ? "à " + (x.test.cote === "g" ? "gauche" : "droite") + ", " : "") + "la ligne d'avant vaut " + x.test.avant.texte() + ", la tienne " + x.test.tienne.texte() + ".");
+    if (x.loc === "plusieurs") return autrement(r, "Reprends la ligne d'avant et refais un terme à la fois.");
     return autrement(r, "Relis ta ligne terme par terme. Compare-la à la ligne d'avant.");
   }
   function expliquerHorsCatalogue1(x, code) {
@@ -322,11 +374,31 @@
       ou: "Mais il manque le terme " + signe(x.bon) + ".", regle: "Chaque terme doit se retrouver dans la ligne suivante." });
     if (x.loc === "trop") return Object.assign(base, { titre: "Un terme en trop", bon: bonAvant, resume: "terme en trop : " + ecr(x.faux),
       ou: "Mais le terme " + signe(x.faux) + " n'a rien à faire là.", regle: "Vérifie d'où vient chaque terme." });
+    if (x.loc === "plusieurs") return Object.assign(base, plusieursTextes(x, bonAvant));
     if (x.loc === "cote") return Object.assign(base, { titre: "Un côté ne tient plus", bon: "Ton côté " + (x.juste === "g" ? "gauche" : "droit") + " est juste.",
       resume: "côté " + (x.juste === "g" ? "droit" : "gauche") + " faux", ou: "Le côté " + (x.juste === "g" ? "droit" : "gauche") + " contient plusieurs erreurs.", regle: "Refais ce côté terme par terme." });
     return Object.assign(base, { titre: "Quelque chose ne va pas", bon: "Je ne trouve pas l'erreur exacte.", resume: "",
       ou: x.expression ? "Ta ligne n'est plus égale à l'expression de départ." : "Ta ligne n'a plus la même solution que la ligne d'avant.",
-      regle: "Compare avec la ligne attendue, juste en dessous." });
+      regle: "Reprends la ligne d'avant, un terme à la fois." });
+  }
+  /* Plusieurs termes faux : pour chacun, l'opération à refaire, sans en donner le résultat (D37). Le parent a le détail chiffré. */
+  const NATURE = { signe: "regarde le signe.", valeur: "la valeur est fausse.", tout: "signe et valeur." };
+  function plusieursTextes(x, bonAvant) {
+    const phrase = f => {
+      if (f.op === "produit") return "Pour " + ecr(f.faux) + ", refais " + ecr(f.f1) + " × " + termePar(f.f2) + " : " + NATURE[f.nature];
+      if (f.op === "somme") return "Pour " + ecr(f.faux) + ", refais " + E.ecrireCote(f.termes) + " : " + NATURE[f.nature];
+      if (f.op === "division") return "Pour " + ecr(f.faux) + ", refais " + f.b.texte() + " ÷ " + entrePar(f.a) + ".";
+      if (f.op === "degre") return "Pour " + ecr(f.faux) + ", regarde le x : " + (f.bon.d === 0 ? "ce terme n'en a pas." : "il en faut un.");
+      return "Le terme " + ecr(f.faux) + " a changé en route : " + (f.nature === "signe" ? "regarde son signe." : "reprends-le dans la ligne d'avant.");
+    };
+    const manque = m => m.op === "produit" ? "Il manque le terme qui vient de " + ecr(m.f1) + " × " + termePar(m.f2) + "." : "Il manque un terme de la ligne d'avant.";
+    const phrases = x.fautes.map(phrase).concat(x.manques.map(manque), x.trops.map(t => "Le terme " + ecr(t) + " n'a rien à faire là."));
+    const chiffre = f => f.op === "produit" ? ecr(f.f1) + " × " + termePar(f.f2) + " = " + ecr(f.bon) + ", pas " + ecr(f.faux) : f.op === "somme" ? E.ecrireCote(f.termes) + " = " + ecr(f.bon) + ", pas " + ecr(f.faux) : ecr(f.bon) + " attendu, pas " + ecr(f.faux);
+    const resume = x.fautes.map(chiffre).concat(x.manques.map(m => "oublié : " + ecr(m.bon)), x.trops.map(t => "en trop : " + ecr(t))).join(" ; ");
+    const calcul = x.fautes.length && !x.manques.length && !x.trops.length && x.fautes.every(f => ["produit", "somme", "division"].includes(f.op));
+    return { titre: calcul ? "Plusieurs erreurs de calcul" : "Plusieurs termes à revoir", bon: bonAvant.replace("Tu es sur la bonne étape.", "Tu es sur la bonne étape, mais plusieurs termes coincent."),
+      resume, ou: phrases.length > 3 ? phrases.slice(0, 2).join(" ") + " Et " + (phrases.length - 2) + " autres termes." : phrases.join(" "),
+      regle: "Un calcul à la fois : le signe d'abord, puis la valeur." };
   }
   function expliquer(d, variante) {
     const code = d && d.code, x = d && d.detail;
@@ -335,6 +407,11 @@
     const cat = CATALOGUE[code];
     let bon, ou, regle;
     if (!x) { bon = "Ta démarche est bonne jusqu'ici."; ou = "Une erreur connue s'est glissée : " + cat.nom.toLowerCase() + "."; regle = cat.reflexe; }
+    else if (code === "SIG-PAR" && x.tout) {
+      bon = "Tu as bien multiplié par " + x.facteur.abs().texte() + ".";
+      ou = "Mais le moins devant le " + x.facteur.abs().texte() + " a disparu, sur chaque terme.";
+      regle = "Dans " + x.terme + ", le moins se colle à chaque terme de la parenthèse.";
+    }
     else if (code === "SIG-PAR") {
       bon = x.facteur.abs().egal(1) ? "Tu as bien enlevé la parenthèse." : "Tu as bien multiplié par " + x.facteur.abs().texte() + ".";
       ou = "Mais dans " + x.terme + ", le moins touche aussi le terme " + signe(x.u) + ".";

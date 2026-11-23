@@ -228,7 +228,8 @@
   function formeAtteinte(n) { return FORMES.nombre(n) ? "nombre" : FORMES.produit(n) ? "produit" : FORMES.parenthese(n) ? "parenthese" : null; }
   function diagnostiquer(prev, cur) {
     const v = valeur(cur);
-    const c = candidats(prev).filter(k => k.valeur.egal(v)).sort((a, b) => PRIORITE.indexOf(a.code) - PRIORITE.indexOf(b.code));
+    // « le signe du résultat » ne vaut que pour une ligne qui est déjà un seul nombre
+    const c = candidats(prev).filter(k => k.valeur.egal(v) && (k.detail.sorte !== "resultat" || FORMES.nombre(cur))).sort((a, b) => PRIORITE.indexOf(a.code) - PRIORITE.indexOf(b.code));
     if (c.length) return { code: c[0].code, detail: c[0].detail, nombre: true, ambigu: new Set(c.map(k => k.code)).size > 1 };
     // une seule opération fausse : on la retrouve en comparant à la ligne modèle de même forme
     const f = formeAtteinte(cur);
@@ -243,6 +244,16 @@
           if (f === "produit" && src.length === A.length && src[i].sorte === "produit")
             return { code: "CALC", nombre: true, detail: { sorte: "calcul", calcul: ecrire(src[i].n), bon: valeur(src[i].n), faux: B[i].fois(src[i].s), seul: false } };
         }
+        // plusieurs nombres faux (recette du 23/11) : chacun est nommé, avec le calcul à refaire
+        if (diff.length >= 2) {
+          const src = plats(sansParentheses(prev));
+          const fautes = diff.map(i => ({ bon: A[i], faux: B[i], calcul: f === "produit" && src.length === A.length && src[i].sorte === "produit" ? ecrire(src[i].n) : null,
+            nature: A[i].abs().egal(B[i].abs()) ? "signe" : A[i].signe() === B[i].signe() ? "valeur" : "tout" }));
+          const code = fautes.every(x => x.nature === "signe") ? "SIG-REL" : fautes.every(x => x.calcul) ? "CALC" : null;
+          return { code, nombre: true, detail: { sorte: "plusieurs", fautes, justes: A.length - diff.length } };
+        }
+      } else if (B.length !== A.length) {
+        return { code: null, nombre: true, detail: { sorte: "compte", attendus: A.length, ecrits: B.length } };
       }
     }
     return { code: null, nombre: true, detail: { sorte: "inconnu" } };
@@ -255,6 +266,16 @@
     const code = d && d.code, x = (d && d.detail) || {}, v2 = variante === 2, cacher = !!(d && d.cacher);
     const egalA = (calcul, bon, faux) => cacher ? "Mais " + calcul + " ne fait pas " + t(faux) + "." : "Mais " + calcul + " = " + t(bon) + ", pas " + t(faux) + ".";
     const fin = (titre, bon, ou, regle) => ({ code: code || null, titre, bon, ou, regle, suite: "", reflexe: code && CAT[code] ? CAT[code].reflexe : "", variante: v2 ? 2 : 1 });
+    if (x.sorte === "plusieurs") {
+      const NAT = { signe: "regarde son signe.", valeur: "la valeur est fausse.", tout: "signe et valeur." };
+      const ph = x.fautes.map(f => f.calcul ? "Pour " + t(f.faux) + ", refais " + f.calcul + " : " + NAT[f.nature] : "Le nombre " + t(f.faux) + " : " + NAT[f.nature]);
+      return fin(code === "SIG-REL" ? CAT["SIG-REL"].nom : "Plusieurs nombres à revoir", x.justes ? "Une partie de ta ligne est juste." : "Tu es sur la bonne étape.",
+        ph.length > 3 ? ph.slice(0, 2).join(" ") + " Et " + (ph.length - 2) + " autres." : ph.join(" "),
+        v2 ? "Entoure chaque signe dans la ligne d'avant, puis refais un nombre à la fois." : "Un calcul à la fois : le signe d'abord, puis la valeur.");
+    }
+    if (x.sorte === "compte") return fin("Pas le bon nombre de termes", "Tu es sur la bonne étape.",
+      "Il faut " + x.attendus + " nombre" + (x.attendus > 1 ? "s" : "") + " dans cette ligne. Tu en as écrit " + x.ecrits + ".",
+      v2 ? "Compte les nombres de la ligne d'avant : chacun doit se retrouver." : "Chaque nombre de la ligne d'avant doit se retrouver, une fois.");
     if (code === "PRIO") return fin(CAT.PRIO.nom, "Tes calculs sont justes.", "Mais tu as calculé de gauche à droite. Le × passe avant.",
       v2 ? "Les × et ÷ sont prioritaires, comme un piéton au passage clouté. Ici : " + x.produit + " d'abord."
          : "D'abord " + x.produit + " = " + t(x.valeurProduit) + ". Ensuite le reste.");

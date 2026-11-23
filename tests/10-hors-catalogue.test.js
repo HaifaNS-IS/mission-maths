@@ -34,10 +34,46 @@ test("recopie, terme oublié, terme en trop, x égaré : chacun nommé, sans cod
   x = D.expliquer(expr("3(x − 5)", "3x + 1 − 15").diag); egal(x.titre, "Un terme en trop"); egal(x.ou, "Mais le terme +1 n'a rien à faire là.");
   x = D.expliquer(expr("3(x − 5)", "3x − 15x").diag); egal(x.titre, "Un x s'est égaré"); egal(x.regle, "Un nombre seul n'a pas de x.");
 });
-test("plusieurs erreurs sur un seul côté : le côté juste est nommé ; sinon message honnête, sans fausse précision", () => {
-  let v = lig(X1, "7x − 30 − 8x + 50 = 69 − 5x − 40", "developpe"); egal(D.expliquer(v.diag).bon, "Ton côté droit est juste.");
-  v = lig(X1, "x = 100", null); const x = D.expliquer(v.diag); egal(x.titre, "Quelque chose ne va pas"); vrai(!v.diag.localise);
-  vrai(/même solution/.test(x.ou)); egal(D.expliquer(expr("3(x − 5)", "9x + 2").diag).ou, "Ta ligne n'est plus égale à l'expression de départ.");
+test("plusieurs termes faux (recette du 23/11) : chacun est nommé avec le calcul à refaire, sans en donner le résultat", () => {
+  let v = lig(X1, "7x − 30 − 8x + 50 = 69 − 5x − 40", "developpe"), x = D.expliquer(v.diag);
+  egal(v.code, "CALC"); egal(x.titre, "Plusieurs erreurs de calcul"); egal(x.bon, "Le reste de ta ligne est juste.");
+  egal(x.ou, "Pour −30, refais 7 × (−4) : la valeur est fausse. Pour +50, refais −8 × (−7) : la valeur est fausse.".replace("+50", "50"));
+  vrai(!/28|56/.test(x.ou + x.regle), "le résultat est donné"); egal(x.resume, "7 × (−4) = −28, pas −30 ; −8 × (−7) = 56, pas 50");
+  x = D.expliquer(expr("−7(x − 5)", "7x − 58").diag);                       // le cas de la recette
+  egal(x.ou, "Pour 7x, refais −7 × x : regarde le signe. Pour −58, refais −7 × (−5) : signe et valeur.");
+  egal(D.expliquer(expr("−7(x − 5)", "7x − 58").diag, 2).regle, "Teste avec x = 1 : la ligne d'avant vaut 28, la tienne −51.");
+  x = D.expliquer(expr("3(x − 5)", "9x + 2").diag); egal(x.ou, "Pour 9x, refais 3 × x : la valeur est fausse. Pour 2, refais 3 × (−5) : signe et valeur.");
+  x = D.expliquer(expr("−7(x − 5)", "3x² + 1").diag); egal(x.titre, "Plusieurs termes à revoir"); vrai(/Pour 3x², regarde le x : il en faut un\./.test(x.ou), x.ou);
+  x = D.expliquer(expr("−7(x − 5)", "7x").diag); vrai(/Il manque le terme qui vient de −7 × \(−5\)\./.test(x.ou), x.ou);
+  v = lig(X1, "x = 100", null); x = D.expliquer(v.diag); egal(x.titre, "Quelque chose ne va pas"); vrai(!v.diag.localise, "saut direct à une solution : rien de fiable à pointer");
+  vrai(/même solution/.test(x.ou)); vrai(!/ligne attendue/.test(x.regle), "renvoie à une ligne que l'échelle ne montre pas");
+});
+test("le moins devant la parenthèse oublié sur tous ses termes : SIG-PAR (−7(x − 5) → 7x − 35)", () => {
+  const v = expr("−7(x − 5)", "7x − 35"), x = D.expliquer(v.diag);
+  egal(v.code, "SIG-PAR"); egal(x.ou, "Mais le moins devant le 7 a disparu, sur chaque terme."); vrai(!/35/.test(x.ou + x.regle));
+  egal(lig(X1, "7x − 28 + 8x − 56 = 69 − 5x − 40", "developpe").code, "SIG-PAR");
+});
+/* L'élève imaginatif : deux termes au hasard faux à la fois, sur tous les générateurs. Jamais « je ne trouve pas ». */
+test("élève imaginatif : 2 termes faux au hasard → toujours localisés (300 lignes), phrases courtes, résultat jamais donné", () => {
+  const rnd = MM.outils.alea(23), bilan = { ok: 0, ko: [] };
+  for (let g = 1; g <= 60; g++) for (const [id, n] of [["dev1", 2], ["dev1", 3], ["devred", 2], ["eq1par", 2], ["eq1par", 3]]) {
+    const exo = Gn.creer(id, n, g), dep = Gn.depart(exo), estE = exo.type === "expression";
+    const bon = estE ? T.devCote(dep) : T.developper(dep), plat = estE ? [bon] : [bon.g, bon.d];
+    const toutes = plat.flatMap((ts, c) => ts.map((t, i) => ({ c, i })));
+    if (toutes.length < 2) continue;
+    const a = rnd.entier(0, toutes.length - 1); let b = rnd.entier(0, toutes.length - 2); if (b >= a) b++;
+    const faux = plat.map(ts => ts.slice());
+    for (const p of [a, b].map(k => toutes[k])) { const t = faux[p.c][p.i]; faux[p.c][p.i] = E.mono(rnd.suivant() < 0.5 ? t.c.oppose() : t.c.plus(F(rnd.choix([-3, -2, 2, 3]))), t.d); }
+    const ligneF = estE ? E.ecrireCote(faux[0]) : E.ecrireEquation({ g: faux[0], d: faux[1] });
+    const v = estE ? T.jugerExpression(dep, ligneF, "developpe") : T.jugerLigne(dep, ligneF, "developpe");
+    if (v.statut !== "faux" || (v.code && v.code !== "CALC")) continue;          // coïncidence avec une erreur du catalogue : écartée
+    const x = D.expliquer(v.diag), ctx = exo.enonce + " → " + ligneF + " : " + x.ou;
+    if (!v.diag.localise || /ne trouve pas/.test(x.bon)) bilan.ko.push("non localisé : " + ctx);
+    else if (!phrasesCourtes(x)) bilan.ko.push("trop long : " + ctx);
+    else if ((x.ou + x.regle).replace(/\s/g, "").includes(E.ecrireTerme(plat[toutes[a].c][toutes[a].i]).replace(/\s/g, "") + "."))  bilan.ko.push("résultat donné : " + ctx);
+    else bilan.ok++;
+  }
+  egal(bilan.ko.slice(0, 3).join(" || "), ""); vrai(bilan.ok >= 150, "trop peu de cas : " + JSON.stringify({ ok: bilan.ok }));
 });
 test("les codes du catalogue gardent la priorité quand l'erreur est vraiment la leur", () => {
   egal(expr("−5(x + 8)", "−5x + 40").code, "SIG-PAR"); egal(expr("7(x − 4)", "7x − 4").code, "DIST-PART"); egal(expr("7x − 28", "−21x").code, "RED-MIX");
