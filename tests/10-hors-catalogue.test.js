@@ -22,8 +22,8 @@ test("ex. 1 du contrôle : une erreur de calcul à chaque étape est repérée l
     ["7x − 28 − 8x + 56 = 69 − 5x − 40", "−x + 28 = 19 − 5x", "reduit", "Mais 69 − 40 = 29, pas 19."],
     ["−x + 28 = 29 − 5x", "4x = 2", "regroupe", "Mais 29 − 28 = 1, pas 2."],
     ["−x + 28 = 29 − 5x", "5x = 1", "regroupe", "Mais −x + 5x = 4x, pas 5x."],
-    ["4x = 1", "x = 1/3", "solution", "Mais 1 ÷ 4 = 1/4, pas 1/3."],
-    ["4x = 1", "x = 0,4", "solution", "Mais 1 ÷ 4 = 1/4, pas 2/5."]
+    ["4x = 1", "x = 1/3", "solution", "Mais 1 ÷ 4 ne fait pas 1/3."],          // lot 2 (D37) : la solution n'est pas donnée dans l'explication
+    ["4x = 1", "x = 0,4", "solution", "Mais 1 ÷ 4 ne fait pas 2/5."]
   ];
   for (const [p, s, f, ou] of cas) { const v = lig(p, s, f), x = D.expliquer(v.diag); egal(v.statut, "faux", s); egal(v.code, "CALC", s); egal(x.ou, ou, s); vrai(phrasesCourtes(x), s); }
 });
@@ -98,15 +98,21 @@ test("élève simulé, erreur d'addition en réduisant ou en regroupant : somme 
   }
   egal(bilan.ko.slice(0, 3).join(" || "), ""); vrai(bilan.ok >= 700 && bilan.sommes >= 300, "trop peu de cas : " + JSON.stringify(bilan));
 });
-test("élève simulé, erreur de division à la dernière étape (x = 0 compris) : division exacte citée", () => {
+test("élève simulé, erreur de division à la dernière étape (x = 0 compris) : division citée, solution jamais donnée (D37), exacte pour le parent", () => {
   const rnd = MM.outils.alea(13), bilan = { ok: 0, ignoré: 0, ko: [], zero: 0 };
   for (let g = 1; g <= 300; g++) for (const n of [1, 2, 3]) {
     const eq0 = Gn.depart(Gn.creer("eq1par", n, g)), rr = T.reduire(T.regrouper(T.reduire(T.developper(eq0))));
     const a = rr.g[0].c, b = rr.d[0].c;
     if (a.egal(1)) continue;                                              // x déjà seul : pas de division
     const x = T.resoudre(rr).x, faux = g % 10 === 0 ? MM.Fraction.ZERO : decale(x, rnd);
-    const r = verifierCas(rr, T.eqSolution(faux), "solution", b.texte() + " ÷ " + (a.signe() < 0 ? "(" + a.texte() + ")" : a.texte()) + " = " + x.texte() + ", pas " + faux.texte());
-    if (r === "ok") { bilan.ok++; if (faux.estNul()) bilan.zero++; } else if (r === "ignoré") bilan.ignoré++; else bilan.ko.push(r);
+    const ab = b.texte() + " ÷ " + (a.signe() < 0 ? "(" + a.texte() + ")" : a.texte());
+    const r = verifierCas(rr, T.eqSolution(faux), "solution", ab + " ne fait pas " + faux.texte());
+    if (r === "ok") {
+      const v = T.jugerLigne(rr, E.ecrireEquation(T.eqSolution(faux)), "solution"), xp = D.expliquer(v.diag);
+      if (xp.resume !== ab + " = " + x.texte() + ", pas " + faux.texte()) bilan.ko.push("précision parent : " + xp.resume);
+      else if ((xp.ou + " " + xp.regle).includes("= " + x.texte() + ".")) bilan.ko.push("solution donnée : " + xp.ou + " " + xp.regle);
+      else { bilan.ok++; if (faux.estNul()) bilan.zero++; }
+    } else if (r === "ignoré") bilan.ignoré++; else bilan.ko.push(r);
   }
   egal(bilan.ko.slice(0, 3).join(" || "), ""); vrai(bilan.ok >= 400 && bilan.zero >= 20, "trop peu de cas : " + JSON.stringify(bilan));
 });

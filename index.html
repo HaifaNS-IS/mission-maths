@@ -14,7 +14,7 @@
   --bg:#EEF2F8; --surface:#FFFFFF; --ink:#18213B; --muted:#56617E; --line:#D5DCEA;
   --primary:#3446B0; --on-primary:#FFFFFF; --star:#A86A00; --star-soft:#FBEBCB;
   --good:#23746F; --good-soft:#DDF1EE; --notyet:#6B5BA8; --notyet-soft:#ECE7F8;
-  --trap:#B3261E; --trap-soft:#FCE8E6;
+  --trap:#B3261E; --trap-soft:#FCE8E6; --warn:#A04A00; --warn-soft:#FDEBD8;
   --f-display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:16px;
@@ -23,12 +23,12 @@
   --bg:#10162A; --surface:#1A2240; --ink:#E9EDF8; --muted:#A5AECA; --line:#2E3860;
   --primary:#8E9AF2; --on-primary:#10162A; --star:#F2B24C; --star-soft:#3A3120;
   --good:#5BC0B9; --good-soft:#173A3A; --notyet:#B5A8EE; --notyet-soft:#2B2650;
-  --trap:#FF8A80; --trap-soft:#3B1E1C; color-scheme:dark }}
+  --trap:#FF8A80; --trap-soft:#3B1E1C; --warn:#FFB067; --warn-soft:#3A2814; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#10162A; --surface:#1A2240; --ink:#E9EDF8; --muted:#A5AECA; --line:#2E3860;
   --primary:#8E9AF2; --on-primary:#10162A; --star:#F2B24C; --star-soft:#3A3120;
   --good:#5BC0B9; --good-soft:#173A3A; --notyet:#B5A8EE; --notyet-soft:#2B2650;
-  --trap:#FF8A80; --trap-soft:#3B1E1C; color-scheme:dark }
+  --trap:#FF8A80; --trap-soft:#3B1E1C; --warn:#FFB067; --warn-soft:#3A2814; color-scheme:dark }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;overflow:hidden}
@@ -146,12 +146,29 @@ button.pill{min-height:44px}
 .pop{animation:pop .2s ease-out}
 @media (prefers-reduced-motion:reduce){.pop{animation:none}}
 
+/* échelle d'aide : terme entouré (marche 2), ligne à trous (marche 3), ligne à recopier (marche 4) */
+mark.pointe{background:transparent;color:inherit;border:2.5px solid var(--trap);border-radius:999px;padding:0 6px;font-weight:700}
+.trous{display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-family:var(--f-display);font-size:1.2rem;background:var(--surface);border:2px solid var(--primary);border-radius:12px;padding:6px 10px;min-height:50px}
+.trous .c{white-space:pre}
+.trous input.trou{font:inherit;color:var(--ink);background:var(--notyet-soft);border:2px dashed var(--notyet);border-radius:8px;min-height:44px;min-width:44px;width:4.2em;padding:2px 6px;text-align:center}
+.trous input.trou[data-sorte="signe"]{width:2.2em} .trous input.trou[data-sorte="valeur"]{width:3em}
+.trous input.trou:focus{border-style:solid;border-color:var(--primary);outline:none}
+.fb.recopie{background:var(--warn-soft)} .fb.recopie h3{color:var(--warn)}
+.ligne.fait.neutre .coche{color:var(--muted)}
+.bloc-barre{flex:none;width:56px;height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.bloc-barre i{display:block;height:100%;background:var(--good)}
+.blocs{display:flex;gap:10px;justify-content:center}
+.blocs i{width:18px;height:18px;border-radius:50%;border:2px solid var(--good)}
+.blocs i.on{background:var(--good)}
+.etape.ferme{opacity:.6}
+.jl .orange{color:var(--warn);font-weight:700}
+
 /* clavier maths */
 #clavier{flex:none;background:var(--surface);border-top:1.5px solid var(--line);padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
 #clavier .in{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:520px;margin:0 auto}
 #clavier button{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-family:var(--f-display);font-size:1.3rem;font-weight:500;padding:0;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 #clavier button.op{background:var(--surface)}
-#clavier button.ok{grid-column:span 2;background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-size:1.05rem;font-weight:600}
+#clavier button.ok{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-size:1.05rem;font-weight:600}
 #clavier button:active{border-color:var(--primary)}
 
 /* leçon */
@@ -218,35 +235,38 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.2.0"></script>
-<script src="js/expr.js?v=0.2.0"></script>
-<script src="js/saisie.js?v=0.2.0"></script>
-<script src="js/etapes.js?v=0.2.0"></script>
-<script src="js/diag.js?v=0.2.0"></script>
-<script src="js/outils.js?v=0.2.0"></script>
-<script src="js/gen/algebre.js?v=0.2.0"></script>
-<script src="js/lecon.js?v=0.2.0"></script>
-<script src="js/progression.js?v=0.2.0"></script>
-<script src="js/rapport.js?v=0.2.0"></script>
-<script src="js/file.js?v=0.2.0"></script>
-<script src="js/config.js?v=0.2.0"></script>
-<script src="js/base.js?v=0.2.0"></script>
+<script src="js/fraction.js?v=0.3.0"></script>
+<script src="js/expr.js?v=0.3.0"></script>
+<script src="js/saisie.js?v=0.3.0"></script>
+<script src="js/etapes.js?v=0.3.0"></script>
+<script src="js/diag.js?v=0.3.0"></script>
+<script src="js/outils.js?v=0.3.0"></script>
+<script src="js/nombres.js?v=0.3.0"></script>
+<script src="js/gen/algebre.js?v=0.3.0"></script>
+<script src="js/gen/nombres.js?v=0.3.0"></script>
+<script src="js/aide.js?v=0.3.0"></script>
+<script src="js/lecon.js?v=0.3.0"></script>
+<script src="js/progression.js?v=0.3.0"></script>
+<script src="js/parcours.js?v=0.3.0"></script>
+<script src="js/rapport.js?v=0.3.0"></script>
+<script src="js/file.js?v=0.3.0"></script>
+<script src="js/config.js?v=0.3.0"></script>
+<script src="js/base.js?v=0.3.0"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
-   Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent). */
-const APP_VERSION = "0.2.0";
+   Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
+   Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention. */
+const APP_VERSION = "0.3.0";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
+const N = MM.nombres, A = MM.aide, PA = MM.parcours;
 
-/* Lot 1 : le banc d'essai tient lieu de palier. Les paliers P0 à P9 arrivent aux lots 2 à 4. */
-const BANC = { id: "T", nom: "Banc d'essai du moteur", resume: "Une leçon et un exercice type, pour vérifier le moteur avant les vrais paliers.", lecon: "LECO-N00-A",
-  ordre: ["lecon", "guide", "semi", "seul"],
-  series: { guide: [{ gen: "eq1ref", niveau: 3 }, { gen: "eq1par", niveau: 2 }], semi: [{ gen: "eq1par", niveau: 3 }], seul: [{ gen: "eq1par", niveau: 3 }] },
-  detail: { lecon: "Le moins devant une parenthèse · 4 min", guide: "2 exercices · chaque étape vérifiée", semi: "1 exercice · 2 étapes demandées", seul: "1 exercice · tu écris ta démarche" } };
 const SEMI = ["reduit", "solution"];
-const NOMS_MODE = { guide: "Guidé", semi: "Semi-guidé", seul: "Seul", lecon: "Leçon" };
+const NOMS_MODE = { guide: "Guidé", semi: "Semi-guidé", seul: "Seul", controle: "Sans aide", diag: "Sans aide", lecon: "Leçon" };
+const MODE_SECTION = { lecon: "guide", guide: "guide", semi: "semi", seul: "seul", remed: "guide", examen: "controle", diagnostic: "diag" };
+const BLOC = 5 * 60000, BLOCS_SEANCE = 3, PAUSE_TOUTES = 8;     // cadre d'attention : blocs de 5 minutes, séance de 3 blocs, mini-pause toutes les 8 questions
 
 /* ---------- petits outils ---------- */
 const $ = s => document.querySelector(s);
@@ -282,17 +302,23 @@ let mode = "init";                // init | attente | cloud | horsligne
 let docConfirme = false, docExiste = false, refuse = false, attenteLongue = false, syncEnCours = false;
 let vue = FAM ? "accueil" : "appairage";   // appairage | accueil | lecon | exo | bilan | pin | parent
 let X = null, Q = null, LC = null;   // série en cours, exercice en cours, leçon affichée
+let dernierCourant = null;          // le palier en cours s'ouvre au chargement, et dès qu'il change
 let SEANCE = LS.lire(LF("seance"));
 let RAPPORT = null;
-const LECONS = {}, ouverts = new Set(["T"]);
+const LECONS = {}, LECONS_TITRES = LS.lire("mm.titres") || {}, ouverts = new Set();
 let clavierPC = LS.lire("mm.clavier") === true;
 
+/* Les paliers : l'élève commence à P0 ; dans la zone d'essai du parent, P0 à P4 sont tous ouverts. */
+function paliersDefaut(essai) {
+  const e = P.etatInitial();
+  for (const id of Object.keys(e)) e[id] = PA.completerPalier(e[id]);
+  if (essai) for (const id of PA.LIVRES) e[id].statut = "en_cours";
+  return e;
+}
 function etatDefaut() {
-  const paliers = P.etatInitial();
-  paliers.T = { statut: "en_cours", meilleurExamen: null, valideLe: null, echecsRevision: 0, fait: {} };
   return { schema: 1, app: "mission-maths", creeLe: Date.now(), majLe: Date.now(), parent: { pinHash: PIN_DEFAUT }, controle: { date: null },
-    eleve: { nom: "", palierActuel: "P0", reprise: null }, paliers, fiches: [],     // prénom : saisi par le parent, rangé dans la base, jamais dans le code
-    essai: { reprise: null, fait: {}, fiches: [] } };       // les essais des appareils parent, à part de la progression de l'élève
+    eleve: { nom: "", palierActuel: "P0", reprise: null }, paliers: paliersDefaut(false), fiches: [],     // prénom : saisi par le parent, rangé dans la base, jamais dans le code
+    essai: { reprise: null, paliers: paliersDefaut(true), fiches: [] } };       // les essais des appareils parent, à part de la progression de l'élève
 }
 /* Garantit que tous les champs existent, quel que soit l'âge du document lu. */
 function completer(s) {
@@ -302,11 +328,15 @@ function completer(s) {
   s.parent = Object.assign({}, d.parent, s.parent); if (!s.parent.pinHash) s.parent.pinHash = PIN_DEFAUT;
   s.controle = Object.assign({}, d.controle, s.controle);
   s.eleve = Object.assign({}, d.eleve, s.eleve);
-  s.paliers = s.paliers && typeof s.paliers === "object" ? s.paliers : {};
-  for (const id of Object.keys(d.paliers)) { s.paliers[id] = Object.assign({}, d.paliers[id], s.paliers[id]); if (!s.paliers[id].fait) s.paliers[id].fait = {}; }
+  s.essai = Object.assign({ reprise: null, fiches: [] }, s.essai);
+  // point de reprise du banc d'essai du lot 1 (palier « T », retiré au lot 2) : on repart de l'accueil
+  if (s.eleve.reprise && s.eleve.reprise.palier === "T") s.eleve.reprise = null;
+  if (s.essai.reprise && s.essai.reprise.palier === "T") s.essai.reprise = null;
+  for (const [cible, defaut] of [[s, d.paliers], [s.essai, d.essai.paliers]]) {
+    cible.paliers = cible.paliers && typeof cible.paliers === "object" ? cible.paliers : {};
+    for (const id of Object.keys(defaut)) cible.paliers[id] = PA.completerPalier(Object.assign({}, defaut[id], cible.paliers[id]));
+  }
   if (!Array.isArray(s.fiches)) s.fiches = [];
-  s.essai = Object.assign({ reprise: null, fait: {}, fiches: [] }, s.essai);
-  if (!s.essai.fait || typeof s.essai.fait !== "object") s.essai.fait = {};
   if (!Array.isArray(s.essai.fiches)) s.essai.fiches = [];
   return s;
 }
@@ -314,12 +344,16 @@ function completer(s) {
 const enEssai = () => estParent();
 const repriseCourante = () => enEssai() ? S.essai.reprise : S.eleve.reprise;
 const majReprise = r => ecrireApp(enEssai() ? { essai: { reprise: r } } : { eleve: { reprise: r } }, "reprise");
-const faitBanc = () => (enEssai() ? S.essai.fait : S.paliers.T && S.paliers.T.fait) || {};
+const prog = () => enEssai() ? S.essai.paliers : S.paliers;
 const fichesVues = () => enEssai() ? S.essai.fiches : S.fiches;
-function marquerFait(section, fiche) {
-  const vues = fichesVues(), neuve = fiche && !vues.includes(fiche) ? vues.concat([fiche]) : null;
-  if (enEssai()) ecrireApp({ essai: Object.assign({ fait: { [section]: true } }, neuve ? { fiches: neuve } : {}) });
-  else ecrireApp(Object.assign({ paliers: { T: { fait: { [section]: true } } } }, neuve ? { fiches: neuve } : {}));
+function ecrirePaliers(o) { if (enEssai()) ecrireApp({ essai: { paliers: o } }); else ecrireApp({ paliers: o, eleve: { palierActuel: P.palierActuel(o) } }); }
+function marquerFait(id, section, fiche) {
+  const o = clone(prog()); o[id] = PA.completerPalier(o[id]);
+  if (section === "remedLecon" || section === "remed") { const r = o[id].remediation || { codes: [], fait: {} }; r.fait = Object.assign({}, r.fait, { [section]: true }); o[id].remediation = r; }
+  else o[id].fait[section] = true;
+  ecrirePaliers(o);
+  const vues = fichesVues();
+  if (fiche && !vues.includes(fiche)) ecrireApp(enEssai() ? { essai: { fiches: vues.concat([fiche]) } } : { fiches: vues.concat([fiche]) });
 }
 
 /* ---------- synchro : base Firebase (js/base.js) + file hors ligne (js/file.js) ---------- */
@@ -404,7 +438,8 @@ function activite() {
   const t = Date.now();
   if (R.nouvelleSeanceRequise(SEANCE, t)) {
     if (SEANCE && SEANCE.fin > seanceEnvoyee) envoyerSeance();
-    SEANCE = { id: O.uid("s"), debut: t, fin: t, dureeActive: 0, palier: X ? X.palier : BANC.id, nbQuestions: 0, parent: estParent() };
+    SEANCE = { id: O.uid("s"), debut: t, fin: t, dureeActive: 0, palier: X ? X.palier : (S ? P.palierActuel(prog()) : "P0"), nbQuestions: 0, parent: estParent(),
+      blocsVus: 0, objectif: BLOCS_SEANCE, pauseVue: 0, leconNouvelle: null };
     envoyerSeance();
   } else R.pointer(SEANCE, t);
   LS.ecrire(LF("seance"), SEANCE);
@@ -432,11 +467,13 @@ function render() {
   if (!S) return;
   if (vue !== "parent" && vue !== "pin") parentOK = false;        // l'espace parent se referme dès qu'on en sort
   if (vue === "lecon" && !LC) vue = "accueil";
+  if ((vue === "bilan" || vue === "pause") && !X) vue = "accueil";
   majBarre();
   if (vue === "exo") return renderExo();
   montrer("app");
   if (vue === "lecon") return renderLecon();
   if (vue === "bilan") return renderBilan();
+  if (vue === "pause") return renderPause();
   if (vue === "pin") return renderPin();
   if (vue === "parent") return renderParent();
   renderAccueil();
@@ -449,56 +486,91 @@ function retour() {
 }
 function plier(ouvrir) { document.querySelectorAll("#app details.panel, #app details.pas").forEach(d => { d.open = ouvrir; }); }
 function suivrePanneaux() { document.querySelectorAll("#app details.panel").forEach(d => d.addEventListener("toggle", () => { d.open ? ouverts.add(d.dataset.k) : ouverts.delete(d.dataset.k); })); }
+/* Le palier sur lequel il travaille, parmi ceux livrés (P0 à P4). */
+function palierCourant() { const id = P.palierActuel(prog()); return PA.LIVRES.includes(id) ? id : null; }
 function sectionSuivante() {
-  const s = P.sectionSuivante(faitBanc(), BANC.ordre);
-  if (!s) { toast("Tout est fait ici. Les paliers arrivent au prochain lot."); return; }
-  lancer(s);
+  const id = palierCourant();
+  if (!id) { toast("P0 à P4 sont validés. Le second degré (P5) arrive au prochain lot."); return; }
+  const s = PA.sectionSuivante(id, prog()[id]);
+  if (!s) { toast("Rien de nouveau ici pour l'instant."); return; }
+  lancer(id, s);
 }
-function lancer(section) {
-  if (section === "lecon") return ouvrirLecon(BANC.lecon);
-  lancerSerie(section, BANC.series[section]);
+function lancer(palier, section) {
+  const p = PA.completerPalier(prog()[palier]);
+  if (section === "diagnostic") {
+    if (p.statut === "valide") { toast("Le test diagnostic est déjà fait."); return; }
+    return lancerSerie(palier, "diagnostic", PA.CONTENU.P0.diagnostic);
+  }
+  if (p.statut === "verrouille") { toast("Ce palier s'ouvre quand le précédent est validé."); return; }
+  if (section === "lecon") return ouvrirLecon(palier, PA.CONTENU[palier].lecon);
+  if (section === "remedLecon") return ouvrirRemediation(palier);
+  if (section === "remed") return lancerSerie(palier, "remed", PA.specsRemediation(palier, p.remediation ? p.remediation.codes : []));
+  if (section === "examen") {
+    if (!PA.examenOuvert(p) && p.statut !== "valide") { toast(p.remediation ? "Fais d'abord la mini-leçon et la série de remédiation." : "L'examen s'ouvre quand les 3 séries sont validées."); return; }
+    return lancerSerie(palier, "examen", PA.CONTENU[palier].examen);
+  }
+  lancerSerie(palier, section, PA.CONTENU[palier][section]);
 }
 function reprendre() {
   const r = repriseCourante();
   if (!r) { toast("Rien à reprendre pour l'instant."); return; }
-  if (r.section === "lecon" && !(r.exos && r.exos.length)) return ouvrirLecon(r.lecon || BANC.lecon);
-  X = { palier: r.palier, section: r.section, exos: clone(r.exos), i: r.i, resultats: clone(r.resultats || []), lecon: r.lecon || null, fiche: r.fiche || null };
+  if ((r.section === "lecon" || r.section === "remedLecon") && !(r.exos && r.exos.length)) return r.section === "lecon" ? ouvrirLecon(r.palier, r.lecon) : ouvrirRemediation(r.palier);
+  X = { palier: r.palier, section: r.section, mode: r.mode || MODE_SECTION[r.section], exos: clone(r.exos), i: r.i, resultats: clone(r.resultats || []), lecon: r.lecon || null, fiche: r.fiche || null };
   ouvrirExo(r);
 }
 
-/* ---------- accueil élève : 11 paliers repliés, celui en cours ouvert ---------- */
+/* ---------- accueil élève : les paliers repliés, celui en cours ouvert ---------- */
 function joursAvantControle() {
   const d = S.controle && S.controle.date; if (!d) return null;
   const j = Math.round((new Date(d + "T00:00:00").getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
   return j >= 0 ? j : null;
 }
+const DETAIL = {
+  P0: { diagnostic: "12 questions · environ 10 min · sans aide" },
+  P1: { guide: "6 calculs · chaque étape vérifiée", semi: "6 calculs · seul le résultat demandé", seul: "6 calculs · tu écris ta démarche", examen: "10 calculs · 80 % pour passer" },
+  P2: { guide: "4 exercices · chaque étape vérifiée", semi: "4 exercices · le résultat réduit", seul: "4 exercices · tu écris ta démarche", examen: "10 exercices · 80 % pour passer" },
+  P3: { guide: "4 équations · chaque étape vérifiée", semi: "4 équations · 2 étapes demandées", seul: "4 équations · tu écris ta démarche", examen: "10 équations · 80 % pour passer" },
+  P4: { guide: "3 équations · avec la vérification", semi: "3 équations · 2 étapes demandées", seul: "3 équations · tu écris ta démarche", examen: "10 équations · pause possible entre deux" }
+};
+function detailSection(palier, s, p) {
+  if (s.id === "lecon") return (LECONS_TITRES[PA.CONTENU[palier].lecon] || "Leçon courte") + " · 4 min";
+  if (s.id === "remedLecon") return "Sur : " + (p.remediation.codes.length ? p.remediation.codes.map(c => D.CATALOGUE[c].nom.toLowerCase()).join(", ") : "reprendre pas à pas");
+  if (s.id === "remed") return "4 exercices où ce piège peut se produire";
+  if (s.id === "examen" && !s.ouvert && p.statut !== "valide") return p.remediation ? "Fermé : fais d'abord la remédiation" : "Fermé : finis les 3 séries";
+  return (DETAIL[palier] && DETAIL[palier][s.id]) || "";
+}
+const TAG_STATUT = { verrouille: '<span class="tag soon">Fermé</span>', en_cours: '<span class="tag actuel">En cours</span>', valide: '<span class="tag fait">Validé</span>', a_consolider: '<span class="tag essai">À consolider</span>' };
 function renderAccueil() {
-  const fait = faitBanc(), suiv = P.sectionSuivante(fait, BANC.ordre), j = joursAvantControle();
-  const etape = (s, n) => `<button class="etape${s === suiv ? " suivante" : ""}" onclick="lancer('${s}')">
-      <span class="num">${n}</span><span class="txt"><strong>${P.NOMS_PARCOURS[s]}</strong><small>${esc(BANC.detail[s])}</small></span>
-      ${fait[s] ? '<span class="tag fait">Fait</span>' : s === suiv ? '<span class="tag actuel">À faire</span>' : ""}</button>`;
-  const palier = p => `<details class="panel" data-k="${p.id}"${ouverts.has(p.id) ? " open" : ""}>
-      <summary><h2><span class="pid">${p.id === "FINAL" ? "Final" : p.id}</span>${esc(p.nom)}</h2><span class="tag soon">Bientôt</span></summary>
-      <p class="sub">${esc(p.resume)}</p><p class="note">Ce contenu n'est pas encore livré.</p></details>`;
+  const j = joursAvantControle(), pr = prog(), cour = palierCourant();
+  if (cour && cour !== dernierCourant) { ouverts.add(cour); dernierCourant = cour; }
+  const palierLivre = id => {
+    const p = PA.completerPalier(pr[id]), meta = P.PALIERS.find(x => x.id === id), suiv = PA.sectionSuivante(id, p), secs = PA.sections(id, p);
+    const etape = (s, n) => `<button class="etape${s.id === suiv ? " suivante" : ""}${!s.ouvert && !s.fait ? " ferme" : ""}" onclick="lancer('${id}','${s.id}')">
+        <span class="num">${n}</span><span class="txt"><strong>${esc(PA.NOMS[s.id])}</strong><small>${esc(detailSection(id, s, p))}</small></span>
+        ${s.fait ? '<span class="tag fait">Fait</span>' : s.id === suiv ? '<span class="tag actuel">À faire</span>' : ""}</button>`;
+    const score = p.meilleurExamen != null ? `<span class="pill">${p.meilleurExamen} %</span>` : p.parDiagnostic ? '<span class="pill">diagnostic</span>' : "";
+    return `<details class="panel${id === cour ? " encours" : ""}" data-k="${id}"${ouverts.has(id) ? " open" : ""}>
+      <summary><h2><span class="pid">${id}</span>${esc(meta.nom)}</h2>${score}${TAG_STATUT[p.statut] || ""}</summary>
+      <p class="sub">${esc(meta.resume)}</p>
+      ${p.statut === "verrouille" ? '<p class="note">S\'ouvre quand le palier d\'avant est validé.</p>' : `<div class="parcours">${secs.map((s, i) => etape(s, i + 1)).join("")}</div>`}</details>`;
+  };
+  const bientot = q => `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}>
+      <summary><h2><span class="pid">${q.id === "FINAL" ? "Final" : q.id}</span>${esc(q.nom)}</h2><span class="tag soon">Bientôt</span></summary>
+      <p class="sub">${esc(q.resume)}</p><p class="note">Ce contenu n'est pas encore livré.</p></details>`;
   const textes = LS.lire("mm.fiches") || {}, fiches = fichesVues().map(id => textes[id]).filter(Boolean);
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>Salut${S.eleve.nom ? " " + esc(S.eleve.nom) : ""}</h1>${pastille()}</div>
-    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève.</p>' : ""}
+    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève. P0 à P4 sont ouverts pour tester.</p>' : ""}
     ${j != null ? `<p class="compte">Prochain contrôle ${j === 0 ? "<strong>aujourd'hui</strong>" : `dans <strong>${j}</strong> jour${j > 1 ? "s" : ""}`}.</p>` : ""}
     ${refuse ? '<p class="compte">Tes exercices restent sur cet appareil : demande à ton parent de te renvoyer ton lien.</p>' : ""}
     <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
-    <details class="panel encours" data-k="T"${ouverts.has("T") ? " open" : ""}>
-      <summary><h2>${esc(BANC.nom)}</h2><span class="tag actuel">En cours</span></summary>
-      <p class="sub">${esc(BANC.resume)}</p>
-      <div class="parcours">${BANC.ordre.map((s, i) => etape(s, i + 1)).join("")}</div>
-    </details>
-    ${P.PALIERS.map(palier).join("")}
+    ${P.PALIERS.map(q => PA.LIVRES.includes(q.id) ? palierLivre(q.id) : bientot(q)).join("")}
     <details class="panel" data-k="memo"${ouverts.has("memo") ? " open" : ""}>
       <summary><h2>Mémo</h2><span class="tag soon">${pluriel(fiches.length, "fiche")}</span></summary>
       ${fiches.length ? `<ul class="fiches">${fiches.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : '<p class="sub">Chaque leçon terminée ajoute ici sa fiche réflexe.</p>'}
     </details>
     <button class="linkbtn" onclick="ouvrirParent()">Espace parent</button>
-    <p class="note">Mission Maths ${APP_VERSION} · lot 1 bis : l'app hors de Claude.</p></div>`;
+    <p class="note">Mission Maths ${APP_VERSION} · lot 2 : algèbre, paliers P0 à P4.</p></div>`;
   suivrePanneaux();
 }
 
@@ -506,75 +578,120 @@ function renderAccueil() {
 async function chargerLecon(id) {
   if (LECONS[id]) return LECONS[id];
   let pack = null;
-  try { const idx = await (await fetch("lecons/index.json")).json(); const m = idx.lecons.find(x => x.pack_id === id); pack = await (await fetch(m.fichier)).json(); LS.ecrire("mm.lecon." + id, pack); }
+  try { const idx = await (await fetch("lecons/index.json?v=" + APP_VERSION)).json(); const m = idx.lecons.find(x => x.pack_id === id); pack = await (await fetch(m.fichier + "?v=" + APP_VERSION)).json(); LS.ecrire("mm.lecon." + id, pack); }
   catch (e) { pack = LS.lire("mm.lecon." + id); }                             // hors ligne : dernière copie lue
   if (!pack) throw new Error("leçon introuvable");
   const defauts = L.valider(pack);
   if (defauts.length) throw new Error("leçon refusée : " + defauts[0]);
-  const fiches = LS.lire("mm.fiches") || {}; fiches[pack.lecon.fiche.id] = pack.lecon.fiche.texte; LS.ecrire("mm.fiches", fiches);
+  memoriserFiche(pack.lecon.fiche);
+  LECONS_TITRES[id] = pack.lecon.titre; LS.ecrire("mm.titres", LECONS_TITRES);
   return (LECONS[id] = pack);
 }
-async function ouvrirLecon(id) {
+function memoriserFiche(f) { if (!f || !f.id) return; const fiches = LS.lire("mm.fiches") || {}; fiches[f.id] = f.texte; LS.ecrire("mm.fiches", fiches); }
+/* Une seule notion nouvelle par séance (cadre d'attention). Revoir une leçon déjà faite reste toujours possible. */
+function notionBloquee(palier) {
+  if (enEssai()) return false;
+  const p = PA.completerPalier(prog()[palier]);
+  return !p.fait.lecon && !!(SEANCE && SEANCE.leconNouvelle && SEANCE.leconNouvelle !== palier && !R.nouvelleSeanceRequise(SEANCE, Date.now()));
+}
+async function ouvrirLecon(palier, id) {
+  if (notionBloquee(palier)) { toast("Une seule nouvelle notion par séance. Celle-ci t'attend à la prochaine."); return; }
   let pack; try { pack = await chargerLecon(id); } catch (e) { toast("Leçon indisponible : vérifie ta connexion."); return; }
-  LC = L.preparer(pack); activite();
-  majReprise(repriseVide({ palier: BANC.id, section: "lecon", lecon: id }));
+  activite();
+  if (!PA.completerPalier(prog()[palier]).fait.lecon && !enEssai()) { SEANCE.leconNouvelle = palier; LS.ecrire(LF("seance"), SEANCE); }
+  LC = Object.assign(L.preparer(pack), { palierId: palier, remed: false });
+  majReprise(repriseVide({ palier, section: "lecon", lecon: id }));
+  aller("lecon");
+}
+function ouvrirRemediation(palier) {
+  const p = PA.completerPalier(prog()[palier]), codes = p.remediation ? p.remediation.codes : [];
+  let l; try { l = L.preparer(PA.packRemediation(palier, codes[0] || null)); } catch (e) { toast("Mini-leçon indisponible."); return; }
+  activite(); memoriserFiche(l.fiche);
+  LC = Object.assign(l, { palierId: palier, remed: true });
+  majReprise(repriseVide({ palier, section: "remedLecon" }));
   aller("lecon");
 }
 function renderLecon() {
-  const l = LC, x = l.piege.explication, fait = faitBanc().lecon;
+  const l = LC, x = l.piege && l.piege.explication, fait = !l.remed && PA.completerPalier(prog()[l.palierId]).fait.lecon;
   $("#app").innerHTML = `<div class="wrap">
-    <div class="top"><h1>${esc(l.titre)}</h1><span class="pill">Leçon · ${l.duree} min</span></div>
+    <div class="top"><h1>${esc(l.titre)}</h1><span class="pill">${l.remed ? "Mini-leçon" : "Leçon"} · ${l.duree} min</span></div>
     <section class="bloc"><h2><span class="num">1</span>L'idée</h2><p class="idee">${esc(l.idee)}</p></section>
     <section class="bloc"><h2><span class="num">2</span>Un exemple, pas à pas</h2>
       <p class="sub">${esc(l.exemple.consigne)}</p><div class="mscroll">${maths(l.exemple.enonce)}</div>
       <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
       <div class="pas-a-pas">${l.exemple.lignes.map((p, i) => `<details class="pas"><summary>Étape ${i + 1} · ${esc(p.nom)}</summary><div class="mscroll">${maths(p.ligne)}</div><p class="sub">${esc(p.pourquoi)}</p></details>`).join("")}</div>
     </section>
-    <section class="bloc piege"><h2><span class="num">3</span>Le piège classique</h2>
+    ${l.piege ? `<section class="bloc piege"><h2><span class="num">3</span>Le piège classique</h2>
       <p>On part de&nbsp;:</p><div class="mscroll">${maths(l.piege.depart)}</div>
       <p class="fauxligne">La ligne piégée&nbsp;:</p><div class="mscroll fauxligne">${maths(l.piege.faux)}</div>
       <p>${esc(x.ou.replace(/^Mais dans/, "Dans").replace(/^Mais /, ""))} ${esc(x.regle)}</p>
       <p>La bonne ligne&nbsp;:</p><div class="mscroll">${maths(l.piege.bon)}</div>
       <p><strong>Pour l'éviter.</strong> ${esc(l.piege.parade)}</p>
-    </section>
-    <section class="bloc"><h2><span class="num">4</span>À toi</h2><p class="sub">2 questions rapides sur ce que tu viens de lire.</p>
-      <div class="row"><button class="btn" onclick="aToi()">${fait ? "Refaire les 2 questions" : "Faire les 2 questions"}</button></div></section>
+    </section>` : ""}
+    ${l.remed ? `<section class="bloc"><h2><span class="num">4</span>À toi</h2><p class="sub">4 exercices où ce piège peut se produire, avec l'aide pas à pas.</p>
+      <div class="row"><button class="btn" onclick="commencerRemediation()">Commencer la série</button></div></section>`
+      : `<section class="bloc"><h2><span class="num">4</span>À toi</h2><p class="sub">2 questions rapides sur ce que tu viens de lire.</p>
+      <div class="row"><button class="btn" onclick="aToi()">${fait ? "Refaire les 2 questions" : "Faire les 2 questions"}</button></div></section>`}
     <section class="bloc"><h2><span class="num">5</span>Fiche réflexe</h2><p class="fiche">${esc(l.fiche.texte)}</p>
-      <p class="note">${fichesVues().includes(l.fiche.id) ? "Elle est dans ton mémo." : "Elle ira dans ton mémo après les 2 questions."}</p></section>
+      <p class="note">${fichesVues().includes(l.fiche.id) ? "Elle est dans ton mémo." : l.remed ? "Elle ira dans ton mémo quand tu commences la série." : "Elle ira dans ton mémo après les 2 questions."}</p></section>
   </div>`;
 }
-function aToi() { lancerSerie("lecon", LC.aToi, { lecon: LC.pack, fiche: LC.fiche.id }); }
+function aToi() { lancerSerie(LC.palierId, "lecon", LC.aToi, { lecon: LC.pack, fiche: LC.fiche.id }); }
+function commencerRemediation() { const id = LC.palierId; marquerFait(id, "remedLecon", LC.fiche.id); lancer(id, "remed"); }
 
-/* ---------- module Saisie par étapes + diagnostic ---------- */
-function repriseVide(o) { return Object.assign({ palier: BANC.id, section: null, lecon: null, fiche: null, i: 0, exos: [], resultats: [], k: 0, acceptees: [], journal: [], libres: [], essais: 0, aide: false, maj: Date.now() }, o); }
-function lancerSerie(section, specs, opt) {
-  X = { palier: BANC.id, section, exos: specs.map(s => ({ gen: s.gen, niveau: s.niveau, graine: O.nouvelleGraine() })), i: 0, resultats: [], lecon: opt && opt.lecon || null, fiche: opt && opt.fiche || null };
+/* ---------- module Saisie par étapes + diagnostic + échelle d'aide ---------- */
+function repriseVide(o) { return Object.assign({ palier: null, section: null, mode: null, lecon: null, fiche: null, i: 0, exos: [], resultats: [], k: 0, acceptees: [], journal: [], libres: [],
+  essais: 0, codePrec: null, indice: false, trous: null, recopie: null, jumeau: false, prevTexte: null, maj: Date.now() }, o); }
+function lancerSerie(palier, section, specs, opt) {
+  X = { palier, section, mode: MODE_SECTION[section], exos: specs.map(s => ({ gen: s.gen, niveau: s.niveau, graine: O.nouvelleGraine(), notion: s.notion || null })), i: 0, resultats: [],
+    lecon: opt && opt.lecon || null, fiche: opt && opt.fiche || null };
   ouvrirExo(null);
 }
+const typeEtape = et => (et && et.type) || Q.exo.type;
+const lireLigne = (type, t) => type === "equation" ? E.lireEquation(t) : type === "expression" ? E.lireExpression(t).termes : E.arbre(t);
+const ecrireLigne = (type, l) => type === "equation" ? E.ecrireEquation(l) : type === "expression" ? E.ecrireCote(l) : N.ecrire(l);
+const ligneDe = (v, type) => type === "equation" ? v.eq : type === "expression" ? v.termes : v.ast;
+/* « Vérifie » (P4, guidé) : remplacer x dans chaque côté de l'énoncé. */
+function etapesVerif(v) {
+  const x = MM.F(v.x).texte(), val = MM.F(v.valeur).texte();
+  return [["g", "à gauche", v.gauche], ["d", "à droite", v.droite]].map(([c, ou, dep]) => ({ id: "verifie-" + c, nom: "Vérifie " + ou, type: "nombre", forme: "nombre", depart: dep,
+    consigne: "Avec x = " + x + ", calcule : " + dep, indice: "Calcule d'abord les parenthèses, puis les ×, puis le reste.", attendu: val }));
+}
+function entrerEtape() { const et = Q.etapes[Q.k]; if (et && et.depart) Q.prev = E.arbre(et.depart); }
 function ouvrirExo(repr) {
   const sp = X.exos[X.i];
   let exo; try { exo = GEN.creer(sp.gen, sp.niveau, sp.graine); } catch (e) { toast("Exercice indisponible."); return aller("accueil"); }
-  const m = X.section === "lecon" ? "guide" : X.section;
+  const m = sp.jumeau ? "controle" : X.mode;
   let etapes = exo.etapes;
-  if (m === "semi" && exo.type === "equation") { etapes = exo.etapes.filter(e => SEMI.includes(e.id)); if (!etapes.length || etapes[etapes.length - 1].id !== exo.etapes[exo.etapes.length - 1].id) etapes = etapes.concat(exo.etapes.slice(-1)); }
+  if (m === "semi") {
+    if (exo.type === "equation") { etapes = exo.etapes.filter(e => SEMI.includes(e.id)); if (!etapes.length || etapes[etapes.length - 1].id !== exo.etapes[exo.etapes.length - 1].id) etapes = etapes.concat(exo.etapes.slice(-1)); }
+    else etapes = exo.etapes.slice(-1);
+  }
+  if (m === "guide" && X.palier === "P4" && exo.verification && X.section !== "lecon") etapes = etapes.concat(etapesVerif(exo.verification));
+  if (m === "seul" || m === "diag") etapes = [];
   const depart = GEN.depart(exo);
   activite();
-  Q = { exo, mode: m, type: exo.type, depart, etapes: m === "seul" ? [] : etapes, k: 0, prev: exo.type === "equation" ? depart : null,
-    acceptees: [], journal: [], libres: [], essais: 0, aide: false, fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null };
+  Q = { exo, mode: m, type: exo.type, depart, etapes, k: 0, prev: depart, acceptees: [], journal: [], libres: [], essais: 0, codePrec: null, indice: false, trous: null, recopie: null, jumeau: false,
+    fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null };
   if (repr && repr.i === X.i) {
     try {
-      Q.acceptees = clone(repr.acceptees || []); Q.journal = clone(repr.journal || []); Q.libres = clone(repr.libres || []);
-      Q.k = Math.min(repr.k || 0, Q.etapes.length ? Q.etapes.length - 1 : 0); Q.essais = repr.essais || 0; Q.aide = !!repr.aide;
-      const der = Q.acceptees.filter(a => a.texte).pop();
-      if (der && Q.type === "equation") Q.prev = E.lireEquation(der.texte);
-    } catch (e) { Q.acceptees = []; Q.journal = []; Q.libres = []; Q.k = 0; Q.prev = Q.type === "equation" ? depart : null; }
+      Object.assign(Q, { acceptees: clone(repr.acceptees || []), journal: clone(repr.journal || []), libres: clone(repr.libres || []), essais: repr.essais || 0, codePrec: repr.codePrec || null,
+        indice: !!repr.indice, trous: repr.trous ? clone(repr.trous) : null, recopie: repr.recopie || null, jumeau: !!repr.jumeau });
+      Q.k = Math.min(repr.k || 0, Q.etapes.length ? Q.etapes.length - 1 : 0);
+      entrerEtape();
+      if (repr.prevTexte && Q.etapes[Q.k]) Q.prev = lireLigne(typeEtape(Q.etapes[Q.k]), repr.prevTexte);
+      if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie };
+      if (Q.trous) Q.fb = { t: "trous" };
+    } catch (e) { Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart }); }
   }
   sauverReprise();
   vue = "exo"; render();
 }
 function sauverReprise() {
-  const r = repriseVide({ palier: X.palier, section: X.section, lecon: X.lecon, fiche: X.fiche, i: X.i, exos: clone(X.exos), resultats: clone(X.resultats),
-    k: Q ? Q.k : 0, acceptees: Q ? clone(Q.acceptees) : [], journal: Q ? clone(Q.journal) : [], libres: Q ? clone(Q.libres) : [], essais: Q ? Q.essais : 0, aide: Q ? Q.aide : false });
+  const et = Q && Q.etapes[Q.k];
+  const r = repriseVide({ palier: X.palier, section: X.section, mode: X.mode, lecon: X.lecon, fiche: X.fiche, i: X.i, exos: clone(X.exos), resultats: clone(X.resultats) });
+  if (Q) Object.assign(r, { k: Q.k, acceptees: clone(Q.acceptees), journal: clone(Q.journal), libres: clone(Q.libres), essais: Q.essais, codePrec: Q.codePrec, indice: Q.indice,
+    trous: Q.trous ? clone(Q.trous) : null, recopie: Q.recopie, jumeau: Q.jumeau, prevTexte: et && Q.prev ? ecrireLigne(typeEtape(et), Q.prev) : null });
   majReprise(r);
 }
 const clavierVisible = () => tactile || clavierPC;
@@ -582,18 +699,26 @@ function clavierHTML() {
   const t = [["7"], ["8"], ["9"], ["(", "op"], [")", "op"], ["⌫", "op", "del", "Effacer"],
     ["4"], ["5"], ["6"], ["x", "op"], ["²", "op", "²", "Au carré"], ["/", "op", "/", "Divisé par"],
     ["1"], ["2"], ["3"], ["+", "op"], ["−", "op", "−", "Moins"], ["=", "op"],
-    ["0"], [",", "", ",", "Virgule"], ["←", "op", "g", "Curseur à gauche"], ["→", "op", "d", "Curseur à droite"], ["Valider", "ok", "ok"]];
+    ["0"], [",", "", ",", "Virgule"], ["×", "op", "×", "Fois"], ["←", "op", "g", "Curseur à gauche"], ["→", "op", "d", "Curseur à droite"], ["OK", "ok", "ok", "Valider"]];
   return `<div id="clavier" role="group" aria-label="Clavier maths"><div class="in">${t.map(([l, c, k, a]) => `<button type="button" class="${c || ""}" data-k="${esc(k || l)}"${a ? ` aria-label="${a}"` : ""}>${esc(l)}</button>`).join("")}</div></div>`;
 }
+/* Le champ où va la frappe : la case de la ligne à trous qui a le curseur, sinon le champ de la ligne. */
+function champActif() {
+  const a = document.activeElement;
+  if (a && (a.id === "champ" || a.classList.contains("trou"))) return a;
+  if (Q && Q.trous) { const cases = [...document.querySelectorAll("input.trou")]; return cases[Q.trouActif || 0] || cases[0] || null; }
+  return $("#champ");
+}
+function lireTrous() { if (!Q || !Q.trous) return; Q.trous.valeurs = [...document.querySelectorAll("input.trou")].map(c => c.value); }
 function touche(k) {
-  const c = $("#champ"); if (!c || c.disabled) return;
+  const c = champActif(); if (!c || c.disabled) return;
   if (k === "ok") return validerLigne();
   const s = c.selectionStart == null ? c.value.length : c.selectionStart, e = c.selectionEnd == null ? s : c.selectionEnd;
   if (k === "del") { if (s !== e) c.setRangeText("", s, e, "end"); else if (s > 0) c.setRangeText("", s - 1, s, "end"); }
   else if (k === "g") { const p = Math.max(0, s - 1); c.setSelectionRange(p, p); }
   else if (k === "d") { const p = Math.min(c.value.length, e + 1); c.setSelectionRange(p, p); }
   else c.setRangeText(k, s, e, "end");
-  Q.brouillon = c.value;
+  if (c.id === "champ") Q.brouillon = c.value; else lireTrous();
   try { c.focus({ preventScroll: true }); } catch (x) { /* certains navigateurs refusent l'option */ }
 }
 function brancherClavier() {
@@ -601,54 +726,75 @@ function brancherClavier() {
   cl.addEventListener("pointerdown", ev => { const b = ev.target.closest("button"); if (!b) return; ev.preventDefault(); activite(); touche(b.dataset.k); });   // preventDefault : le champ garde le curseur
   cl.addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && ev.detail === 0) touche(b.dataset.k); });                                // activation au clavier physique
 }
-function basculerClavier() { clavierPC = !clavierPC; LS.ecrire("mm.clavier", clavierPC); if (Q) { const c = $("#champ"); if (c) Q.brouillon = c.value; } renderExo(); }
+function basculerClavier() { clavierPC = !clavierPC; LS.ecrire("mm.clavier", clavierPC); if (Q) { const c = $("#champ"); if (c) Q.brouillon = c.value; lireTrous(); } renderExo(); }
 
 function ligneFaite(etq, texte, cls, marque) {
   return `<div class="ligne fait ${cls || ""}"><span class="etq">${esc(etq)}</span><div class="corps"><div class="mscroll">${texte}</div><span class="coche" aria-hidden="true">${marque || "✓"}</span></div></div>`;
 }
+/* Marche 2 : sa ligne, termes fautifs entourés. */
+function lignePointee(p) { return p.segments.map(c => c.map(s => s.faux ? `<mark class="pointe">${esc(s.texte.trim())}</mark>` : esc(s.texte)).join("")).join(" = "); }
 function fbHTML() {
   const f = Q.fb; if (!f) return "";
   if (f.t === "lecture") return `<div class="fb lecture pop"><p>${esc(f.message)}</p><p class="note">Ce n'est pas compté comme une erreur.</p></div>`;
   if (f.t === "info") return `<div class="fb info pop"><p>${esc(f.message)}</p></div>`;
   if (f.t === "bon") return `<div class="fb bon pop"><h3>${esc(f.message)}</h3>${f.note ? `<p>${esc(f.note)}</p>` : ""}</div>`;
+  if (f.t === "pointe") return `<div class="fb faux pop"><h3>Regarde où ça coince</h3><div class="mscroll m">${lignePointee(f.p)}</div><p>${esc(f.p.message)}</p>
+    <p class="note">Corrige ta ligne, puis valide.</p></div>`;
+  if (f.t === "trous") return `<div class="fb faux pop"><h3>Complète les cases</h3><p>Le reste de ta ligne est gardé. Remplis chaque case, puis valide.</p></div>`;
+  if (f.t === "recopie") return `<div class="fb recopie pop"><h3>Voici la ligne</h3><div class="modele"><span class="etq">Recopie-la toi-même</span><div class="mscroll">${maths(f.attendu)}</div></div>
+    <p>${esc(f.message || "Tape-la dans le champ, puis valide. Un exercice jumeau t'attend juste après.")}</p></div>`;
   const x = f.x;
   return `<div class="fb faux pop"><h3>${esc(x.titre)}</h3>
     <p>${esc(x.bon)}</p><p>${esc(x.ou)}</p><p class="regle">${esc(x.regle)}</p>${x.suite ? `<p>${esc(x.suite)}</p>` : ""}
-    ${f.montrer ? `<div class="modele"><span class="etq">La ligne attendue</span><div class="mscroll">${maths(f.attendu)}</div></div>` : ""}
-    <div class="actions">${f.montrer ? '<button class="btn small" onclick="prendreModele()">Continuer avec cette ligne</button>' : ""}
-      <span class="note" style="align-self:center">${f.montrer ? "Ou corrige ta ligne et valide." : "Corrige ta ligne, puis valide."}</span></div></div>`;
+    <p class="note">${f.variante === 2 ? "Autre façon de voir. " : ""}Corrige ta ligne, puis valide.</p></div>`;
 }
 function corrigeHTML(ouvert) {
   return `<details class="panel"${ouvert ? " open" : ""}><summary><h2>Démarche modèle à recopier</h2></summary>
     <div class="modele">${Q.exo.corrige.map(p => `<div class="pas"><div class="mscroll">${maths(p.ligne)}</div><small>${esc(p.pourquoi)}</small></div>`).join("")}</div></details>`;
 }
+function champHTML(cv) {
+  if (Q.trous) return `<div class="trous m" id="trous">${Q.trous.jetons.map(j => j.fixe != null ? `<span class="c">${esc(j.fixe)}</span>`
+    : `<input class="trou" data-i="${j.trou}" data-sorte="${j.sorte}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Case ${j.trou + 1}${j.sorte === "signe" ? " : un signe" : ""}"${cv && tactile ? ' inputmode="none"' : ""} size="${j.sorte === "signe" ? 1 : 4}" value="${esc((Q.trous.valeurs || [])[j.trou] || "")}">`).join("")}</div>
+    ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}`;
+  return `<div class="saisie"><input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
+    ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>`;
+}
+const nomEtape = id => T.ETAPES[id] ? T.ETAPES[id].nom : N.ETAPES[id] ? N.ETAPES[id].nom : /^verifie/.test(id) ? "Vérifie" : "Ligne";
+function barreBloc() {
+  if (!SEANCE) return "";
+  const dans = Math.max(0, SEANCE.dureeActive - (SEANCE.blocsVus || 0) * BLOC), pct = Math.min(100, Math.round(dans / BLOC * 100));
+  return `<span class="bloc-barre" title="Bloc ${(SEANCE.blocsVus || 0) + 1} : ${pct} %" aria-label="Bloc ${(SEANCE.blocsVus || 0) + 1}, ${pct} %"><i style="width:${pct}%"></i></span>`;
+}
 function renderExo() {
   montrer("focus"); majBarre();
-  const exo = Q.exo, n = X.exos.length, cv = clavierVisible();
+  const exo = Q.exo, n = X.exos.length, cv = clavierVisible(), sp = X.exos[X.i];
   const dots = X.exos.map((_, k) => `<span class="dot ${k < X.i ? "done" : k === X.i ? "now" : ""}"></span>`).join("");
-  const nomEt = id => T.ETAPES[id] ? T.ETAPES[id].nom : "Ligne";
+  const outils = (avecIndice) => `<div class="outils">${avecIndice ? '<button class="linkbtn" onclick="indice()">Un indice</button>' : ""}${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div>`;
   let corps = "";
-  if (Q.mode !== "seul") {
-    corps += Q.acceptees.map(a => a.saute ? `<div class="ligne fait saute"><span class="etq">${esc(nomEt(a.etape))}</span><div class="corps">Déjà fait dans ta ligne précédente.</div></div>`
-      : ligneFaite(nomEt(a.etape) + (a.inter ? " · en cours" : "") + (a.donnee ? " · ligne donnée" : ""), maths(a.texte))).join("");
+  if (Q.mode === "guide" || Q.mode === "semi" || Q.mode === "controle") {
+    const ctl = Q.mode === "controle";
+    corps += Q.acceptees.map(a => a.saute ? `<div class="ligne fait saute"><span class="etq">${esc(a.nom || nomEtape(a.etape))}</span><div class="corps">Déjà fait dans ta ligne précédente.</div></div>`
+      : ligneFaite((a.nom || nomEtape(a.etape)) + (a.inter ? " · en cours" : ""), maths(a.texte), ctl ? "neutre" : "", ctl ? "·" : "✓")).join("");
     if (!Q.fini) {
       const et = Q.etapes[Q.k];
       corps += `<div class="ligne active" id="active"><label class="etq" for="champ">${esc(et.nom)}<small>${esc(et.consigne)}</small></label>
-        <div class="saisie"><input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
-          ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>
-        <div class="outils"><button class="linkbtn" onclick="indice()">Un indice</button>${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div></div>`;
+        ${champHTML(cv)}${outils(!ctl && !Q.recopie && !Q.trous)}</div>`;
     }
   } else if (!Q.fini) {
+    const diag = Q.mode === "diag";
+    const aide = diag ? (Q.type === "equation" ? "Écris seulement la solution : x = …" : Q.type === "expression" ? "Écris seulement le résultat final." : "Écris seulement le résultat.")
+      : Q.type === "equation" ? "Écris ta démarche. Termine par x = …" : Q.type === "expression" ? "Écris ta démarche, jusqu'à l'expression réduite." : "Écris ta démarche, jusqu'à un seul nombre.";
     corps += Q.libres.map((t, i) => ligneFaite("Ligne " + (i + 1), maths(t), "", "·")).join("");
-    corps += `<div class="ligne active" id="active"><label class="etq" for="champ">Ligne ${Q.libres.length + 1}<small>${Q.type === "equation" ? "Écris ta démarche. Termine par x = …" : "Écris ta réponse."}</small></label>
-      <div class="saisie"><input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
-        ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>
-      <div class="outils">${Q.libres.length ? '<button class="linkbtn" onclick="effacerDerniere()">Effacer ma dernière ligne</button>' : ""}${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div></div>`;
-  } else corps += verdictHTML();
+    corps += `<div class="ligne active" id="active"><label class="etq" for="champ">${diag ? "Ta réponse" : "Ligne " + (Q.libres.length + 1)}<small>${esc(aide)}</small></label>
+      ${champHTML(cv)}<div class="outils">${Q.libres.length ? '<button class="linkbtn" onclick="effacerDerniere()">Effacer ma dernière ligne</button>' : ""}${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div></div>`;
+  } else if (Q.mode === "seul") corps += verdictHTML();
+  const montrerCorrige = Q.fini && (Q.mode === "seul" || (Q.mode === "controle" && sp.jumeau));
   const fin = Q.fini ? `<div class="fb ${Q.bilan.cls} pop"><h3>${esc(Q.bilan.titre)}</h3>${Q.bilan.texte ? `<p>${esc(Q.bilan.texte)}</p>` : ""}
-      <div class="actions"><button class="btn" id="suite" onclick="exoSuivant()">${X.i + 1 < n ? "Exercice suivant" : "Voir le bilan"}</button></div></div>${corrigeHTML(Q.mode === "seul")}` : "";
+      <div class="actions"><button class="btn" id="suite" onclick="exoSuivant()">${X.i + 1 < n ? (X.section === "diagnostic" ? "Question suivante" : "Exercice suivant") : "Voir le bilan"}</button></div></div>
+      ${Q.mode === "controle" && sp.jumeau ? verdictControleHTML() : ""}${montrerCorrige ? corrigeHTML(Q.mode === "seul" || sp.jumeau) : Q.fini && Q.mode !== "controle" && Q.mode !== "diag" ? corrigeHTML(false) : ""}` : "";
+  const titre = sp.jumeau ? "Exercice jumeau · sans aide" : (X.section === "lecon" ? "À toi" : PA.NOMS[X.section] || "À toi") + " · " + (X.section === "diagnostic" ? "question " : "exercice ") + (X.i + 1) + " sur " + n;
   $("#focus").innerHTML = `
-    <div class="xtete"><span class="titre">${esc(P.NOMS_PARCOURS[X.section] || "À toi")} · exercice ${X.i + 1} sur ${n}</span><div class="dots" aria-hidden="true">${dots}</div></div>
+    <div class="xtete"><span class="titre">${esc(titre)}</span>${barreBloc()}<div class="dots" aria-hidden="true">${dots}</div></div>
     <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div></div></div>
     <div id="lignes"><div class="in">${corps}<div id="fb" aria-live="polite">${Q.fini ? "" : fbHTML()}</div>${fin}</div></div>
     ${cv && !Q.fini ? clavierHTML() : ""}`;
@@ -660,6 +806,13 @@ function renderExo() {
     c.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); validerLigne(); } });
     try { c.focus({ preventScroll: true }); } catch (x) { /* sans importance */ }
   }
+  const cases = [...document.querySelectorAll("input.trou")];
+  cases.forEach((t, i) => {
+    t.addEventListener("focus", () => { Q.trouActif = i; });
+    t.addEventListener("input", () => { lireTrous(); activite(); });
+    t.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); validerLigne(); } });
+  });
+  if (cases.length) { const v = Q.trous.valeurs || []; const k = cases.findIndex((t, i) => !v[i]); try { cases[k >= 0 ? k : 0].focus({ preventScroll: true }); } catch (x) { /* sans importance */ } }
   cadrer();
 }
 /* Le champ actif se place juste sous l'énoncé, avec la ligne précédente encore visible au-dessus. */
@@ -677,68 +830,145 @@ const BRAVO = {
   developpe: { moins: ["Tes signes sont bons. C'était LE piège.", "Le moins a bien touché chaque terme.", "Parenthèses parties, signes intacts."], sans: ["Parenthèses parties, sans casse.", "Chaque terme a bien été multiplié."] },
   reduit: ["Les x avec les x, les nombres avec les nombres. Propre.", "Bien réduit. Une ligne courte, c'est plus sûr."],
   regroupe: ["Balance équilibrée : les x d'un côté, les nombres de l'autre.", "Bien rangé. Le signe a changé en changeant de côté."],
-  solution: ["x est tout seul. Équation résolue.", "Bonne division. C'est la solution."]
+  solution: ["x est tout seul. Équation résolue.", "Bonne division. C'est la solution."],
+  sanspar: ["Signes collés bien lus. C'était le piège.", "Un seul signe entre deux nombres : propre."],
+  parenthese: ["Parenthèse d'abord : bon réflexe.", "Bien commencé par la parenthèse."],
+  produit: ["Le × avant le + : priorité respectée.", "Multiplication faite d'abord, bien vu."],
+  nombre: ["Calcul juste, signe compris.", "Bon résultat, et le bon signe."],
+  "verifie-g": ["Côté gauche calculé juste."], "verifie-d": ["Les deux côtés sont égaux : x est bien la solution."]
 };
 let tourBravo = 0;
 function bravo(id, avant) {
   let liste = BRAVO[id] || ["Ligne juste."];
-  if (id === "developpe") liste = avant && avant.some(t => t.inner && t.c.signe() < 0) ? liste.moins : liste.sans;
+  if (id === "developpe") liste = Array.isArray(avant) && avant.some(t => t.inner && t.c.signe() < 0) ? liste.moins : liste.sans;
   return liste[tourBravo++ % liste.length];
 }
 /* Pour une erreur hors catalogue, le rapport parent garde le calcul exact : « Erreur de calcul : 3 × (−5) = −15, pas −12 ». */
-function precisionDe(diag) { if (!diag || (diag.code && diag.code !== "CALC")) return null; const x = D.expliquer(diag); return x.resume ? x.titre + " : " + x.resume : null; }
+function precisionDe(diag) { if (!diag || diag.nombre || (diag.code && diag.code !== "CALC")) return null; const x = D.expliquer(diag); return x.resume ? x.titre + " : " + x.resume : null; }
+function juger(et, texte) {
+  const type = typeEtape(et);
+  if (type === "equation") return T.jugerLigne(Q.prev, texte, et.forme);
+  if (type === "expression") return T.jugerExpression(Q.prev, texte, et.forme);
+  return N.juger(Q.prev, texte, et.forme);
+}
 function validerLigne() {
-  const c = $("#champ"); if (!c || Q.fini) return;
-  const texte = c.value; Q.brouillon = texte; activite();
+  if (!Q || Q.fini) return;
+  lireTrous();
+  let texte;
+  if (Q.trous) {
+    const a = A.assembler(Q.trous.jetons, Q.trous.valeurs || []);
+    if (a.incomplet) { Q.fb = { t: "lecture", message: "Remplis chaque case avant de valider." }; return majFb(); }
+    texte = a.texte;
+  } else { const c = $("#champ"); if (!c) return; texte = c.value; Q.brouillon = texte; }
+  activite();
   if (Q.mode === "seul") return ligneLibre(texte);
-  const et = Q.etapes[Q.k];
-  const avant = Q.type === "equation" ? [...Q.prev.g, ...Q.prev.d] : Q.depart;
-  const v = Q.type === "equation" ? T.jugerLigne(Q.prev, texte, et.forme) : T.jugerExpression(Q.depart, texte, et.forme);
+  if (Q.mode === "diag") return reponseDiag(texte);
+  const et = Q.etapes[Q.k], type = typeEtape(et), avant = Q.prev;
+  const v = juger(et, texte);
   if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
+  if (Q.mode === "controle") return ligneControle(et, v, type);
   if (v.statut === "incomplet") {
-    if (Q.type === "equation" && E.ecrireEquation(Q.prev) !== v.ecrit) { Q.acceptees.push({ etape: et.id, texte: v.ecrit, inter: true }); Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true, incomplet: true }); Q.prev = v.eq; Q.brouillon = ""; sauverReprise(); Q.fb = { t: "info", message: v.message }; return renderExo(); }
+    if (!Q.recopie && ecrireLigne(type, Q.prev) !== v.ecrit) {
+      Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, inter: true }); Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true, incomplet: true });
+      Q.prev = ligneDe(v, type); Q.brouillon = ""; Q.trous = null; sauverReprise(); Q.fb = { t: "info", message: v.message }; return renderExo();
+    }
     Q.fb = { t: "info", message: v.message }; return majFb();
   }
-  if (v.statut === "juste") { Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true }); return accepter(et, v, avant); }
-  Q.essais++; Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: false, code: v.code || null, precision: precisionDe(v.diag) });
-  // erreur reconnue (code du catalogue) ou localisée : il se corrige d'abord seul ; la ligne attendue n'arrive qu'au 2e essai
-  Q.fb = { t: "faux", x: D.expliquer(v.diag), attendu: v.attendu, montrer: !(v.code || (v.diag && v.diag.localise)) || Q.essais >= 2 };
-  sauverReprise(); majFb();
+  if (v.statut === "juste") {
+    const niv = A.niveau(Q.essais, Q.indice);
+    Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true, niveau: niv });
+    if (niv === 4) Q.jumeau = true;
+    return accepter(et, v, type, niv, avant);
+  }
+  // faux : l'échelle d'aide (D37)
+  Q.essais++;
+  const marche = A.marche(Q.essais), cur = ligneDe(v, type);
+  Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: false, code: v.code || null, precision: precisionDe(v.diag), marche });
+  if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: "Ce n'est pas tout à fait la ligne. Recopie-la exactement, puis valide." };
+  else if (marche === 1) { const va = A.variante(Q.essais, v.code || null, Q.codePrec); Q.fb = { t: "faux", x: A.expliquer(type, v.diag, va), variante: va }; }
+  else if (marche === 2) Q.fb = { t: "pointe", p: A.pointer(type, Q.prev, cur, et.forme, v.code) };
+  else if (marche === 3) {
+    const t = A.aTrous(type, Q.prev, cur, et.forme);
+    Q.trous = { jetons: t.jetons.map(j => j.trou != null ? { trou: j.trou, sorte: j.sorte, premier: j.premier } : { fixe: j.fixe }), valeurs: [] };  // ni la réponse ni sa saisie ne sont gardées
+    Q.trouActif = 0; Q.fb = { t: "trous" };
+  } else { Q.recopie = A.fautes(type, Q.prev, cur, et.forme).ecritModele; Q.trous = null; Q.brouillon = ""; Q.fb = { t: "recopie", attendu: Q.recopie }; }
+  Q.codePrec = v.code || null;
+  sauverReprise();
+  if (marche >= 3) return renderExo();
+  majFb();
 }
-function accepter(et, v, avant, donnee) {
-  Q.acceptees.push({ etape: et.id, texte: v.ecrit, donnee: !!donnee });
-  if (Q.type === "equation") Q.prev = v.eq;
-  Q.essais = 0; Q.brouillon = "";
+function accepter(et, v, type, niv, avant) {
+  Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, niveau: niv });
+  Q.prev = ligneDe(v, type);
+  Object.assign(Q, { essais: 0, indice: false, trous: null, recopie: null, codePrec: null, brouillon: "" });
   let k = Q.k + 1, sautees = 0;
-  if (Q.type === "equation") while (k < Q.etapes.length && T.FORMES[Q.etapes[k].forme](v.eq)) { Q.acceptees.push({ etape: Q.etapes[k].id, texte: null, saute: true }); k++; sautees++; }
-  Q.k = k;
-  Q.fb = donnee ? { t: "info", message: "Ligne recopiée. À toi pour la suite." }
+  const formeAtteinte = e => { const t = typeEtape(e); if (t !== type || e.depart) return false; return t === "equation" ? T.FORMES[e.forme](Q.prev) : t === "expression" ? T.FORMES_EXPR[e.forme](Q.prev) : N.FORMES[e.forme](Q.prev); };
+  while (k < Q.etapes.length && formeAtteinte(Q.etapes[k])) { Q.acceptees.push({ etape: Q.etapes[k].id, nom: Q.etapes[k].nom, texte: null, saute: true }); k++; sautees++; }
+  Q.k = k; entrerEtape();
+  Q.fb = niv === 4 ? { t: "info", message: "Ligne recopiée. Continue : un exercice jumeau suivra, sans aide." }
+    : niv === 3 ? { t: "bon", message: "Cases complétées : ta ligne tient.", note: "" }
     : { t: "bon", message: bravo(et.id, avant), note: sautees ? "Tu as fait plusieurs étapes d'un coup. Sur ta copie, écris quand même chaque ligne." : v.aSimplifier ? "Pense à simplifier ta fraction : " + Q.exo.reponseTexte + "." : "" };
   if (k >= Q.etapes.length) return finExo();
   sauverReprise(); renderExo();
 }
-function prendreModele() {
-  const f = Q.fb; if (!f || !f.attendu) return;
-  activite(); Q.aide = true;
-  const et = Q.etapes[Q.k];
-  Q.journal.push({ etape: et.id, saisie: f.attendu, juste: true, donnee: true });
-  accepter(et, { ecrit: f.attendu, eq: Q.type === "equation" ? E.lireEquation(f.attendu) : null }, null, true);
-}
-function indice() { activite(); Q.aide = true; Q.fb = { t: "info", message: Q.etapes[Q.k].indice }; sauverReprise(); majFb(); }
+function indice() { activite(); Q.indice = true; Q.fb = { t: "info", message: Q.etapes[Q.k].indice }; sauverReprise(); majFb(); }
 
+/* Sans aide (examen, jumeau) : étapes nommées, aucune correction avant la fin, chaque ligne jugée à partir de la sienne. */
+function ligneControle(et, v, type) {
+  Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: v.statut === "juste", statut: v.statut, code: v.code || null, precision: v.statut === "faux" ? precisionDe(v.diag) : null });
+  Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, statut: v.statut, code: v.code || null, attendu: v.attendu || null, diag: v.statut === "faux" ? v.diag : null, typeLigne: type });
+  Q.prev = ligneDe(v, type);
+  let k = Q.k + 1;
+  if (v.statut === "juste") {
+    const atteinte = e => typeEtape(e) === "equation" ? T.FORMES[e.forme](Q.prev) : typeEtape(e) === "expression" ? T.FORMES_EXPR[e.forme](Q.prev) : N.FORMES[e.forme](Q.prev);
+    while (k < Q.etapes.length && atteinte(Q.etapes[k])) { Q.journal.push({ etape: Q.etapes[k].id, juste: true, saute: true }); Q.acceptees.push({ etape: Q.etapes[k].id, nom: Q.etapes[k].nom, texte: null, saute: true }); k++; }
+  }
+  Q.k = k; Q.brouillon = ""; Q.fb = null;
+  if (k >= Q.etapes.length) return finExo();
+  sauverReprise(); renderExo();
+}
+function verdictControleHTML() {
+  return Q.acceptees.filter(a => !a.saute).map(a => {
+    const faux = a.statut !== "juste";
+    const expl = a.statut === "faux" && a.diag ? A.expliquer(a.typeLigne, a.diag, 1) : null;
+    return ligneFaite(a.nom, maths(a.texte), faux ? "ko" : "", faux ? "✗" : "✓")
+      + (expl ? `<div class="fb faux"><h3>${esc(expl.titre)}</h3><p>${esc(expl.ou)}</p><p class="regle">${esc(expl.regle)}</p>${a.attendu ? `<div class="modele"><span class="etq">La ligne attendue</span><div class="mscroll">${maths(a.attendu)}</div></div>` : ""}</div>`
+        : a.statut === "incomplet" ? '<p class="note">Juste, mais l\'étape n\'est pas finie.</p>' : "");
+  }).join("");
+}
+/* Diagnostic : une seule réponse, jugée sur le résultat final, sans correction. */
+function reponseDiag(texte) {
+  const exo = Q.exo, et = exo.etapes[exo.etapes.length - 1];
+  let juste = false, ecrit = texte, code = null;
+  if (exo.type === "equation") {
+    const s = MM.saisie.lireSolution(texte); if (!s.ok) { Q.fb = { t: "lecture", message: s.message }; return majFb(); }
+    juste = s.valeur.egal(MM.F(exo.reponse)); ecrit = "x = " + s.valeur.texte();
+    if (!juste) { const d = D.diagnostiquerReponse(exo.erreurs, s.valeur); code = d ? d.code : null; }
+  } else {
+    const v = exo.type === "expression" ? T.jugerExpression(Q.depart, texte, et.forme) : N.juger(Q.depart, texte, "nombre");
+    if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
+    juste = v.statut === "juste"; ecrit = v.ecrit; code = v.code || null;
+  }
+  Q.journal = [{ etape: "reponse", saisie: ecrit, juste, code }];
+  finExo();
+}
 /* Mode seul : lignes libres, tout est jugé à la fin, chaque ligne à partir de la précédente. */
 function ligneLibre(texte) {
-  if (Q.type !== "equation") {
-    const v = T.jugerExpression(Q.depart, texte, Q.exo.etapes[0].forme);
-    if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
-    Q.libres.push(v.ecrit); Q.verdict = { expr: v }; Q.journal = [{ etape: "reponse", saisie: v.ecrit, juste: v.statut !== "faux", code: v.code || null, precision: v.statut === "faux" ? precisionDe(v.diag) : null }];
-    return finExo();
+  const type = Q.type, formeFin = Q.exo.etapes[Q.exo.etapes.length - 1].forme;
+  let ecrit, fini;
+  if (type === "equation") {
+    const lu = MM.saisie.lireEquation(texte); if (!lu.ok) { Q.fb = { t: "lecture", message: lu.message }; return majFb(); }
+    ecrit = E.ecrireEquation(lu.eq); fini = T.FORMES.solution(lu.eq);
+  } else if (type === "expression") {
+    const lu = MM.saisie.lireExpression(texte); if (!lu.ok) { Q.fb = { t: "lecture", message: lu.message }; return majFb(); }
+    ecrit = E.ecrireCote(lu.termes); fini = T.FORMES_EXPR[formeFin](lu.termes);
+  } else {
+    const lu = N.lire(texte); if (!lu.ok) { Q.fb = { t: "lecture", message: lu.message }; return majFb(); }
+    ecrit = N.ecrire(lu.ast); fini = N.FORMES.nombre(lu.ast);
   }
-  const lu = MM.saisie.lireEquation(texte);
-  if (!lu.ok) { Q.fb = { t: "lecture", message: lu.message }; return majFb(); }
-  Q.libres.push(E.ecrireEquation(lu.eq)); Q.brouillon = ""; Q.fb = null;
-  if (!T.FORMES.solution(lu.eq)) { sauverReprise(); return renderExo(); }
-  const r = T.evaluerDemarche(Q.depart, Q.libres);
+  Q.libres.push(ecrit); Q.brouillon = ""; Q.fb = null;
+  if (!fini) { sauverReprise(); return renderExo(); }
+  const r = type === "equation" ? T.evaluerDemarche(Q.depart, Q.libres) : type === "expression" ? T.evaluerDemarcheExpression(Q.depart, Q.libres, formeFin) : N.evaluerDemarche(Q.depart, Q.libres);
   Q.verdict = r;
   Q.journal = r.lignes.map((l, i) => ({ etape: "ligne" + (i + 1), saisie: l.ecrit, juste: l.statut !== "faux", code: l.code || null, precision: l.statut === "faux" ? precisionDe(l.diag) : null }));
   finExo();
@@ -746,7 +976,6 @@ function ligneLibre(texte) {
 function effacerDerniere() { activite(); Q.brouillon = Q.libres.pop() || ""; Q.fb = null; sauverReprise(); renderExo(); }
 function verdictHTML() {
   const r = Q.verdict;
-  if (r.expr) return ligneFaite("Ta réponse", maths(r.expr.ecrit), r.expr.statut === "faux" ? "ko" : "", r.expr.statut === "faux" ? "✗" : "✓") + (r.expr.statut === "faux" ? explicationHTML(r.expr) : "");
   let apresErreur = false;
   return r.lignes.map((l, i) => {
     const faux = l.statut === "faux";
@@ -756,56 +985,147 @@ function verdictHTML() {
   }).join("");
 }
 function explicationHTML(l) {
-  const x = D.expliquer(l.diag);
+  const x = A.expliquer(Q.type, l.diag, 1);
   return `<div class="fb faux"><h3>${esc(x.titre)}</h3><p>${esc(x.bon)}</p><p>${esc(x.ou)}</p><p class="regle">${esc(x.regle)}</p>${x.suite ? `<p>${esc(x.suite)}</p>` : ""}
     <div class="modele"><span class="etq">La ligne attendue</span><div class="mscroll">${maths(l.attendu)}</div></div></div>`;
 }
 
 function finExo() {
   activite();
-  const exo = Q.exo, nbErreurs = Q.journal.filter(l => l.juste === false).length;
-  let resultatJuste = true, bilan;
+  const exo = Q.exo, sp = X.exos[X.i], nbErreurs = Q.journal.filter(l => l.juste === false).length;
+  let resultatJuste = true, bilan, points = null, total = null;
   if (Q.mode === "seul") {
     const r = Q.verdict;
-    resultatJuste = r.expr ? r.expr.statut !== "faux" : r.resultatJuste;
-    const seule = !r.expr && r.lignes.length === 1 && !resultatJuste ? D.diagnostiquerReponse(exo.erreurs, MM.saisie.lireSolution(Q.libres[0]).valeur) : null;
-    if (resultatJuste && !nbErreurs) bilan = { cls: "bon", titre: "Tout est juste, de la première à la dernière ligne.", texte: r.expr || r.lignes.length > 1 ? "" : "Sur ta copie, écris aussi les lignes de calcul : elles rapportent des points." };
+    resultatJuste = r.resultatJuste;
+    const seule = Q.type === "equation" && r.lignes.length === 1 && !resultatJuste ? D.diagnostiquerReponse(exo.erreurs, MM.saisie.lireSolution(Q.libres[0]).valeur) : null;
+    if (resultatJuste && !nbErreurs) bilan = { cls: "bon", titre: "Tout est juste, de la première à la dernière ligne.", texte: r.lignes.length > 1 || Q.type !== "equation" ? "" : "Sur ta copie, écris aussi les lignes de calcul : elles rapportent des points." };
     else if (resultatJuste) bilan = { cls: "info", titre: "Ton résultat est juste, mais une ligne ne tenait pas.", texte: "Regarde la ligne marquée." };
     else if (seule) bilan = { cls: "faux", titre: "Ce n'est pas le bon résultat.", texte: "Il ressemble à cette erreur : " + D.CATALOGUE[seule.code].nom.toLowerCase() + ". " + D.CATALOGUE[seule.code].reflexe + " Résultat attendu : " + exo.reponseTexte + "." };
-    else if (nbErreurs === 1 && !r.expr) bilan = { cls: "faux", titre: "Une seule erreur, à la ligne " + (r.premiereErreur + 1) + ".", texte: "Le reste est juste à partir de ta ligne. Résultat attendu : " + exo.reponseTexte + "." };
+    else if (nbErreurs === 1) bilan = { cls: "faux", titre: "Une seule erreur, à la ligne " + (r.premiereErreur + 1) + ".", texte: "Le reste est juste à partir de ta ligne. Résultat attendu : " + exo.reponseTexte + "." };
     else bilan = { cls: "faux", titre: nbErreurs > 1 ? nbErreurs + " lignes à revoir." : "Ce n'est pas le bon résultat.", texte: "Résultat attendu : " + exo.reponseTexte + "." };
-  } else if (!nbErreurs && !Q.aide) bilan = { cls: "bon", titre: "Exercice réussi sans une seule erreur.", texte: Q.fb && Q.fb.note || "" };
-  else bilan = { cls: "info", titre: "Exercice terminé.", texte: (nbErreurs ? pluriel(nbErreurs, "erreur") + " corrigée" + (nbErreurs > 1 ? "s" : "") + " en route. " : "") + (Q.aide ? "Tu as utilisé une aide." : "") };
+  } else if (Q.mode === "controle") {
+    points = Q.journal.filter(l => l.juste).length; total = Q.etapes.length; resultatJuste = points === total;
+    if (!sp.jumeau) bilan = { cls: "info", titre: "Exercice enregistré.", texte: "La correction arrive à la fin de l'examen." };
+    else bilan = resultatJuste ? { cls: "bon", titre: "Jumeau réussi, sans aide : c'est acquis.", texte: "" } : { cls: "info", titre: "Jumeau : " + points + " étape" + (points > 1 ? "s" : "") + " juste" + (points > 1 ? "s" : "") + " sur " + total + ".", texte: "Regarde les lignes marquées et la démarche modèle." };
+  } else if (Q.mode === "diag") {
+    resultatJuste = !!(Q.journal[0] && Q.journal[0].juste);
+    bilan = { cls: "info", titre: "Réponse enregistrée.", texte: "" };
+  } else {
+    const niv = Q.journal.filter(l => l.niveau != null).map(l => l.niveau), max = niv.length ? Math.max(...niv) : 0;
+    if (!nbErreurs && !max) bilan = { cls: "bon", titre: "Exercice réussi sans une seule erreur.", texte: Q.fb && Q.fb.note || "" };
+    else bilan = { cls: "info", titre: "Exercice terminé.", texte: (nbErreurs ? pluriel(nbErreurs, "erreur") + " corrigée" + (nbErreurs > 1 ? "s" : "") + " en route. " : "") + (max ? "Aide la plus forte : " + A.NIVEAUX[max] + "." : "") + (Q.jumeau ? " Un exercice jumeau arrive, sans aide." : "") };
+    // « Vérifie » fait jusqu'au bout : on le dit avec les valeurs calculées
+    if (exo.verification && Q.etapes.some(e => /^verifie/.test(e.id))) bilan.texte = (bilan.texte ? bilan.texte + " " : "") + "Les deux côtés valent " + MM.F(exo.verification.valeur).texte() + " : x = " + MM.F(exo.verification.x).texte() + " est bien la solution.";
+  }
+  const niveaux = Q.journal.filter(l => l.niveau != null).map(l => l.niveau);
   const premier = Q.journal.find(l => l.juste === false && l.code);
+  const aide = niveaux.some(n => n > 0);
   const tent = { id: O.uid("t"), sid: SEANCE.id, t: Date.now(), palier: X.palier, section: X.section, generateur: exo.gen, niveau: exo.niveau, graine: exo.graine, enonce: exo.enonce,
-    mode: Q.mode, lignes: clone(Q.journal), juste: !nbErreurs && !Q.aide && resultatJuste, resultatJuste, codeErreur: premier ? premier.code : null, nbErreurs,
-    tempsMs: Math.max(0, SEANCE.dureeActive - Q.actif0), aideUtilisee: Q.aide, parent: estParent() };
+    mode: Q.mode, jumeau: !!sp.jumeau, lignes: clone(Q.journal), juste: !nbErreurs && !aide && resultatJuste, resultatJuste, codeErreur: premier ? premier.code : null, nbErreurs,
+    aideMax: niveaux.length ? Math.max(...niveaux) : 0, points, total, tempsMs: Math.max(0, SEANCE.dureeActive - Q.actif0), aideUtilisee: aide, parent: estParent() };
   FILE.ajouter({ id: O.uid("w"), type: "set", chemin: RACINE + "/tentatives/" + tent.id, donnees: tent });
   SEANCE.nbQuestions++; SEANCE.palier = X.palier; LS.ecrire(LF("seance"), SEANCE); envoyerSeance();
-  X.resultats.push({ enonce: exo.enonce, nbErreurs, juste: tent.juste, resultatJuste, aide: Q.aide, codes: [...new Set(Q.journal.filter(l => l.code).map(l => l.code))], tempsMs: tent.tempsMs });
+  X.resultats.push({ enonce: exo.enonce, nbErreurs, juste: tent.juste, resultatJuste, aide, niveaux, jumeau: !!sp.jumeau, points, total, notion: sp.notion || null,
+    codes: [...new Set(Q.journal.filter(l => l.code).map(l => l.code))], lignes: X.section === "examen" ? clone(Q.journal) : [], tempsMs: tent.tempsMs });
+  // erreur 5 sur une ligne : l'exercice jumeau (même générateur, autres nombres) arrive juste après, sans aide (D42)
+  if (Q.jumeau && (Q.mode === "guide" || Q.mode === "semi") && !sp.jumeau) X.exos.splice(X.i + 1, 0, { gen: exo.gen, niveau: exo.niveau, graine: O.nouvelleGraine(), jumeau: true });
   Q.fini = true; Q.bilan = bilan; Q.tentative = tent;
   // le point de reprise passe à l'exercice suivant
   const reste = X.i + 1 < X.exos.length;
-  majReprise(reste ? repriseVide({ palier: X.palier, section: X.section, lecon: X.lecon, fiche: X.fiche, i: X.i + 1, exos: clone(X.exos), resultats: clone(X.resultats) }) : null);
-  if (!reste) marquerFait(X.section, X.section === "lecon" ? X.fiche : null);
+  majReprise(reste ? repriseVide({ palier: X.palier, section: X.section, mode: X.mode, lecon: X.lecon, fiche: X.fiche, i: X.i + 1, exos: clone(X.exos), resultats: clone(X.resultats) }) : null);
+  if (!reste) finSerie();
   renderExo();
 }
+/* Fin d'une série : ce qu'elle valide (D38), l'examen (80 %), le diagnostic (placement). */
+function finSerie() {
+  const id = X.palier, sec = X.section;
+  if (sec === "lecon") { marquerFait(id, "lecon", X.fiche); X.issue = {}; return; }
+  if (sec === "diagnostic") {
+    const res = X.resultats.map(r => ({ notion: r.notion, juste: r.resultatJuste }));
+    const { paliers, bilan } = PA.apresDiagnostic(prog(), res, Date.now());
+    ecrirePaliers(paliers); X.issue = { bilan, depart: P.palierActuel(paliers) }; return;
+  }
+  if (sec === "examen") {
+    const pts = X.resultats.reduce((a, r) => a + (r.points || 0), 0), tot = X.resultats.reduce((a, r) => a + (r.total || 0), 0);
+    const o = PA.apresExamenPalier(prog(), id, pts, tot, X.resultats.flatMap(r => r.lignes || []), Date.now());
+    ecrirePaliers(o);
+    X.issue = { pts, tot, pct: P.pourcent(pts, tot), reussi: o[id].statut === "valide", codes: o[id].remediation ? o[id].remediation.codes : [] }; return;
+  }
+  const niveaux = X.resultats.filter(r => !r.jumeau).flatMap(r => r.niveaux || []);
+  const aRefaire = sec !== "seul" && A.serieAFaire(niveaux);
+  X.issue = { aRefaire };
+  if (!aRefaire) marquerFait(id, sec, null);
+}
+/* Entre deux exercices : fin de bloc (5 min), fin de séance (3 blocs), mini-pause (toutes les 8 questions). */
+let PAUSE = null;
+function pauseDue() {
+  if (!SEANCE) return null;
+  const blocs = Math.floor(SEANCE.dureeActive / BLOC), vus = SEANCE.blocsVus || 0, objectif = SEANCE.objectif || BLOCS_SEANCE;
+  if (blocs > vus) return { sorte: blocs >= objectif ? "fin" : "bloc", blocs, objectif };
+  if (SEANCE.nbQuestions > 0 && SEANCE.nbQuestions % PAUSE_TOUTES === 0 && SEANCE.pauseVue !== SEANCE.nbQuestions) return { sorte: "mini" };
+  return null;
+}
 function exoSuivant() {
-  if (X.i + 1 < X.exos.length) { X.i++; return ouvrirExo(null); }
-  Q = null; aller("bilan");
+  PAUSE = pauseDue();
+  if (PAUSE) return aller("pause");
+  continuer();
+}
+function continuer() {
+  if (X && X.i + 1 < X.exos.length) { X.i++; return ouvrirExo(null); }
+  Q = null; aller(X ? "bilan" : "accueil");
+}
+function quitterPause(action) {
+  const p = PAUSE || {};
+  if (p.sorte === "mini") SEANCE.pauseVue = SEANCE.nbQuestions;
+  else { SEANCE.blocsVus = p.blocs || SEANCE.blocsVus; if (action === "encore") SEANCE.objectif = (p.blocs || 0) + 1; }
+  LS.ecrire(LF("seance"), SEANCE); envoyerSeance();
+  PAUSE = null;
+  if (action === "stop") { Q = null; X = null; return aller("accueil"); }
+  continuer();
+}
+function renderPause() {
+  const p = PAUSE || { sorte: "mini" }, min = R.minutes(SEANCE ? SEANCE.dureeActive : 0);
+  const points = n => `<div class="blocs" aria-label="${n} bloc(s) faits">${Array.from({ length: Math.max(p.objectif || BLOCS_SEANCE, n) }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("")}</div>`;
+  let h;
+  if (p.sorte === "mini") h = `<h1>Mini-pause</h1><div class="bloc center"><p>8 questions d'affilée. Lève-toi 30 secondes, bois un verre d'eau.</p>
+      <div class="row"><button class="btn" onclick="quitterPause('suite')">Je reprends</button></div></div>`;
+  else if (p.sorte === "bloc") h = `<h1>Bloc ${p.blocs} terminé</h1><div class="bloc center">${points(p.blocs)}<p>${min} minutes de travail. Encore ${p.objectif - p.blocs} bloc${p.objectif - p.blocs > 1 ? "s" : ""} de 5 minutes pour finir ta séance.</p>
+      <div class="row"><button class="btn" onclick="quitterPause('suite')">Continuer</button></div><p class="note">Tu peux aussi souffler une minute avant.</p></div>`;
+  else h = `<h1>Séance terminée</h1><div class="bloc center">${points(p.blocs)}<p>${min} minutes de travail : objectif du jour atteint.</p>
+      <div class="row"><button class="btn" onclick="quitterPause('encore')">Encore un bloc</button><button class="btn ghost" onclick="quitterPause('stop')">J'arrête là</button></div>
+      <p class="note">Ta progression est gardée. « Reprendre » te ramène ici.</p></div>`;
+  $("#app").innerHTML = `<div class="wrap">${h}</div>`;
 }
 function renderBilan() {
-  const sansFaute = X.resultats.filter(r => r.juste).length, suiv = P.sectionSuivante(faitBanc(), BANC.ordre);
-  const piege = X.resultats.length && X.resultats.every(r => !r.codes.includes("SIG-PAR") && !r.codes.includes("SIG-REL"));
+  const sec = X.section, id = X.palier, is = X.issue || {}, sansFaute = X.resultats.filter(r => r.juste).length;
+  const cour = palierCourant(), suiv = cour ? PA.sectionSuivante(cour, prog()[cour]) : null;
+  const ligneRes = r => `<div class="resultat"><span class="coche" aria-hidden="true">${r.total != null ? (r.points === r.total ? "✓" : "·") : r.juste ? "✓" : "·"}</span><div class="txt"><div class="mscroll">${maths(r.enonce)}</div>
+      <span class="note">${r.total != null ? r.points + " sur " + r.total + (r.jumeau ? " · jumeau" : "") : sec === "diagnostic" ? (r.resultatJuste ? "Juste" : "À travailler") : r.juste ? "Sans erreur" : r.nbErreurs ? pluriel(r.nbErreurs, "erreur") + (r.codes.length ? " : " + r.codes.map(c => D.CATALOGUE[c] ? D.CATALOGUE[c].nom.toLowerCase() : c).join(", ") : "") : "Avec une aide"} · ${R.texteDuree(r.tempsMs)}</span></div></div>`;
+  let titre, texte = "";
+  if (sec === "examen") {
+    titre = is.reussi ? "Palier " + id + " validé !" : "Examen : " + is.pct + " %";
+    texte = is.reussi ? is.pct + " % (" + is.pts + " points sur " + is.tot + "). Le palier suivant est ouvert."
+      : is.pts + " points sur " + is.tot + " : il faut 80 %. " + (is.codes.length ? "Ce qui coince : " + is.codes.map(c => D.CATALOGUE[c].nom.toLowerCase()).join(" et ") + ". " : "") + "Mini-leçon, 4 exercices, puis un nouvel examen.";
+  } else if (sec === "diagnostic") {
+    titre = "Test diagnostic terminé";
+    texte = (is.depart && PA.LIVRES.includes(is.depart) ? "Tu commences au palier " + is.depart + " : " + P.PALIERS.find(p => p.id === is.depart).nom.toLowerCase() + "." : "P1 à P4 sont acquis.")
+      + " " + ["P1", "P2", "P3", "P4"].filter(k => is.bilan && is.bilan[k]).map(k => k + " : " + is.bilan[k].justes + "/" + is.bilan[k].total).join(" · ");
+  } else if (sec === "lecon") titre = "Leçon terminée";
+  else {
+    titre = is.aRefaire ? "Série à refaire" : "Série terminée";
+    texte = is.aRefaire ? "Plus de la moitié de tes lignes ont été complétées ou recopiées. Refais-la avec d'autres nombres : c'est comme ça qu'on progresse."
+      : sansFaute === X.resultats.length ? "Tout juste du premier coup." : sansFaute + " exercice" + (sansFaute > 1 ? "s" : "") + " sur " + X.resultats.length + " sans erreur ni aide.";
+  }
+  const corrections = sec === "examen" ? `<details class="panel"><summary><h2>Le détail, exercice par exercice</h2></summary>${X.resultats.map(ligneRes).join("")}</details>` : X.resultats.map(ligneRes).join("");
   $("#app").innerHTML = `<div class="wrap">
-    <div class="top"><h1>${X.section === "lecon" ? "Leçon terminée" : "Série terminée"}</h1>${pastille()}</div>
-    <p>${sansFaute === X.resultats.length ? "Tout juste du premier coup." : sansFaute + " exercice" + (sansFaute > 1 ? "s" : "") + " sur " + X.resultats.length + " sans erreur ni aide."}
-      ${piege ? "Aucune faute de signe : c'était le piège numéro un." : ""}</p>
-    ${X.section === "lecon" ? `<p class="fiche">${esc((LS.lire("mm.fiches") || {})[X.fiche] || "")}</p><p class="note">Cette fiche est maintenant dans ton mémo.</p>` : ""}
-    ${X.resultats.map(r => `<div class="resultat"><span class="coche" aria-hidden="true">${r.juste ? "✓" : "·"}</span><div class="txt"><div class="mscroll">${maths(r.enonce)}</div>
-      <span class="note">${r.juste ? "Sans erreur" : r.nbErreurs ? pluriel(r.nbErreurs, "erreur") + (r.codes.length ? " : " + r.codes.map(c => D.CATALOGUE[c].nom.toLowerCase()).join(", ") : "") : "Avec une aide"} · ${R.texteDuree(r.tempsMs)}</span></div></div>`).join("")}
-    <div class="row">${suiv ? `<button class="btn" onclick="sectionSuivante()">Section suivante : ${esc(P.NOMS_PARCOURS[suiv].toLowerCase())}</button>` : ""}
-      <button class="btn ghost" onclick="lancer('${X.section}')">${X.section === "lecon" ? "Revoir la leçon" : "Refaire avec d'autres nombres"}</button></div>
+    <div class="top"><h1>${esc(titre)}</h1>${pastille()}</div>
+    ${texte ? `<p>${esc(texte)}</p>` : ""}
+    ${sec === "lecon" ? `<p class="fiche">${esc((LS.lire("mm.fiches") || {})[X.fiche] || "")}</p><p class="note">Cette fiche est maintenant dans ton mémo.</p>` : ""}
+    <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
+    ${corrections}
+    <div class="row">${suiv ? `<button class="btn" onclick="sectionSuivante()">Section suivante : ${esc(PA.NOMS[suiv].toLowerCase())}</button>` : ""}
+      ${sec !== "diagnostic" && sec !== "examen" ? `<button class="btn ghost" onclick="lancer('${id}','${sec}')">${sec === "lecon" ? "Revoir la leçon" : "Refaire avec d'autres nombres"}</button>` : ""}
+      <button class="btn ghost" onclick="aller('accueil')">Accueil</button></div>
   </div>`;
 }
 
@@ -867,7 +1187,7 @@ function pinTouche(k) {
   pinBuf = ""; ecrireApp({ parent: { pinHash: h } }); toast("Code parent changé."); aller("parent");
 }
 function changerCode() { pinDepuisParent = true; pinBuf = ""; pinEtape = "neuf1"; aller("pin"); }
-function entrerParent() { ouverts.delete("T"); aller("parent"); chargerRapport(); }
+function entrerParent() { aller("parent"); chargerRapport(); }
 function quitterParent() { parentOK = false; aller("accueil"); }
 
 async function chargerRapport() {
@@ -899,19 +1219,22 @@ function renderParent() {
       <div><small>Dernière séance</small><strong>${r.derniere ? quand(r.joursSansSeance) + " · " + R.texteDuree(r.derniere.dureeActive || 0) : "aucune"}</strong></div>
       <div><small>7 derniers jours</small><strong>${r.minutes7j} min · ${pluriel(r.seances7j, "séance")}</strong></div>
       <div><small>Exercices (7 jours)</small><strong>${r.exercices7j ? r.justes7j + " sur " + r.exercices7j + " sans erreur" : "aucun"}</strong></div>
-      <div><small>Palier actuel</small><strong>${esc(BANC.nom)}</strong></div></div>`;
-  const ligneJ = l => `<li class="${l.juste === false ? "ko" : ""}">${maths(l.saisie || "")} ${l.juste === false ? "✗ " + esc(l.precision || (l.code && D.CATALOGUE[l.code] ? D.CATALOGUE[l.code].nom : "erreur non reconnue")) : l.donnee ? "(ligne donnée)" : "✓"}</li>`;
+      <div><small>Palier actuel</small><strong>${esc((() => { const id = P.palierActuel(S.paliers), q = P.PALIERS.find(x => x.id === id); return (id === "FINAL" ? "Final" : id) + " · " + q.nom; })())}</strong></div></div>`;
+  /* D39 : chaque ligne acceptée dit le niveau d'aide atteint, en clair ; « recopiée » en orange. */
+  const aideTexte = l => l.niveau != null ? A.NIVEAUX[l.niveau] : l.donnee ? A.NIVEAUX[4] : l.saute ? "étape faite dans la ligne d'avant" : l.incomplet ? "juste, étape en cours" : "juste";
+  const ligneJ = l => l.saute && !l.saisie ? "" : `<li class="${l.juste === false ? "ko" : (l.niveau === 4 || l.donnee) ? "orange" : ""}">${maths(l.saisie || "")} ${l.juste === false ? "✗ " + esc(l.precision || (l.code && D.CATALOGUE[l.code] ? D.CATALOGUE[l.code].nom : l.statut === "incomplet" ? "étape pas finie" : "erreur non reconnue")) + (l.marche ? " · " + ["", "explication", "explication", "indice", "ligne à trous", "ligne montrée"][l.marche] : "") : "✓ " + esc(aideTexte(l))}</li>`;
+  const nomTent = t => (t.jumeau ? "Jumeau" : PA.NOMS[t.section] || NOMS_MODE[t.mode] || t.mode || "") + (t.palier && t.palier !== "T" ? " · " + t.palier : "");
   const tentH = t => `<div class="tent"><div class="mscroll">${maths(t.enonce || "")}</div>
-      <span class="meta">${esc(NOMS_MODE[t.mode] || t.mode)} · ${R.texteDuree(t.tempsMs || 0)} · ${t.juste ? "sans erreur" : t.nbErreurs ? pluriel(t.nbErreurs, "erreur") : "avec aide"}${t.aideUtilisee ? " · aide utilisée" : ""}${t.resultatJuste === false ? " · résultat faux" : ""}</span>
+      <span class="meta">${esc(nomTent(t))} · ${R.texteDuree(t.tempsMs || 0)} · ${t.total != null ? t.points + " sur " + t.total : t.juste ? "sans erreur" : t.nbErreurs ? pluriel(t.nbErreurs, "erreur") : "avec aide"}${t.aideMax ? " · aide max : " + A.NIVEAUX[t.aideMax] : t.aideUtilisee ? " · aide utilisée" : ""}${t.resultatJuste === false ? " · résultat faux" : ""}</span>
       <ol class="jl">${(t.lignes || []).map(ligneJ).join("")}</ol></div>`;
   const seances = rap ? R.parSeance(rap.seances, rap.tentatives) : [];
   const seanceH = s => `<details class="seance"><summary><strong>${esc(dateCourte(s.debut))}</strong><span>${R.texteDuree(s.dureeActive || 0)} actives · ${pluriel(s.tentatives.length, "exercice")}</span>${s.parent ? '<span class="tag essai">Essai parent</span>' : ""}</summary>
       ${s.tentatives.length ? s.tentatives.map(tentH).join("") : '<p class="note">Aucun exercice terminé pendant cette séance.</p>'}</details>`;
   const erreurs = r && r.erreurs7j.length ? `<div class="tablewrap"><table><thead><tr><th>Erreur</th><th>Code</th><th>Fois</th></tr></thead><tbody>${r.erreurs7j.map(e => `<tr><td>${esc(D.CATALOGUE[e.code] ? D.CATALOGUE[e.code].nom : e.code)}<br><span class="note">${esc(D.CATALOGUE[e.code] ? D.CATALOGUE[e.code].exemple : "")}</span></td><td>${esc(e.code)}</td><td>${e.n}</td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">Aucune erreur enregistrée sur les 7 derniers jours.</p>';
-  const fait = S.paliers.T.fait || {};
+  const etapesFaites = (id, p) => PA.sections(id, p).filter(x => x.fait).map(x => PA.NOMS[x.id].toLowerCase()).join(", ");
   const paliers = `<div class="tablewrap"><table><thead><tr><th>Palier</th><th>Statut</th><th>Meilleur examen</th></tr></thead><tbody>
-      <tr><td>${esc(BANC.nom)}</td><td>${BANC.ordre.filter(s => fait[s]).length} étape(s) sur ${BANC.ordre.length}</td><td>—</td></tr>
-      ${P.PALIERS.map(q => `<tr><td>${q.id === "FINAL" ? "Final" : q.id} · ${esc(q.nom)}</td><td>${esc(P.STATUTS[S.paliers[q.id].statut])} <span class="note">(contenu à venir)</span></td><td>${S.paliers[q.id].meilleurExamen == null ? "—" : S.paliers[q.id].meilleurExamen + " %"}</td></tr>`).join("")}</tbody></table></div>`;
+      ${P.PALIERS.map(q => { const p = PA.completerPalier(S.paliers[q.id]), livre = PA.LIVRES.includes(q.id);
+        return `<tr><td>${q.id === "FINAL" ? "Final" : q.id} · ${esc(q.nom)}</td><td>${esc(P.STATUTS[p.statut])}${p.parDiagnostic ? " (par le diagnostic)" : ""}${livre ? (etapesFaites(q.id, p) ? `<br><span class="note">Fait : ${esc(etapesFaites(q.id, p))}</span>` : "") + (p.remediation ? `<br><span class="note">Remédiation : ${esc(p.remediation.codes.map(c => D.CATALOGUE[c] ? D.CATALOGUE[c].nom : c).join(", ") || "pas à pas")}</span>` : "") : ' <span class="note">(contenu à venir)</span>'}</td><td>${p.meilleurExamen == null ? "—" : p.meilleurExamen + " %"}${p.examens ? `<br><span class="note">${pluriel(p.examens, "examen")}</span>` : ""}</td></tr>`; }).join("")}</tbody></table></div>`;
   const nAtt = FILE.taille(), nRej = FILE.rejets().length;
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>Espace parent</h1>${pastille()}</div>
@@ -974,7 +1297,7 @@ async function demarrerFamille(initial) {
   S = completer(S); LS.ecrire(LF("etat"), S);
   if (vue === "appairage" || vue === "pin") vue = "accueil";
   render();
-  chargerLecon(BANC.lecon).then(() => { if (vue === "accueil") render(); }, () => {});
+  Promise.all(PA.LIVRES.filter(id => PA.CONTENU[id].lecon).map(id => chargerLecon(PA.CONTENU[id].lecon).catch(() => null))).then(() => { if (vue === "accueil") render(); });
   await initSync();
   if (vue === "accueil" || vue === "parent") render(); else majPastille();
 }

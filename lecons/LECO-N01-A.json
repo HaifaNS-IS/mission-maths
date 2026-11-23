@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N01-A",
+  "categorie": "lecon",
+  "palier": "P1",
+  "niveau": 1,
+  "version": "1.0",
+  "source": "Mission Maths, lot 2 : leçon du palier P1",
+  "verifie_le": "2026-11-23",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "signes-relatifs",
+    "titre": "Les signes des nombres relatifs",
+    "duree_min": 4,
+    "idee": "Deux signes collés : pareils donnent plus, différents donnent moins.",
+    "exemple": {
+      "gen": "rel",
+      "niveau": 2,
+      "graine": 3
+    },
+    "piege": {
+      "code": "SIG-REL",
+      "parade": "Avant de calculer, remplace chaque paire de signes collés par un seul signe."
+    },
+    "a_toi": [
+      {
+        "gen": "rel",
+        "niveau": 2
+      },
+      {
+        "gen": "relmul",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-SIG-REL",
+      "texte": "Moins par moins donne plus, plus par moins donne moins."
+    }
+  },
+  "questions": []
+}

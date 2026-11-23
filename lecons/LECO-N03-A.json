@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N03-A",
+  "categorie": "lecon",
+  "palier": "P3",
+  "niveau": 3,
+  "version": "1.0",
+  "source": "Mission Maths, lot 2 : leçon du palier P3",
+  "verifie_le": "2026-11-23",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "balance",
+    "titre": "La balance",
+    "duree_min": 4,
+    "idee": "Ce que tu fais d'un côté du signe =, fais-le aussi de l'autre.",
+    "exemple": {
+      "gen": "eqs",
+      "niveau": 3,
+      "graine": 11
+    },
+    "piege": {
+      "code": "TRANS-SIG",
+      "parade": "Pour faire partir un terme, fais l'opération inverse des deux côtés."
+    },
+    "a_toi": [
+      {
+        "gen": "eqs",
+        "niveau": 1
+      },
+      {
+        "gen": "eqs",
+        "niveau": 2
+      }
+    ],
+    "fiche": {
+      "id": "F-TRANS-SIG",
+      "texte": "Un terme qui change de côté change de signe."
+    }
+  },
+  "questions": []
+}

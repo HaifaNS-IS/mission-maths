@@ -6,24 +6,30 @@ const E = MM.expr, T = MM.etapes, L = MM.lecon;
 const dossier = path.join(__dirname, "..", "lecons");
 const index = JSON.parse(fs.readFileSync(path.join(dossier, "index.json"), "utf8"));
 
-test("index des leçons : chaque fichier existe et porte le bon identifiant", () => {
-  vrai(index.lecons.length >= 1);
+test("index des leçons : une leçon par palier P1 à P4, chaque fichier existe et porte le bon identifiant", () => {
+  egal(index.lecons.map(m => m.palier).join(), "P1,P2,P3,P4");
   for (const m of index.lecons) { const p = JSON.parse(fs.readFileSync(path.join(__dirname, "..", m.fichier), "utf8")); egal(p.pack_id, m.pack_id); egal(p.palier, m.palier); egal(p.version, m.version); }
 });
 for (const m of index.lecons) {
   const pack = JSON.parse(fs.readFileSync(path.join(__dirname, "..", m.fichier), "utf8"));
   test(m.pack_id + " : pack accepté par le validateur", () => { egal(L.valider(pack).join(" ; "), ""); });
   test(m.pack_id + " : exemple résolu juste, ligne après ligne", () => {
-    const l = L.preparer(pack), eq0 = E.lireEquation(l.exemple.enonce);
-    vrai(l.exemple.lignes.length >= 3, "exemple trop court");
-    for (const li of l.exemple.lignes) { vrai(T.equivalentes(eq0, E.lireEquation(li.ligne.split(" = ").slice(0, 2).join(" = "))), li.ligne); vrai(li.pourquoi.length > 5); }
+    const l = L.preparer(pack), N = MM.nombres;
+    vrai(l.exemple.lignes.length >= (l.exemple.type === "equation" ? 3 : 2), "exemple trop court");
+    const egalDepart = {
+      equation: li => T.equivalentes(E.lireEquation(l.exemple.enonce), E.lireEquation(li.split(" = ").slice(0, 2).join(" = "))),
+      expression: li => E.lireExpression(li).poly.egal(E.lireExpression(l.exemple.enonce).poly),
+      nombre: li => N.valeur(E.arbre(li)).egal(N.valeur(E.arbre(l.exemple.enonce)))
+    }[l.exemple.type];
+    for (const li of l.exemple.lignes) { vrai(egalDepart(li.ligne), li.ligne); vrai(li.pourquoi.length > 5); }
     egal(l.exemple.lignes[l.exemple.lignes.length - 1].ligne, l.exemple.reponse);
   });
   test(m.pack_id + " : le piège montré est bien l'erreur annoncée, et la bonne ligne est juste", () => {
-    const l = L.preparer(pack), avant = E.lireEquation(l.piege.depart);
-    const v = T.jugerLigne(avant, l.piege.faux, null); egal(v.statut, "faux"); egal(v.code, pack.lecon.piege.code);
-    egal(T.jugerLigne(avant, l.piege.bon, null).statut, "juste");
-    vrai(l.piege.explication.ou.length > 10 && l.piege.explication.regle.length > 5);
+    const l = L.preparer(pack), N = MM.nombres, p = l.piege;
+    const juge = { equation: (t) => T.jugerLigne(E.lireEquation(p.depart), t, null), expression: (t) => T.jugerExpression(E.lireExpression(p.depart).termes, t, null), nombre: (t) => N.juger(E.arbre(p.depart), t, null) }[p.type];
+    const v = juge(p.faux); egal(v.statut, "faux"); egal(v.code, pack.lecon.piege.code);
+    egal(juge(p.bon).statut, "juste");
+    vrai(p.explication.ou.length > 10 && p.explication.regle.length > 5);
   });
   test(m.pack_id + " : les 2 questions « À toi » se génèrent, avec des nombres différents à chaque fois", () => {
     const l = L.preparer(pack); egal(l.aToi.length, 2);
@@ -36,6 +42,7 @@ test("validateur : un pack défectueux est refusé avec la raison", () => {
   vrai(/générateur inconnu/.test(casse(p => { p.lecon.exemple.gen = "nexistepas"; })));
   vrai(/2 questions/.test(casse(p => { p.lecon.a_toi.pop(); })));
   vrai(/piege\.code/.test(casse(p => { p.lecon.piege.code = "AIRE-2"; })));
+  vrai(/palier/.test(casse(p => { delete p.palier; })));
   vrai(/une phrase/.test(casse(p => { p.lecon.idee = "Première phrase. Deuxième phrase."; })));
   vrai(/pack_id/.test(casse(p => { p.pack_id = "LECON-1"; })));
   vrai(/lecon manquant/.test(casse(p => { delete p.lecon; })));

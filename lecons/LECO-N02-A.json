@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N02-A",
+  "categorie": "lecon",
+  "palier": "P2",
+  "niveau": 2,
+  "version": "1.0",
+  "source": "Mission Maths, lot 2 : leçon du palier P2",
+  "verifie_le": "2026-11-23",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "developper-reduire",
+    "titre": "Développer, puis réduire",
+    "duree_min": 4,
+    "idee": "Le nombre devant la parenthèse multiplie chaque terme, signe compris.",
+    "exemple": {
+      "gen": "devred",
+      "niveau": 2,
+      "graine": 2
+    },
+    "piege": {
+      "code": "SIG-PAR",
+      "parade": "Avant d'écrire, dis-toi : le moins se colle à chaque terme. Puis vérifie chaque signe."
+    },
+    "a_toi": [
+      {
+        "gen": "dev1",
+        "niveau": 2
+      },
+      {
+        "gen": "red",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-SIG-PAR",
+      "texte": "Le moins se colle à chaque terme de la parenthèse."
+    }
+  },
+  "questions": []
+}

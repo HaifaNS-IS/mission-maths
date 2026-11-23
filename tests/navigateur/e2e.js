@@ -110,6 +110,60 @@ const visible = (b, h) => b && b.haut >= -1 && b.bas <= h + 1;
 async function pasDeDefilementHorizontal(page) {
   return page.evaluate(() => [document.documentElement, document.body, document.querySelector("#app"), document.querySelector("#lignes")].filter(Boolean).every(e => e.scrollWidth <= e.clientWidth + 1));
 }
+/* ---------- lot 2 : ce que l'élève tape, calculé par le moteur de l'app (rien n'est écrit à la main) ---------- */
+const BONNE = () => {
+  const et = Q.etapes[Q.k], type = et.type || Q.exo.type;
+  const t = type === "equation" ? MM.expr.ecrireEquation(MM.etapes.prochaine(Q.prev, et.forme)) : type === "expression" ? MM.expr.ecrireCote(MM.etapes.attenduExpr(Q.prev, et.forme)) : MM.nombres.prochaine(Q.prev, et.forme);
+  return t.replace(/−/g, "-").replace(/÷/g, "/");
+};
+/* Une ligne fausse pour l'étape en cours : une erreur du catalogue si elle existe, sinon la bonne ligne décalée de 1. */
+const MAUVAISE = (code) => {
+  const et = Q.etapes[Q.k], type = et.type || Q.exo.type, D = MM.diag, T = MM.etapes, E = MM.expr, N = MM.nombres;
+  let f = null;
+  if (type === "equation") { const st = T.ORDRE.indexOf(et.forme); const c = D.candidats(Q.prev).filter(k => (k.stade === st || (et.forme === "regroupe" && k.stade === 2)) && (!code || k.code === code))[0]; if (c) f = E.ecrireEquation(c.stade === 2 ? T.reduire(c.eq) : c.eq); }
+  else if (type === "expression") { const c = D.candidatsExpression(Q.prev).filter(k => k.stade === (et.forme === "developpe" ? 0 : 1) && (!code || k.code === code))[0]; if (c) f = E.ecrireCote(et.forme === "reduit" ? T.redCote(c.termes) : c.termes); }
+  else if (et.forme === "nombre") { const c = N.candidats(Q.prev).filter(k => !code || k.code === code)[0]; if (c) f = c.valeur.texte(); }
+  if (!f) {
+    const b = type === "equation" ? E.ecrireEquation(T.prochaine(Q.prev, et.forme)) : type === "expression" ? E.ecrireCote(T.attenduExpr(Q.prev, et.forme)) : N.prochaine(Q.prev, et.forme);
+    f = type === "nombre" && et.forme === "nombre" ? N.valeur(E.arbre(b)).plus(1).texte() : b + " + 1";
+  }
+  return f.replace(/−/g, "-").replace(/÷/g, "/");
+};
+const REPONSE_DIAG = (juste) => {
+  const ex = Q.exo; let t;
+  if (ex.type === "equation") t = "x=" + MM.F(ex.reponse).plus(juste ? 0 : 1).texte();
+  else if (ex.type === "expression") t = ex.reponse + (juste ? "" : "+1");
+  else t = MM.F(ex.reponse).plus(juste ? 0 : 1).texte();
+  return t.replace(/−/g, "-");
+};
+/* Écrit une ligne d'un coup dans le champ (clavier physique), puis valide avec la touche OK du clavier maths. */
+async function ecrire(page, t) { await page.fill("#champ", t); await valider(page); }
+async function etapeJuste(page) { await ecrire(page, await page.evaluate(BONNE)); }
+async function etapeFausse(page, code) { await ecrire(page, await page.evaluate(MAUVAISE, code || null)); }
+/* Résout l'exercice en cours, quel que soit le mode, en ne faisant que des lignes justes. */
+async function resoudre(page) {
+  for (let s = 0; s < 12; s++) {
+    if (await page.evaluate(() => Q.fini)) return;
+    const mode = await page.evaluate(() => Q.mode);
+    if (mode === "seul") await ecrire(page, await page.evaluate(() => { const ex = Q.exo; return (ex.type === "equation" ? "x=" + MM.F(ex.reponse).texte() : ex.type === "expression" ? ex.reponse : ex.reponseTexte).replace(/−/g, "-"); }));
+    else if (mode === "diag") await ecrire(page, await page.evaluate(REPONSE_DIAG, true));
+    else await etapeJuste(page);
+  }
+  throw new Error("exercice non terminé : " + await page.evaluate(() => JSON.stringify({ mode: Q.mode, k: Q.k, fb: Q.fb })));
+}
+/* Joue toute une série : chaque exercice résolu juste, jusqu'au bilan (les pauses de bloc éventuelles sont passées). */
+async function serie(page) {
+  for (let i = 0; i < 30; i++) {
+    if (!(await page.evaluate(() => vue === "exo" && !!Q))) {
+      if (await page.evaluate(() => vue === "pause")) { await page.locator("#app .btn").first().tap(); continue; }
+      return;
+    }
+    await resoudre(page); await page.tap("#suite"); await pause(40);
+  }
+}
+async function tagsFait(page, palier) { return page.$$eval(`details[data-k='${palier}'] .etape .tag.fait`, t => t.length); }
+async function ouvrirPalier(page, id) { if (!(await page.$eval(`details[data-k='${id}']`, d => d.open))) await page.locator(`details[data-k='${id}'] summary`).tap(); }
+async function suite(page) { await page.tap("#suite"); for (let i = 0; i < 3 && await page.evaluate(() => vue === "pause"); i++) await page.locator("#app .btn").first().tap(); }
 async function petitsBoutons(page) {
   return page.evaluate(() => [...document.querySelectorAll("button, summary, input")].filter(b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(b).visibility !== "hidden"; })
     .filter(b => b.getBoundingClientRect().height < 43.5).map(b => (b.textContent || b.id || b.tagName).trim().slice(0, 30)));
@@ -178,12 +232,12 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     vrai(!/Appareil parent/.test(await pe.textContent("#app")));
     egal(JSON.stringify(await pe.evaluate(() => JSON.parse(localStorage.getItem("mm.famille")))), JSON.stringify({ cle: CLE, role: "eleve" }));
   });
-  await verif("accueil : 11 paliers + banc d'essai + mémo repliés, seul le palier en cours ouvert", async () => {
+  await verif("accueil : 11 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
     const etat = await pe.$$eval("#app details.panel", ds => ds.map(d => [d.dataset.k, d.open]));
-    egal(etat.length, 13); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "T");
+    egal(etat.length, 12); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
   });
   await verif("Tout déplier puis Tout replier", async () => {
-    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 13);
+    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 12);
     await pe.getByRole("button", { name: "Tout replier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 0);
     await pe.getByRole("button", { name: "Tout déplier" }).tap();
   });
@@ -197,80 +251,136 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     vrai(await pe.isDisabled("#bRetour")); vrai(await pe.isDisabled("#bReprendre")); vrai(!(await pe.isDisabled("#bSuivant")));
   });
 
-  /* ---------- leçon ---------- */
+  /* ================= P0 : test diagnostic ================= */
   await pe.tap("#bSuivant");
-  await verif("Section suivante ouvre la leçon ; étapes de l'exemple repliées ; piège en rouge", async () => {
-    egal(await pe.textContent("h1"), "Le moins devant une parenthèse");
-    egal(await pe.$$eval("details.pas", ds => ds.filter(d => d.open).length), 0); vrai((await pe.$$("details.pas")).length >= 4);
+  await verif("Section suivante ouvre le diagnostic : 12 questions sans aide, une seule réponse demandée", async () => {
+    egal(await pe.evaluate(() => [X.section, X.exos.length, Q.mode].join()), "diagnostic,12,diag");
+    vrai(!(await pe.isVisible("text=Un indice"))); vrai(/Ta réponse/.test(await pe.textContent("label.etq")));
+    vrai(await pe.isVisible("#clavier")); egal(await pe.getAttribute("#champ", "inputmode"), "none");
+  });
+  await verif("diagnostic : réponses au clavier maths, aucune correction montrée, mini-pause proposée après 8 questions", async () => {
+    let miniPause = false;
+    for (let i = 0; i < 12; i++) {
+      const juste = i !== 6;                                                 // une faute en P2 (réduire)
+      const t = await pe.evaluate(REPONSE_DIAG, juste);
+      if (i === 0) { await taper(pe, t); await valider(pe); } else await ecrire(pe, t);
+      vrai(/Réponse enregistrée/.test(await pe.textContent("#lignes")), "question " + (i + 1) + " : pas enregistrée");
+      vrai(!(await pe.isVisible(".fb.faux")) && !(await pe.isVisible("text=Démarche modèle")), "correction montrée pendant le diagnostic");
+      await pe.tap("#suite");
+      if (await pe.evaluate(() => vue === "pause")) { egal(await pe.textContent("h1"), "Mini-pause"); egal(i, 7); miniPause = true; await pe.getByRole("button", { name: "Je reprends" }).tap(); }
+    }
+    vrai(miniPause, "pas de mini-pause après 8 questions");
+    egal(await pe.textContent("h1"), "Test diagnostic terminé");
+    const t = await pe.textContent("#app");
+    vrai(/Tu commences au palier P2/.test(t), t); vrai(/P1 : 5\/5/.test(t) && /P2 : 2\/3/.test(t), t);
+  });
+  await verif("diagnostic dans la base : P0 et P1 validés (P1 par le diagnostic), il commence à P2, P3 reste fermé", async () => {
+    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && d.paliers.P1.statut === "valide" && d; }, 8000, "P1 validé");
+    egal(["P0", "P1", "P2", "P3"].map(k => app.paliers[k].statut).join(), "valide,valide,en_cours,verrouille"); vrai(app.paliers.P1.parDiagnostic); egal(app.eleve.palierActuel, "P2");
+  });
+
+  /* ================= P2 : leçon, échelle d'aide complète, jumeau ================= */
+  await verif("une seule nouvelle notion par séance : si une autre leçon a été ouverte, Section suivante refuse", async () => {
+    await pe.evaluate(() => { SEANCE.leconNouvelle = "P1"; });
+    await pe.tap("#bSuivant");
+    await attendre(async () => /Une seule nouvelle notion/.test(await pe.textContent("#toast")), 3000, "message");
+    vrai(await pe.evaluate(() => vue !== "lecon"), "leçon ouverte quand même");
+    await pe.evaluate(() => { SEANCE.leconNouvelle = null; });
+  });
+  await pe.tap("#bSuivant");
+  await verif("leçon P2 : idée, exemple replié, piège SIG-PAR en rouge, pas de défilement horizontal", async () => {
+    egal(await pe.textContent("h1"), "Développer, puis réduire");
+    egal(await pe.$$eval("details.pas", ds => ds.filter(d => d.open).length), 0); vrai((await pe.$$("details.pas")).length >= 2);
     vrai(await pe.isVisible(".bloc.piege")); vrai(/moins touche aussi le terme/.test(await pe.textContent(".bloc.piege")));
     vrai(await pasDeDefilementHorizontal(pe), "défilement horizontal dans la leçon");
   });
+  await pe.screenshot({ path: SHOTS + "/2-lecon.png" });
   await pe.getByRole("button", { name: "Faire les 2 questions" }).tap();
-  await verif("« À toi » 1 : erreur de table → « Erreur de calcul » avec le produit exact, ligne attendue pas encore montrée", async () => {
-    vrai(await pe.isVisible("#clavier")); egal(await pe.getAttribute("#champ", "inputmode"), "none");
-    const { faux, phrase } = await pe.evaluate(() => {
-      const bon = MM.etapes.devCote(Q.depart), k = Q.depart[0].c, a = Q.depart[0].inner[1].c, f = bon[1].c.plus(MM.F(1));
-      return { faux: MM.expr.ecrireCote([bon[0], MM.expr.mono(f, 0)]).replace(/−/g, "-"),
-        phrase: k.texte() + " × " + (a.signe() < 0 ? "(" + a.texte() + ")" : a.texte()) + " = " + bon[1].c.texte() + ", pas " + f.texte() };
-    });
-    await ligne(pe, faux);
-    egal(await titreFb(pe), "Erreur de calcul");
-    vrai((await pe.textContent("#fb")).includes(phrase), "produit absent : " + phrase);
-    vrai(!(await pe.isVisible("text=Continuer avec cette ligne")), "la ligne attendue est montrée dès le 1er essai");
-    await vider(pe);
-  });
-  await verif("« À toi » 1 : bonne réponse tapée au clavier maths → ligne juste", async () => {
-    const t = (await attendus(pe))[0]; await ligne(pe, t);
-    vrai(await pe.evaluate(() => Q.fini), "exercice non terminé");
-    await pe.tap("#suite");
-  });
-  await verif("« À toi » 2 : erreur SIG-PAR → explication ciblée SIG-PAR, puis correction acceptée", async () => {
-    const faux = await pe.evaluate(() => Q.exo.erreurs["SIG-PAR"][0].replace(/−/g, "-"));
-    await ligne(pe, faux);
+  let fauxSP = null, bonneLigne = null;
+  await verif("échelle, erreur 1 : explication ciblée SIG-PAR, ligne attendue jamais montrée", async () => {
+    egal(await pe.evaluate(() => Q.exo.gen), "dev1");
+    fauxSP = await pe.evaluate(MAUVAISE, "SIG-PAR"); bonneLigne = await pe.evaluate(BONNE);
+    await taper(pe, fauxSP); await valider(pe);
     egal(await titreFb(pe), "Signe moins non distribué");
-    await vider(pe); await ligne(pe, (await attendus(pe))[0]);
-    vrai(await pe.evaluate(() => Q.fini)); await pe.tap("#suite");
-    egal(await pe.textContent("h1"), "Leçon terminée");
+    vrai(!/Autre façon/.test(await pe.textContent("#fb"))); vrai(!(await pe.isVisible("text=La ligne attendue")));
+  });
+  await verif("échelle, erreur 2 (la même) : formulée autrement, avec un test chiffré", async () => {
+    await vider(pe); await ecrire(pe, fauxSP);
+    const t = await pe.textContent("#fb"); vrai(/Autre façon de voir/.test(t), t); vrai(/Teste avec x = /.test(t), t);
+  });
+  await verif("échelle, erreur 3 : sa ligne réaffichée, le terme fautif entouré, sans la réponse", async () => {
+    await ecrire(pe, fauxSP);
+    vrai((await pe.$$("#fb mark.pointe")).length >= 1, "aucun terme entouré"); egal(await titreFb(pe), "Regarde où ça coince");
+    vrai(!(await pe.textContent("#fb")).replace(/\s/g, "").includes(bonneLigne.replace(/-/g, "−").replace(/\s/g, "")), "la bonne ligne est dans l'indice");
+  });
+  await verif("échelle, erreur 4 : ligne à trous ; à 380 × 600, énoncé, cases et clavier visibles ensemble", async () => {
+    await ecrire(pe, fauxSP);
+    vrai((await pe.$$("input.trou")).length >= 1, "pas de case"); egal(await pe.evaluate(() => Q.trous.jetons.some(j => "attendu" in j || "saisi" in j)), false, "la réponse est gardée dans la page");
+    await pe.setViewportSize({ width: 380, height: 600 }); await pause(150);
+    const b = await pe.evaluate(() => { const r = s => { const e = document.querySelector(s); const x = e.getBoundingClientRect(); return { haut: x.top, bas: x.bottom }; }; return { enonce: r(".enonce"), champ: r("#trous"), clavier: r("#clavier"), hauteur: window.innerHeight }; });
+    vrai(visible(b.enonce, b.hauteur) && visible(b.champ, b.hauteur) && visible(b.clavier, b.hauteur), JSON.stringify(b));
+    await pe.setViewportSize({ width: 380, height: 800 });
+  });
+  await pe.screenshot({ path: SHOTS + "/3-trous.png" });
+  await verif("échelle, erreur 5 (cases mal remplies) : la ligne est montrée, à recopier lui-même, plus d'indice", async () => {
+    const valeurs = await pe.evaluate((f) => { const et = Q.etapes[Q.k]; return MM.aide.aTrous("expression", Q.prev, MM.expr.lireExpression(f).termes, et.forme).jetons.filter(j => j.trou != null).map(j => j.saisi.replace(/−/g, "-")); }, fauxSP);
+    for (let i = 0; i < valeurs.length; i++) { await pe.tap(`input.trou[data-i="${i}"]`); await taper(pe, valeurs[i]); }
+    await valider(pe);
+    vrai(await pe.isVisible(".fb.recopie"), "ligne pas montrée"); egal(await titreFb(pe), "Voici la ligne");
+    vrai(await pe.isVisible("#champ")); vrai(!(await pe.isVisible("text=Un indice")));
+  });
+  await verif("il recopie la ligne : acceptée « recopiée » (niveau 4), un exercice jumeau est ajouté à la suite", async () => {
+    await vider(pe); await ecrire(pe, bonneLigne);
+    vrai(await pe.evaluate(() => Q.fini)); vrai(/jumeau/.test(await pe.textContent("#lignes")));
+    egal(await pe.evaluate(() => Q.journal.filter(l => l.juste).map(l => l.niveau).join()), "4");
+    egal(await pe.evaluate(() => X.exos.length + ":" + !!X.exos[1].jumeau), "3:true");
+  });
+  await pe.tap("#suite");
+  await verif("exercice jumeau : mêmes structure, autres nombres, sans indice ni correction pendant, démarche modèle à la fin", async () => {
+    vrai(/Exercice jumeau/.test(await pe.textContent(".xtete")));
+    egal(await pe.evaluate(() => Q.mode + ":" + Q.exo.gen), "controle:dev1");
+    vrai(!(await pe.isVisible("text=Un indice")));
+    await etapeFausse(pe);
+    vrai(await pe.evaluate(() => Q.fini)); vrai(/Jumeau : 0 étape/.test(await pe.textContent("#lignes")));
+    vrai(await pe.isVisible("text=Démarche modèle à recopier")); vrai(await pe.isVisible(".ligne.fait.ko"));
+  });
+  await pe.tap("#suite");
+  await verif("« À toi » 2 juste → Leçon terminée, fiche au mémo", async () => {
+    await resoudre(pe); await suite(pe); egal(await pe.textContent("h1"), "Leçon terminée");
+  });
+  await verif("base : ligne recopiée au niveau 4, jumeau enregistré à part, leçon P2 cochée, fiche F-SIG-PAR gagnée", async () => {
+    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && d.paliers.P2.fait.lecon && d; }, 8000, "leçon cochée");
+    egal(app.fiches.join(), "F-SIG-PAR");
+    const ts = await attendre(async () => { const r = await fetch(URL_BASE + `familles/${CLE}/suivi/app/tentatives?pageSize=1000`, { headers: { Authorization: "Bearer owner" } }); const j = await r.json(); const l = (j.documents || []).map(d => decoder({ mapValue: { fields: d.fields } })); return l.length >= 15 && l; }, 8000, "tentatives");
+    vrai(ts.some(t => t.aideMax === 4 && t.lignes.some(l => l.niveau === 4) && t.lignes.filter(l => l.marche).map(l => l.marche).join() === "1,1,2,3,4"), "ligne recopiée absente");
+    vrai(ts.some(t => t.jumeau && t.mode === "controle" && t.points === 0), "jumeau absent");
   });
 
-  /* ---------- série guidée : l'ex. 1 du contrôle ---------- */
+  /* ================= P2 : série guidée, fin de bloc, reprise après fermeture ================= */
   await pe.getByRole("button", { name: /Section suivante : série guidée/ }).tap();
-  await verif("série guidée : premier exercice = ex. 1 du contrôle, étape Développe", async () => {
-    egal((await pe.textContent(".enonce .mscroll")).replace(/\s+/g, " ").trim(), "7(x − 4) − 8(x − 7) = 69 − 5(x + 8)");
-    vrai(/Développe/.test(await pe.textContent("label.etq")));
+  await verif("série guidée : la barre du bloc est visible ; fin de bloc (5 min) → écran de pause entre deux exercices", async () => {
+    vrai(await pe.isVisible(".bloc-barre"));
+    await resoudre(pe);
+    await pe.evaluate(() => { SEANCE.dureeActive = BLOC + 1000; });
+    await pe.tap("#suite");
+    egal(await pe.textContent("h1"), "Bloc 1 terminé"); await pe.getByRole("button", { name: "Continuer" }).tap();
+    egal(await pe.evaluate(() => vue + ":" + X.i), "exo:1");
   });
-  await verif("ligne fausse (moins non distribué) → signalée à Développe avec le code SIG-PAR", async () => {
-    await ligne(pe, "7x-28-8x-56=69-5x-40");
-    egal(await titreFb(pe), "Signe moins non distribué");
-    vrai(/−8 × \(−7\) = \+56, pas −56/.test(await pe.textContent("#fb")), "règle chiffrée absente");
-  });
-  await verif("clavier ouvert, 380 × 800 : énoncé, champ actif et clavier visibles en même temps", async () => {
-    const b = await boites(pe); vrai(visible(b.enonce, b.hauteur) && visible(b.champ, b.hauteur) && visible(b.clavier, b.hauteur), JSON.stringify(b));
-  });
-  await verif("correction, puis Réduis : lignes acceptées, encouragement spécifique", async () => {
-    await vider(pe); await ligne(pe, "7x-28-8x+56=69-5x-40");
-    vrai(/signe|moins/i.test(await titreFb(pe)), "encouragement non spécifique : " + await titreFb(pe));
-    await ligne(pe, "-x+28=29-5x");
-    vrai(/Regroupe/.test(await pe.textContent("label.etq")));
+  await verif("guidé : 2 exercices de plus, jusqu'à « développer puis réduire »", async () => {
+    for (let i = 0; i < 2; i++) { await resoudre(pe); await suite(pe); }
+    egal(await pe.evaluate(() => Q.exo.gen + ":" + Q.etapes.map(e => e.id).join()), "devred:developpe,reduit");
+    await etapeJuste(pe); vrai(/Réduis/.test(await pe.textContent("label.etq")));
   });
   await pause(1500);                                   // le point de reprise part dans la base
   await pe.reload({ waitUntil: "domcontentloaded" }); await pastilleOK(pe);
-  await verif("après fermeture : Reprendre ramène au même exercice, à l'étape Regroupe, lignes déjà faites affichées", async () => {
+  await verif("après fermeture : Reprendre ramène au même exercice, à l'étape Réduis, la ligne déjà faite affichée", async () => {
     vrai(!(await pe.isDisabled("#bReprendre"))); await pe.tap("#bReprendre");
-    egal((await pe.textContent(".enonce .mscroll")).replace(/\s+/g, " ").trim(), "7(x − 4) − 8(x − 7) = 69 − 5(x + 8)");
-    vrai(/Regroupe/.test(await pe.textContent("label.etq")), "pas à l'étape Regroupe");
-    egal(await pe.$$eval(".ligne.fait", ls => ls.length), 2);
-  });
-  await verif("fin de l'ex. 1 : 4x = 1 puis x = 0,25 acceptés (écriture décimale)", async () => {
-    await ligne(pe, "4x=1"); await ligne(pe, "x=0,25");
-    vrai(await pe.evaluate(() => Q.fini)); await pe.tap("#suite");
-  });
-  await verif("exercice 2 : nombres tirés au hasard, résolu jusqu'au bilan", async () => {
-    vrai(!/7\(x − 4\)/.test(await pe.textContent(".enonce")), "même énoncé qu'avant");
-    await resoudreGuide(pe); await pe.tap("#suite"); egal(await pe.textContent("h1"), "Série terminée");
+    egal(await pe.evaluate(() => Q.exo.gen + ":" + X.i), "devred:3"); vrai(/Réduis/.test(await pe.textContent("label.etq")), "pas à l'étape Réduis");
+    egal(await pe.$$eval(".ligne.fait", ls => ls.length), 1);
+    await resoudre(pe); await suite(pe); egal(await pe.textContent("h1"), "Série terminée");
   });
 
-  /* ---------- semi-guidé, petit écran ---------- */
+  /* ================= semi-guidé, petit écran ================= */
   await pe.getByRole("button", { name: /Section suivante/ }).first().tap();
   for (const [w, h] of [[380, 600], [360, 520]]) {
     await pe.setViewportSize({ width: w, height: h }); await pause(150);
@@ -280,29 +390,25 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     });
   }
   await pe.setViewportSize({ width: 380, height: 800 });
-  await verif("semi-guidé : seules les étapes Réduis et Trouve x sont demandées", async () => {
-    egal((await pe.evaluate(() => Q.etapes.map(e => e.id))).join(), "reduit,solution");
-    await resoudreGuide(pe); await pe.tap("#suite");
+  await verif("semi-guidé : seule la dernière étape est demandée ; série jouée jusqu'au bilan", async () => {
+    egal(await pe.evaluate(() => Q.etapes.length), 1);
+    await serie(pe); egal(await pe.textContent("h1"), "Série terminée");
   });
 
-  /* ---------- seul, réseau coupé ---------- */
+  /* ================= seul, réseau coupé ================= */
   await pause(1500);
   const avantHL = await compter("suivi/app/tentatives");
   await eleve.ctx.setOffline(true);
   await pe.getByRole("button", { name: /Section suivante/ }).first().tap();
-  await verif("mode seul : erreur à la ligne 1 signalée ligne 1, lignes suivantes justes à partir de sa ligne", async () => {
-    const lignes = await pe.evaluate(() => {
-      const D = MM.diag, T = MM.etapes, E = MM.expr;
-      const c = D.candidats(Q.depart).filter(k => k.code === "SIG-PAR" && k.stade === 0).sort((a, b) => b.n - a.n)[0];
-      const l1 = c.eq, l2 = T.reduire(l1), l3 = T.reduire(T.regrouper(l2)), s = T.resoudre(l3);
-      return [l1, l2, l3, T.eqSolution(s.x)].map(e => E.ecrireEquation(e).replace(/−/g, "-"));
-    });
-    for (const l of lignes) await ligne(pe, l);
-    egal(await pe.$$eval(".ligne.fait .coche", cs => cs.map(c => c.textContent).join("")), "✗✓✓✓");
-    vrai(/Une seule erreur, à la ligne 1/.test(await pe.textContent("#lignes")));
+  await verif("mode seul : une ligne fausse → signalée ✗ avec son explication et la ligne attendue, à la fin seulement", async () => {
+    egal(await pe.evaluate(() => Q.mode), "seul");
+    const f = await pe.evaluate(() => { const ex = Q.exo, c = MM.diag.candidatsExpression(Q.depart).find(k => k.code === "SIG-REL"); return MM.expr.ecrireCote(MM.etapes.redCote(c.termes)).replace(/−/g, "-"); });
+    await ecrire(pe, f);
+    egal(await pe.$$eval(".ligne.fait .coche", cs => cs.map(c => c.textContent).join("")), "✗");
+    vrai(/Une seule erreur, à la ligne 1/.test(await pe.textContent("#lignes"))); vrai(await pe.isVisible("text=La ligne attendue"));
   });
   await verif("réseau coupé : rien n'est parti, la pastille le dit, le travail est rangé sur l'appareil", async () => {
-    await pe.tap("#suite"); vrai(/en attente/.test(await pe.textContent("#pastille")), await pe.textContent("#pastille"));
+    await suite(pe); const pt = await pe.evaluate(() => pastille()); vrai(/en attente/.test(pt), pt);
     vrai(await pe.evaluate(k => JSON.parse(localStorage.getItem("mm." + k.slice(0, 8) + ".file")).ops.length > 0, CLE), "file vide sur l'appareil");
   });
   await eleve.ctx.setOffline(false);
@@ -310,15 +416,73 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
   await verif("retour du réseau : la tentative faite hors ligne arrive dans la base, la file se vide", async () => {
     await attendre(async () => (await compter("suivi/app/tentatives")) === avantHL + 1, 15000, "tentative dans la base");
     await attendre(() => pe.evaluate(() => FILE.taille() === 0), 10000, "file vide");
-    await pastilleOK(pe);
+    await attendre(async () => /Synchronisé/.test(await pe.evaluate(() => pastille())), 10000, "pastille Synchronisé");
   });
-  await verif("progression enregistrée dans la base de la famille : leçon, guidé, semi et seul cochés, fiche gagnée", async () => {
-    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && ["lecon", "guide", "semi", "seul"].every(s => d.paliers.T.fait[s]) && d; }, 8000, "4 étapes cochées");
-    egal(app.fiches.join(), "F-SIG-PAR");
+  await verif("série seule finie : leçon, guidé, semi et seul cochés dans la base ; l'examen s'ouvre", async () => {
+    await serie(pe); egal(await pe.textContent("h1"), "Série terminée");
+    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && ["lecon", "guide", "semi", "seul"].every(s => d.paliers.P2.fait[s]) && d; }, 8000, "4 étapes cochées");
+    vrai(!app.paliers.P2.remediation);
   });
 
+  /* ================= examen de P2 : raté, remédiation, réussi ================= */
+  await pe.getByRole("button", { name: /Section suivante : examen/ }).tap();
+  await verif("examen : 10 exercices, étapes nommées, aucune correction pendant ; 3 étapes fausses (signe moins)", async () => {
+    egal(await pe.evaluate(() => X.exos.length + ":" + Q.mode), "10:controle");
+    for (let i = 0; i < 5; i++) {
+      const faux = i === 3 || i === 4;
+      for (let s = 0; s < 4 && !(await pe.evaluate(() => Q.fini)); s++) { if (faux && s === 0) await etapeFausse(pe, "SIG-PAR"); else await etapeJuste(pe); vrai(!(await pe.isVisible(".fb.faux")), "correction montrée pendant l'examen"); }
+      vrai(/Exercice enregistré/.test(await pe.textContent("#lignes"))); await pe.tap("#suite");
+      if (await pe.evaluate(() => vue === "pause")) await pe.locator("#app .btn").first().tap();
+    }
+  });
+  await pause(1500);
+  await pe.reload({ waitUntil: "domcontentloaded" }); await pastilleOK(pe);
+  await verif("examen interrompu puis repris (D44) : Reprendre ramène au 6e exercice, les 5 premiers gardés", async () => {
+    await pe.tap("#bReprendre");
+    egal(await pe.evaluate(() => X.section + ":" + X.i + ":" + X.resultats.length), "examen:5:5");
+    for (let i = 5; i < 10; i++) {
+      for (let s = 0; s < 4 && !(await pe.evaluate(() => Q.fini)); s++) { if (i === 6 && s === 0) await etapeFausse(pe, "SIG-PAR"); else await etapeJuste(pe); }
+      await pe.tap("#suite");
+      if (await pe.evaluate(() => vue === "pause")) await pe.locator("#app .btn").first().tap();
+    }
+  });
+  await verif("examen sous 80 % : palier pas validé, erreur dominante nommée, remédiation annoncée", async () => {
+    const h = await pe.textContent("h1"); vrai(/^Examen : \d+ %$/.test(h), h);
+    const t = await pe.textContent("#app"); vrai(/il faut 80 %/.test(t) && /signe moins non distribué/.test(t), t);
+    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && d.paliers.P2.examens === 1 && d; }, 8000, "examen enregistré");
+    egal(app.paliers.P2.statut, "en_cours"); vrai(app.paliers.P2.remediation.codes.includes("SIG-PAR")); vrai(app.paliers.P2.meilleurExamen < 80);
+  });
+  await pe.getByRole("button", { name: "Accueil" }).tap();
+  await verif("accueil : mini-leçon et série de remédiation ajoutées, examen refermé", async () => {
+    const t = await pe.textContent("details[data-k='P2']");
+    vrai(/Mini-leçon ciblée/.test(t) && /Série de remédiation/.test(t) && /Fermé : fais d'abord la remédiation/.test(t), t);
+  });
+  await pe.tap("#bSuivant");
+  await verif("mini-leçon ciblée sur le signe moins, avec son piège ; puis 4 exercices de remédiation", async () => {
+    vrai(/^Mini-leçon : signe moins/.test(await pe.textContent("h1")), await pe.textContent("h1")); vrai(await pe.isVisible(".bloc.piege"));
+    await pe.getByRole("button", { name: "Commencer la série" }).tap();
+    egal(await pe.evaluate(() => X.section + ":" + X.exos.length + ":" + Q.mode), "remed:4:guide");
+  });
+  await verif("fin de séance (3 blocs) : « Séance terminée », Encore un bloc → la série continue", async () => {
+    await resoudre(pe);
+    await pe.evaluate(() => { SEANCE.dureeActive = 3 * BLOC + 1000; SEANCE.blocsVus = 2; });
+    await pe.tap("#suite");
+    egal(await pe.textContent("h1"), "Séance terminée"); vrai(await pe.isVisible("text=J'arrête là"));
+    await pe.getByRole("button", { name: "Encore un bloc" }).tap();
+    egal(await pe.evaluate(() => vue + ":" + X.i + ":" + SEANCE.objectif), "exo:1:4");
+    await serie(pe); egal(await pe.textContent("h1"), "Série terminée");
+  });
+  await verif("nouvel examen, sans faute : palier P2 validé, P3 ouvert, remédiation effacée", async () => {
+    await pe.getByRole("button", { name: /Section suivante : examen/ }).tap();
+    await serie(pe);
+    egal(await pe.textContent("h1"), "Palier P2 validé !");
+    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && d.paliers.P2.statut === "valide" && d; }, 8000, "P2 validé");
+    egal(app.paliers.P3.statut, "en_cours"); egal(app.paliers.P2.remediation, null); egal(app.paliers.P2.examens, 2); egal(app.paliers.P2.meilleurExamen, 100);
+  });
+  await pe.screenshot({ path: SHOTS + "/4-examen.png" });
+
   /* ---------- l'élève ne peut pas ouvrir l'espace parent sans le code ---------- */
-  await pe.tap("#bRetour");
+  await pe.getByRole("button", { name: "Accueil" }).tap();
   await pe.getByRole("button", { name: "Espace parent" }).tap();
   await verif("élève : un mauvais code n'ouvre pas le rapport", async () => {
     await code(pe, "1234");
@@ -329,33 +493,44 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
   /* ================= PC de l'élève : même lien, même progression ================= */
   const pc = await appareil(nav, "PC élève", { viewport: { width: 1280, height: 800 } });
   await ouvrir(pc.page, "#eleve=" + CLE);
-  await verif("PC de l'élève, même lien : même prénom, les 4 étapes du banc d'essai marquées Fait", async () => {
+  await verif("PC de l'élève, même lien : même prénom, P1 et P2 validés, P3 en cours et ouvert", async () => {
     await attendre(async () => (await pc.page.textContent("h1")) === "Salut " + PRENOM, 5000, "prénom");
-    await attendre(async () => (await pc.page.$$eval(".etape .tag.fait", t => t.length)) === 4, 5000, "4 étapes Fait");
+    await attendre(async () => /Validé/.test(await pc.page.textContent("details[data-k='P2'] summary")) && /Validé/.test(await pc.page.textContent("details[data-k='P1'] summary")), 5000, "P1 et P2 validés");
+    egal(await pc.page.$eval("details[data-k='P3']", d => d.open), true);
   });
 
   /* ================= retour au téléphone du parent : le rapport ================= */
   await pp.tap("#bRetour");
-  await verif("appareil parent : accueil marqué « Appareil parent »", async () => { vrai(/Appareil parent/.test(await pp.textContent("#app"))); });
+  await verif("appareil parent : accueil marqué « Appareil parent », P0 à P4 ouverts pour l'essai", async () => {
+    vrai(/Appareil parent/.test(await pp.textContent("#app")));
+    vrai(!/S'ouvre quand le palier/.test(await pp.textContent("details[data-k='P4']")));
+  });
   await pp.getByRole("button", { name: "Espace parent" }).tap();
   await code(pp, "1986");
   await pp.waitForFunction(() => /Séances/.test(document.querySelector("#app").textContent) && !/Lecture du suivi/.test(document.querySelector("#app").textContent), null, { timeout: 8000 });
-  await verif("parent, autre appareil : la séance de l'élève apparaît, avec ses 6 exercices", async () => {
+  await verif("parent, autre appareil : la séance de l'élève apparaît, avec tous ses exercices", async () => {
     await attendre(() => pp.evaluate(() => !!(RAPPORT && RAPPORT.frais && document.querySelector(".synth"))), 8000, "rapport lu depuis la base");
     const t = await pp.textContent(".synth");
-    vrai(/aujourd'hui/.test(t), "dernière séance : " + JSON.stringify(t) + " " + await pp.evaluate(() => JSON.stringify({ n: RAPPORT && RAPPORT.seances.length, lu: RAPPORT && RAPPORT.lu }))); vrai(/sur \d+ sans erreur/.test(t), t);
-    egal(await compter("suivi/app/tentatives"), 6, "2 « À toi » + 2 guidés + 1 semi + 1 seul");
-    egal(await pp.evaluate(() => RAPPORT.tentatives.length), 6);
+    vrai(/aujourd'hui/.test(t), t); vrai(/P3 · Équations simples/.test(t), "palier actuel : " + t);
+    const n = await compter("suivi/app/tentatives"); vrai(n >= 45, "trop peu de tentatives : " + n);
+    egal(await pp.evaluate(() => RAPPORT.tentatives.length), n);
   });
-  await verif("parent : SIG-PAR et CALC dans les erreurs des 7 jours, avec leur nom clair", async () => {
+  await verif("parent : SIG-PAR en tête des erreurs, nom en clair", async () => {
     await pp.getByRole("button", { name: "Tout déplier" }).tap();
     const top = await pp.$$eval("details[data-k='erreurs'] td", tds => tds.map(t => t.textContent).join(" | "));
-    vrai(/Signe moins non distribué/.test(top) && /SIG-PAR/.test(top), "erreurs : " + JSON.stringify(top)); vrai(/Erreur de calcul/.test(top) && /CALC/.test(top), top);
+    vrai(/Signe moins non distribué/.test(top) && /SIG-PAR/.test(top), "erreurs : " + JSON.stringify(top));
   });
-  await verif("parent : détail d'une séance jusqu'aux lignes saisies, la ligne fausse marquée", async () => {
+  await verif("parent : paliers — P1 validé par le diagnostic, P2 validé en 2 examens", async () => {
+    const t = await pp.textContent("details[data-k='paliers']");
+    vrai(/Validé \(par le diagnostic\)/.test(t), t); vrai(/2 examens/.test(t) && /100 %/.test(t), t);
+  });
+  await verif("parent (D39) : détail des lignes avec le niveau d'aide en clair, « recopiée » en orange, jumeau et examen nommés", async () => {
     await pp.locator("details.seance summary").first().tap();
     const d = await pp.textContent("details.seance");
-    vrai(/✗ Signe moins non distribué/.test(d), "ligne fausse absente du détail"); vrai(/Guidé|Seul/.test(d));
+    vrai(/✗ Signe moins non distribué/.test(d), "ligne fausse absente"); vrai(/juste seul/.test(d)); vrai(/Jumeau/.test(d) && /Examen de palier/.test(d), "jumeau ou examen non nommés");
+    const o = await pp.$$eval("details.seance li.orange", ls => ls.map(l => [l.textContent, getComputedStyle(l).color]));
+    vrai(o.length >= 1 && /recopiée/.test(o[0][0]), "ligne recopiée absente"); vrai(o[0][1] !== "rgb(0, 0, 0)", "pas en orange");
+    vrai(!/ligne donnée/.test(d), "ancien libellé « ligne donnée »");
   });
   await pp.screenshot({ path: SHOTS + "/5-parent.png", fullPage: false });
   await verif("parent : date du contrôle réglée → compte à rebours chez l'élève, en direct", async () => {
@@ -373,21 +548,27 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     await pp.tap("#bRetour"); await pp.getByRole("button", { name: "Espace parent" }).tap();
     vrai(await pp.isVisible(".pinpad"));
   });
-  await verif("essai sur l'appareil parent : la progression de l'élève ne bouge pas, l'essai va dans la zone d'essai", async () => {
+  await verif("essai sur l'appareil parent : P4 guidé avec l'étape « Vérifie » ; la progression de l'élève ne bouge pas", async () => {
     await pp.tap("#bRetour");
-    const avant = await lireBase("suivi/app"), cle = d => JSON.stringify({ r: d.eleve.reprise, f: d.paliers.T.fait });
-    await pp.tap("#bSuivant"); await pp.getByRole("button", { name: /Faire les 2 questions/ }).tap();
-    const apres = await attendre(async () => { const d = await lireBase("suivi/app"); return d.essai && d.essai.reprise && d.essai.reprise.section === "lecon" && d; }, 8000, "reprise d'essai");
+    const avant = await lireBase("suivi/app"), cle = d => JSON.stringify({ r: d.eleve.reprise, p: d.paliers });
+    await ouvrirPalier(pp, "P4"); await pp.locator("details[data-k='P4'] .etape", { hasText: "Série guidée" }).tap();
+    egal(await pp.evaluate(() => Q.etapes.slice(-2).map(e => e.nom).join()), "Vérifie à gauche,Vérifie à droite");
+    for (let s = 0; s < 8 && !(await pp.evaluate(() => /^verifie/.test(Q.etapes[Q.k].id))); s++) await etapeJuste(pp);
+    vrai(/Avec x = /.test(await pp.textContent("label.etq")), "consigne : " + await pp.textContent("label.etq"));
+    await etapeFausse(pp); vrai(await pp.isVisible(".fb.faux"), "erreur de vérification non signalée : " + await pp.evaluate(() => JSON.stringify(Q.fb)));
+    await etapeJuste(pp); await etapeJuste(pp);
+    vrai(await pp.evaluate(() => Q.fini), "pas fini : " + await pp.evaluate(() => JSON.stringify({ k: Q.k, fb: Q.fb, et: Q.etapes.map(e => e.id) })));
+    vrai(/deux côtés sont égaux|deux côtés valent/.test(await pp.textContent("#lignes")), await pp.textContent("#lignes"));
+    const apres = await attendre(async () => { const d = await lireBase("suivi/app"); return d.essai && d.essai.reprise && d.essai.reprise.section === "guide" && d; }, 8000, "reprise d'essai");
     egal(cle(apres), cle(avant));
-    await pp.tap("#bRetour"); await pp.tap("#bRetour").catch(() => {});
+    await pp.tap("#bRetour").catch(() => {});
   });
-
   /* ================= clé oubliée, lien abîmé, refus de la base ================= */
   await verif("clé oubliée sur le téléphone de l'élève : écran d'appairage, puis lien rouvert → rien de perdu", async () => {
     await pe.evaluate(() => localStorage.clear());
     await pe.goto(URL_APP(), { waitUntil: "domcontentloaded" }); await pe.waitForSelector("text=Cet appareil n'est pas encore relié");
     await ouvrir(pe, "#eleve=" + CLE);
-    await attendre(async () => (await pe.$$eval(".etape .tag.fait", t => t.length)) === 4, 8000, "4 étapes Fait");
+    await attendre(async () => /Validé/.test(await pe.textContent("details[data-k='P2'] summary")), 8000, "P2 validé");
     egal(await pe.textContent("h1"), "Salut " + PRENOM);
   });
   await verif("lien coupé (clé de 31 caractères) : écran d'appairage, aucune famille créée dans la base", async () => {

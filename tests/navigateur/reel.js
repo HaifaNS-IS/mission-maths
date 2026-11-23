@@ -67,13 +67,20 @@ async function taper(page, texte) {
   for (const ch of texte.replace(/\s/g, "")) { const k = ch === "-" ? "−" : ch === "." ? "," : ch; await page.locator(`#clavier button[data-k="${k}"]`).tap(); }
   await page.locator('#clavier button[data-k="ok"]').tap(); await pause(60);
 }
-async function resoudre(page) {
-  for (let s = 0; s < 8; s++) {
+/* Résout l'exercice en cours avec des lignes justes, calculées par le moteur de l'app (diagnostic : faux si on le demande). */
+async function resoudre(page, faux) {
+  for (let s = 0; s < 10; s++) {
     if (await page.evaluate(() => Q.fini)) return;
-    await taper(page, await page.evaluate(() => (Q.type === "equation" ? MM.expr.ecrireEquation(MM.etapes.prochaine(Q.prev, Q.etapes[Q.k].forme)) : Q.etapes[Q.k].attendu).replace(/−/g, "-")));
+    await taper(page, await page.evaluate((faux) => {
+      const ex = Q.exo, F = MM.F;
+      if (Q.mode === "diag" || Q.mode === "seul") { const d = faux ? 1 : 0; return (ex.type === "equation" ? "x=" + F(ex.reponse).plus(d).texte() : ex.type === "expression" ? ex.reponse + (d ? "+1" : "") : F(ex.reponse).plus(d).texte()).replace(/−/g, "-"); }
+      const et = Q.etapes[Q.k], type = et.type || ex.type;
+      return (type === "equation" ? MM.expr.ecrireEquation(MM.etapes.prochaine(Q.prev, et.forme)) : type === "expression" ? MM.expr.ecrireCote(MM.etapes.attenduExpr(Q.prev, et.forme)) : MM.nombres.prochaine(Q.prev, et.forme)).replace(/−/g, "-");
+    }, !!faux));
   }
   throw new Error("exercice non terminé");
 }
+async function suite(page) { await page.tap("#suite"); for (let i = 0; i < 3 && await page.evaluate(() => vue === "pause"); i++) await page.locator("#app .btn").first().tap(); }
 const code = async (page, c) => { for (const k of c) await page.getByRole("button", { name: k, exact: true }).tap(); };
 
 (async () => {
@@ -113,17 +120,25 @@ const code = async (page, c) => { for (const k of c) await page.getByRole("butto
     await attendre(async () => (await pe.textContent("h1")) === "Salut " + PRENOM, 10000, "prénom");
     console.log("   (lien ouvert → synchronisé en " + ((Date.now() - t0) / 1000).toFixed(1) + " s)");
   });
-  await verif("élève : leçon + 2 questions « À toi » faites, les 2 tentatives arrivent dans la vraie base", async () => {
-    await pe.tap("#bSuivant"); await pe.getByRole("button", { name: "Faire les 2 questions" }).tap();
-    await resoudre(pe); await pe.tap("#suite"); await resoudre(pe); await pe.tap("#suite");
+  await verif("élève : diagnostic (une faute sur les signes → il commence à P1), placement écrit dans la vraie base", async () => {
+    await pe.tap("#bSuivant");
+    for (let i = 0; i < 12; i++) { await resoudre(pe, i === 0); await suite(pe); }
+    egal(await pe.textContent("h1"), "Test diagnostic terminé");
+    await attendre(async () => { const d = await lire("suivi/app"); return d && d.paliers.P0.statut === "valide" && d.paliers.P1.statut === "en_cours"; }, 15000, "placement");
+    await attendre(async () => (await lister("suivi/app/tentatives")).length === 12, 15000, "12 tentatives");
+  });
+  await verif("élève : leçon P1 + 2 questions « À toi » faites, les tentatives arrivent dans la vraie base", async () => {
+    await pe.tap("#bSuivant"); egal(await pe.textContent("h1"), "Les signes des nombres relatifs");
+    await pe.getByRole("button", { name: "Faire les 2 questions" }).tap();
+    await resoudre(pe); await suite(pe); await resoudre(pe); await suite(pe);
     egal(await pe.textContent("h1"), "Leçon terminée");
-    await attendre(async () => (await lister("suivi/app/tentatives")).length === 2, 15000, "2 tentatives");
-    await attendre(async () => { const d = await lire("suivi/app"); return d.paliers.T.fait.lecon === true; }, 10000, "leçon cochée");
+    await attendre(async () => (await lister("suivi/app/tentatives")).length === 14, 15000, "14 tentatives");
+    await attendre(async () => { const d = await lire("suivi/app"); return d.paliers.P1.fait.lecon === true; }, 10000, "leçon cochée");
     egal((await lire("suivi/app")).essai.reprise, null, "la zone d'essai du parent a bougé");
   });
-  await verif("parent, autre appareil : le rapport montre la séance d'aujourd'hui et ses 2 exercices", async () => {
+  await verif("parent, autre appareil : le rapport montre la séance d'aujourd'hui et ses 14 exercices", async () => {
     await pp.tap("#bRetour"); await pp.getByRole("button", { name: "Espace parent" }).tap(); await code(pp, "1986");
-    await attendre(() => pp.evaluate(() => !!(RAPPORT && RAPPORT.frais && RAPPORT.tentatives.length === 2)), 15000, "rapport frais");
+    await attendre(() => pp.evaluate(() => !!(RAPPORT && RAPPORT.frais && RAPPORT.tentatives.length === 14)), 15000, "rapport frais");
     vrai(/aujourd'hui/.test(await pp.textContent(".synth")), await pp.textContent(".synth"));
   });
   await pp.screenshot({ path: SHOTS + "/reel-parent.png" });
@@ -131,9 +146,9 @@ const code = async (page, c) => { for (const k of c) await page.getByRole("butto
     await pe.getByRole("button", { name: /Section suivante : série guidée/ }).tap();
     await E.ctx.setOffline(true);
     await resoudre(pe); await pe.tap("#suite");
-    egal((await lister("suivi/app/tentatives")).length, 2, "parti malgré la coupure");
+    egal((await lister("suivi/app/tentatives")).length, 14, "parti malgré la coupure");
     await E.ctx.setOffline(false); await pe.evaluate(() => window.dispatchEvent(new Event("online")));
-    await attendre(async () => (await lister("suivi/app/tentatives")).length === 3, 30000, "3e tentative");
+    await attendre(async () => (await lister("suivi/app/tentatives")).length === 15, 30000, "15e tentative");
     await attendre(() => pe.evaluate(() => FILE.taille() === 0), 15000, "file vide");
   });
   await verif("clé oubliée sur le téléphone de l'élève, lien rouvert : rien de perdu", async () => {

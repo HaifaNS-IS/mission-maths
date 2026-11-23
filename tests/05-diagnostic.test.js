@@ -12,10 +12,11 @@ function explicationValable(x, code) {
   egal(x.reflexe, D.CATALOGUE[code].reflexe);
 }
 
-test("catalogue : les 17 codes du cahier des charges + CALC (validé le 15/11), chacun avec nom, exemple et réflexe", () => {
-  egal(Object.keys(D.CATALOGUE).sort().join(), CODES_CDC.concat(["CALC"]).sort().join());
-  for (const c of CODES_CDC.concat(["CALC"])) { const k = D.CATALOGUE[c]; vrai(k.nom && k.exemple && k.reflexe, c); vrai(mots(k.reflexe) < 15, c); vrai(k.actif || k.lot >= 3, c + " : ni actif ni planifié"); }
-  egal(Object.keys(D.CATALOGUE).filter(c => D.CATALOGUE[c].actif).sort().join(), ACTIFS.concat(["CALC"]).sort().join());
+test("catalogue : les 17 codes du cahier des charges + CALC (validé le 15/11) + PRIO (validé le 23/11), chacun avec nom, exemple et réflexe", () => {
+  const AJOUTS = ["CALC", "PRIO"];
+  egal(Object.keys(D.CATALOGUE).sort().join(), CODES_CDC.concat(AJOUTS).sort().join());
+  for (const c of CODES_CDC.concat(AJOUTS)) { const k = D.CATALOGUE[c]; vrai(k.nom && k.exemple && k.reflexe, c); vrai(mots(k.reflexe) < 15, c); vrai(k.actif || k.lot >= 3, c + " : ni actif ni planifié"); }
+  egal(Object.keys(D.CATALOGUE).filter(c => D.CATALOGUE[c].actif).sort().join(), ACTIFS.concat(AJOUTS).sort().join());
 });
 test("le moteur reproduit les exemples du catalogue (SIG-PAR, DIST-PART, RED-MIX)", () => {
   const ex = (depart, saisie, forme) => T.jugerExpression(E.lireExpression(depart).termes, saisie, forme);

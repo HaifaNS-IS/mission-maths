@@ -275,6 +275,9 @@
 
   MM.ErreurLecture = ErreurLecture;
   MM.Poly = Poly;
-  MM.expr = { normaliser, lireExpression, lireEquation, polyDeTermes, monomes, mono, par, ecrireCote, ecrireTerme, ecrireEquation, MOINS };
+  /* L'arbre d'une ligne sans signe = (sert au module des nombres relatifs, qui juge la forme écrite : parenthèses, produits). */
+  const arbre = texte => analyser(jetons(normaliser(texte)));
+  const corpsTerme = t => corps(t);
+  MM.expr = { normaliser, lireExpression, lireEquation, polyDeTermes, monomes, mono, par, ecrireCote, ecrireTerme, ecrireEquation, MOINS, arbre, polyDeArbre: polyDe, corpsTerme };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;
 })(typeof globalThis !== "undefined" ? globalThis : this);

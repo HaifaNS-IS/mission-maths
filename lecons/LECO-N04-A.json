@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N04-A",
+  "categorie": "lecon",
+  "palier": "P4",
+  "niveau": 4,
+  "version": "1.0",
+  "source": "Mission Maths, lot 2 : leçon du palier P4",
+  "verifie_le": "2026-11-23",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "equation-complete",
+    "titre": "L'équation complète",
+    "duree_min": 5,
+    "idee": "Développe, réduis, regroupe les x, puis divise : toujours dans cet ordre.",
+    "exemple": {
+      "gen": "eq1par",
+      "niveau": 3,
+      "graine": 2
+    },
+    "piege": {
+      "code": "DIV-INV",
+      "parade": "Dernière ligne : on divise par le nombre collé au x, jamais l'inverse."
+    },
+    "a_toi": [
+      {
+        "gen": "eqxx",
+        "niveau": 1
+      },
+      {
+        "gen": "eq1par",
+        "niveau": 2
+      }
+    ],
+    "fiche": {
+      "id": "F-DIV-INV",
+      "texte": "On divise par le nombre collé au x, jamais l'inverse."
+    }
+  },
+  "questions": []
+}

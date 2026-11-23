@@ -3,6 +3,8 @@
 Outil de rattrapage en maths pour un élève de 3e / 4e : équations du 1er et du 2nd degré, repère, fonctions affines.
 Leçons courtes, saisie de chaque étape du calcul, diagnostic de l'erreur commise, suivi pour le parent.
 
+Contenu livré : test diagnostic (P0), nombres relatifs (P1), calcul littéral (P2), équations simples (P3), équations complètes (P4). Une échelle d'aide à 4 marches guide l'élève sans jamais lui donner la ligne avant la 5e erreur.
+
 - **Site** : page statique servie par GitHub Pages.
 - **Données** : base Firebase Firestore. Chaque famille a une clé secrète de 32 caractères, transmise par lien (`#eleve=…` ou `#parent=…`). La clé n'est jamais dans ce dépôt.
 - **Règles de la base** : `firestore.rules` (lecture et écriture seulement avec une clé de famille, connexion anonyme obligatoire, aucune liste des familles).

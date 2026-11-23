@@ -1,0 +1,164 @@
+/* Mission Maths — parcours.js
+   Le contenu des paliers P0 à P4 (leçon, séries, examen, diagnostic) et les règles de passage du lot 2 :
+     leçon → série guidée → semi-guidée → seule → examen (ouvert quand les 3 séries sont validées)
+     examen raté → 1 ou 2 erreurs dominantes → mini-leçon ciblée → série de remédiation (4 exercices) → nouvel examen
+     diagnostic P0 → paliers validés d'office, seulement à la suite (P1 exige 5/5).
+   Fonctions pures : elles reçoivent l'état des paliers et en rendent un nouveau. */
+(function (G) {
+  "use strict";
+  const MM = G.MM || (G.MM = {});
+  if (typeof require === "function") { if (!MM.progression) require("./progression.js"); if (!MM.gen) require("./gen/algebre.js"); }
+  const P = MM.progression;
+  const s = (gen, niveau) => ({ gen, niveau });
+  const serie = (...l) => l.map(([g, n]) => s(g, n));
+
+  const CONTENU = {
+    P0: { diagnostic: [
+      Object.assign(s("rel", 2), { notion: "P1" }), Object.assign(s("rel", 3), { notion: "P1" }), Object.assign(s("relmul", 1), { notion: "P1" }),
+      Object.assign(s("relmul", 2), { notion: "P1" }), Object.assign(s("prio", 2), { notion: "P1" }),
+      Object.assign(s("dev1", 2), { notion: "P2" }), Object.assign(s("red", 2), { notion: "P2" }), Object.assign(s("devred", 2), { notion: "P2" }),
+      Object.assign(s("eqs", 1), { notion: "P3" }), Object.assign(s("eqs", 3), { notion: "P3" }),
+      Object.assign(s("eqxx", 1), { notion: "P4" }), Object.assign(s("eq1par", 2), { notion: "P4" })] },
+    P1: { lecon: "LECO-N01-A",
+      guide: serie(["rel", 1], ["rel", 2], ["relmul", 1], ["prio", 1], ["rel", 3], ["prio", 2]),
+      semi: serie(["rel", 2], ["relmul", 2], ["prio", 2], ["rel", 3], ["relmul", 3], ["prio", 3]),
+      seul: serie(["rel", 3], ["relmul", 2], ["prio", 2], ["prio", 3], ["relmul", 3], ["rel", 2]),
+      examen: serie(["rel", 1], ["rel", 2], ["rel", 3], ["relmul", 1], ["relmul", 2], ["relmul", 3], ["prio", 1], ["prio", 2], ["prio", 3], ["rel", 3]) },
+    P2: { lecon: "LECO-N02-A",
+      guide: serie(["red", 1], ["dev1", 1], ["dev1", 2], ["devred", 1]),
+      semi: serie(["red", 2], ["dev1", 2], ["devred", 2], ["devred", 2]),
+      seul: serie(["red", 2], ["dev1", 3], ["devred", 2], ["devred", 3]),
+      examen: serie(["red", 1], ["red", 2], ["dev1", 1], ["dev1", 2], ["dev1", 3], ["devred", 1], ["devred", 2], ["devred", 2], ["devred", 3], ["red", 2]) },
+    P3: { lecon: "LECO-N03-A",
+      guide: serie(["eqs", 1], ["eqs", 2], ["eqs", 3], ["eqs", 3]),
+      semi: serie(["eqs", 1], ["eqs", 2], ["eqs", 3], ["eqs", 3]),
+      seul: serie(["eqs", 2], ["eqs", 3], ["eqs", 3], ["eqs", 3]),
+      examen: serie(["eqs", 1], ["eqs", 1], ["eqs", 1], ["eqs", 2], ["eqs", 2], ["eqs", 2], ["eqs", 3], ["eqs", 3], ["eqs", 3], ["eqs", 3]) },
+    P4: { lecon: "LECO-N04-A",
+      guide: serie(["eqxx", 1], ["eq1par", 1], ["eq1par", 2]),
+      semi: serie(["eqxx", 2], ["eq1par", 2], ["eq1par", 3]),
+      seul: serie(["eqxx", 1], ["eq1par", 2], ["eq1par", 3]),
+      examen: serie(["eqxx", 1], ["eqxx", 2], ["eq1par", 1], ["eq1par", 2], ["eq1par", 2], ["eq1par", 2], ["eq1par", 3], ["eq1par", 3], ["eq1par", 3], ["eqxx", 1]) }
+  };
+  const LIVRES = ["P0", "P1", "P2", "P3", "P4"];
+  const SECTIONS = ["lecon", "guide", "semi", "seul", "examen"];
+  const NOMS = { diagnostic: "Test diagnostic", lecon: "Leçon", guide: "Série guidée", semi: "Série semi-guidée", seul: "Série seul", examen: "Examen de palier",
+    remedLecon: "Mini-leçon ciblée", remed: "Série de remédiation" };
+  const PARADES = {
+    "SIG-PAR": "Avant d'écrire, dis-toi : le moins se colle à chaque terme.",
+    "DIST-PART": "Trace une flèche du nombre vers chaque terme de la parenthèse.",
+    "RED-MIX": "Souligne les x d'une couleur, les nombres d'une autre.",
+    "TRANS-SIG": "Pour faire partir un terme, fais l'opération inverse des deux côtés.",
+    "DIV-INV": "Dernière ligne : on divise par le nombre collé au x.",
+    "SIG-REL": "Entoure chaque signe avant de calculer.",
+    "PRIO": "Repère les × et les ÷ : ils passent en premier.",
+    "CALC": "Pose chaque calcul au brouillon, un à la fois."
+  };
+
+  /* ---------- état d'un palier (champs ajoutés au lot 2) ---------- */
+  function completerPalier(p) {
+    const o = Object.assign({ statut: "verrouille", meilleurExamen: null, valideLe: null, echecsRevision: 0, fait: {}, examens: 0, remediation: null, parDiagnostic: false }, p);
+    if (!o.fait || typeof o.fait !== "object") o.fait = {};
+    return o;
+  }
+  const examenOuvert = p => !!(p.fait.guide && p.fait.semi && p.fait.seul) && (!p.remediation || !!(p.remediation.fait && p.remediation.fait.remed));
+  /* Les sections d'un palier, dans l'ordre, avec ce qui est fait et ce qui est ouvert. */
+  function sections(id, p) {
+    p = completerPalier(p);
+    if (id === "P0") return [{ id: "diagnostic", fait: p.statut === "valide", ouvert: p.statut !== "valide" }];
+    const out = SECTIONS.filter(x => x !== "examen").map(x => ({ id: x, fait: !!p.fait[x], ouvert: true }));
+    if (p.remediation) for (const x of ["remedLecon", "remed"]) out.push({ id: x, fait: !!(p.remediation.fait && p.remediation.fait[x]), ouvert: true, codes: p.remediation.codes });
+    out.push({ id: "examen", fait: p.statut === "valide", ouvert: examenOuvert(p) });
+    return out;
+  }
+  /* « Section suivante » dans un palier : le premier contenu pas fait et ouvert. null si le palier est validé. */
+  function sectionSuivante(id, p) {
+    p = completerPalier(p);
+    if (p.statut === "valide" || p.statut === "verrouille") return null;
+    const l = sections(id, p);
+    const r = l.find(x => !x.fait && x.ouvert && x.id !== "examen");
+    if (r) return r.id;
+    return examenOuvert(p) ? "examen" : null;
+  }
+
+  /* ---------- examen ---------- */
+  /* Les 1 ou 2 erreurs qui reviennent le plus (codes du catalogue). */
+  function codesDominants(lignes) {
+    const n = {};
+    for (const l of lignes) if (l && l.juste === false && l.code) n[l.code] = (n[l.code] || 0) + 1;
+    const ordre = (MM.diag && MM.diag.PRIORITE) || [];
+    const tri = Object.keys(n).sort((a, b) => n[b] - n[a] || ordre.indexOf(a) - ordre.indexOf(b) || (a < b ? -1 : 1));
+    return tri.slice(0, tri.length >= 2 && n[tri[1]] >= 2 ? 2 : 1);
+  }
+  /* Résultat d'un examen de palier : validation (80 %) ou remédiation. */
+  function apresExamenPalier(paliers, id, points, total, lignes, maintenant) {
+    let o = P.apresExamen(paliers, id, points, total, maintenant);
+    o[id] = completerPalier(o[id]);
+    o[id].examens = (o[id].examens || 0) + 1;
+    if (o[id].statut === "valide") o[id].remediation = null;
+    else o[id].remediation = { codes: codesDominants(lignes), fait: {} };
+    return o;
+  }
+
+  /* ---------- diagnostic P0 ---------- */
+  /* resultats : [{ notion: "P1", juste: true }, …]. Un palier n'est validé que si tous ses précédents le sont. */
+  function apresDiagnostic(paliers, resultats, maintenant) {
+    const o = JSON.parse(JSON.stringify(paliers));
+    o.P0 = completerPalier(o.P0); o.P0.statut = "valide"; o.P0.valideLe = o.P0.valideLe || maintenant;
+    const bilan = {};
+    for (const r of resultats) { const b = bilan[r.notion] || (bilan[r.notion] = { justes: 0, total: 0 }); b.total++; if (r.juste) b.justes++; }
+    let suite = true;
+    for (const id of ["P1", "P2", "P3", "P4"]) {
+      o[id] = completerPalier(o[id]);
+      if (o[id].statut === "valide") continue;
+      const b = bilan[id], acquis = suite && b && b.total > 0 && b.justes === b.total;
+      if (acquis) Object.assign(o[id], { statut: "valide", valideLe: maintenant, parDiagnostic: true });
+      else { if (o[id].statut === "verrouille") o[id].statut = "en_cours"; suite = false; break; }
+    }
+    if (suite) { const p5 = o.P5 = completerPalier(o.P5); if (p5.statut === "verrouille") p5.statut = "en_cours"; }
+    return { paliers: o, bilan };
+  }
+
+  /* ---------- remédiation : les exercices du palier où ce piège peut se produire ---------- */
+  function peutProduire(spec, code) {
+    if (!code) return true;
+    for (let g = 1; g <= 12; g++) { try { const e = MM.gen.creer(spec.gen, spec.niveau, g); if (e.erreurs[code] && e.erreurs[code].length) return true; } catch (x) { /* graine sans tirage */ } }
+    return false;
+  }
+  function specsRemediation(id, codes) {
+    const c = CONTENU[id], vus = new Set(), base = [];
+    for (const sp of c.examen.concat(c.guide)) { const k = sp.gen + sp.niveau; if (!vus.has(k)) { vus.add(k); base.push(sp); } }
+    let ok = base.filter(sp => (codes || []).some(code => code !== "CALC" && peutProduire(sp, code)));
+    if (!ok.length) ok = c.guide.slice();
+    const out = [];
+    for (let i = 0; out.length < 4; i++) out.push(s(ok[i % ok.length].gen, ok[i % ok.length].niveau));
+    return out;
+  }
+  /* La mini-leçon ciblée, au format d'un pack de leçon (tout le reste est calculé par lecon.preparer). */
+  function packRemediation(id, code) {
+    const cat = MM.diag.CATALOGUE[code] || null;
+    const specs = specsRemediation(id, [code]);
+    const avecPiege = !!(cat && code !== "CALC");
+    const pack = ex => ({ pack_id: "LECO-R00-A", palier: id, lecon: {
+      id: "remed-" + (code || "aucun"), titre: cat ? "Mini-leçon : " + cat.nom.toLowerCase() : "Mini-leçon : reprendre pas à pas",
+      duree_min: 3, idee: cat ? cat.reflexe : "Une étape à la fois, en vérifiant chaque ligne.",
+      exemple: ex, piege: avecPiege ? { code, parade: PARADES[code] } : null, a_toi: [],
+      fiche: { id: "F-" + (code || "PAS"), texte: cat ? cat.reflexe : "Une étape à la fois, en vérifiant chaque ligne." } } });
+    let exemple = null;
+    for (const sp of specs) {
+      for (let g = 1; g <= 40 && !exemple; g++) {
+        const ex = { gen: sp.gen, niveau: sp.niveau, graine: g };
+        try { MM.lecon.preparer(pack(ex)); exemple = ex; } catch (x) { /* piège absent sur cette graine */ }
+      }
+      if (exemple) break;
+    }
+    if (exemple) return pack(exemple);
+    const sans = pack({ gen: specs[0].gen, niveau: specs[0].niveau, graine: 1 });       // code impossible ici : mini-leçon sans piège
+    sans.lecon.piege = null;
+    return sans;
+  }
+
+  MM.parcours = { CONTENU, LIVRES, SECTIONS, NOMS, PARADES, completerPalier, sections, sectionSuivante, examenOuvert, codesDominants,
+    apresExamenPalier, apresDiagnostic, specsRemediation, packRemediation };
+  if (typeof module !== "undefined" && module.exports) module.exports = MM;
+})(typeof globalThis !== "undefined" ? globalThis : this);

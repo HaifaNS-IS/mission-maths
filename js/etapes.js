@@ -170,14 +170,28 @@
     if (!lu.ok) return { statut: "illisible", raison: lu.raison, message: lu.message };
     const ecrit = E.ecrireCote(lu.termes);
     if (lu.poly.egal(poly(depart))) {
-      if (forme && !FORMES_EXPR[forme](lu.termes)) return { statut: "incomplet", ecrit, manque: forme, message: ETAPES[forme].manque };
-      return { statut: "juste", ecrit };
+      if (forme && !FORMES_EXPR[forme](lu.termes)) return { statut: "incomplet", ecrit, termes: lu.termes, manque: forme, message: ETAPES[forme].manque };
+      return { statut: "juste", ecrit, termes: lu.termes };
     }
     const d = MM.diag.diagnostiquerExpression(depart, lu.poly, lu.termes) || MM.diag.localiser({ g: depart, d: [] }, { g: lu.termes, d: [] }, true);
-    return { statut: "faux", ecrit, code: d ? d.code : null, diag: d, attendu: E.ecrireCote(attenduExpr(depart, forme)) };
+    return { statut: "faux", ecrit, termes: lu.termes, code: d ? d.code : null, diag: d, attendu: E.ecrireCote(attenduExpr(depart, forme)) };
   }
 
-  MM.etapes = { developper, devCote, devTerme, reduire, redCote, regrouper, resoudre, signature, equivalentes, memesCotes, eqSolution,
+  /* Démarche libre sur une expression (mode seul) : chaque ligne jugée à partir de la précédente de l'élève. */
+  function evaluerDemarcheExpression(depart, lignes, formeFinale) {
+    let prev = depart, nbErreurs = 0, premiere = -1;
+    const res = lignes.map((txt, i) => {
+      const v = jugerExpression(prev, txt, null);
+      if (v.statut === "faux") { nbErreurs++; if (premiere < 0) premiere = i; }
+      if (v.termes) prev = v.termes;
+      return v;
+    });
+    const der = res[res.length - 1];
+    const fini = !!(der && der.termes && FORMES_EXPR[formeFinale || "reduit"](der.termes));
+    return { lignes: res, nbErreurs, premiereErreur: premiere, fini, resultatJuste: fini && poly(der.termes).egal(poly(depart)) };
+  }
+
+  MM.etapes = { FORMES_EXPR, evaluerDemarcheExpression, developper, devCote, devTerme, reduire, redCote, regrouper, resoudre, signature, equivalentes, memesCotes, eqSolution,
     FORMES, ORDRE, ETAPES, chaine, prochaine, corrige, etapesUtiles, ecrireSolution, jugerLigne, evaluerDemarche, jugerExpression, attenduExpr, lesX, lesNombres, opp };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -8,7 +8,7 @@
   if (typeof require === "function" && !MM.etapes) require("./etapes.js");
   const E = MM.expr, T = MM.etapes, Fraction = MM.Fraction, mono = E.mono, poly = E.polyDeTermes;
 
-  /* Les 17 codes du cahier des charges, plus CALC. actif = détection livrée ; sinon, lot prévu. */
+  /* Les 17 codes du cahier des charges, plus CALC et PRIO. actif = détection livrée ; sinon, lot prévu. */
   const CATALOGUE = {
     "SIG-PAR":   { nom: "Signe moins non distribué", exemple: "−5(x + 8) → −5x + 40", reflexe: "Le moins se colle à chaque terme de la parenthèse.", actif: true },
     "SIG-REL":   { nom: "Règle des signes", exemple: "−3 × −4 = −12", reflexe: "Moins par moins donne plus. Pense à l'ascenseur.", actif: true },
@@ -18,6 +18,8 @@
     "DIV-INV":   { nom: "Division inversée", exemple: "4x = 1 → x = 4", reflexe: "On divise par ce qui est collé au x.", actif: true },
     /* Ajout au catalogue minimum, validé le 15/11/2026 : erreurs de table, d'addition, de division. */
     "CALC":      { nom: "Erreur de calcul", exemple: "3 × 5 = 12", reflexe: "Un calcul à la fois, au brouillon.", actif: true, ajout: "2026-11-15" },
+    /* Ajout validé le 23/11/2026 (lot 2, palier P1). */
+    "PRIO":      { nom: "Priorités de calcul", exemple: "2 + 3 × 4 = 20", reflexe: "Le × et le ÷ passent avant le + et le −.", actif: true, ajout: "2026-11-23" },
     "ABC-SIG":   { nom: "b ou c pris sans son signe", exemple: "b = 13 au lieu de −13", reflexe: "Le signe fait partie du nombre.", lot: 3 },
     "DELTA-SQ":  { nom: "(−b)² ou −b mal calculé", exemple: "−(−13) = −13", reflexe: "Parenthèses obligatoires quand b est négatif.", lot: 3 },
     "RAC-SQ":    { nom: "Racine confondue avec carré", exemple: "√49 = 49²", reflexe: "La racine, c'est le chemin retour du carré.", lot: 3 },
@@ -48,7 +50,7 @@
   };
   function detailDev(t, faux) {
     const bon = T.devTerme(t);
-    return { terme: E.ecrireTerme(t), facteur: t.c, premier: bon[0], u: t.inner[1], faux: faux[1], bon: bon[1] };
+    return { terme: E.ecrireTerme(t), facteur: t.c, premier: bon[0], u: t.inner[1], faux: faux[1], bon: bon[1], t, fauxTermes: faux };
   }
   function malDevelopper(eq) {
     const out = [], places = [];
@@ -278,7 +280,21 @@
 
   /* ---------- l'explication du prof : ce qui est juste, l'endroit exact où ça déraille, la règle ---------- */
   const ecr = t => E.ecrireTerme(t);
-  function expliquerHorsCatalogue(x, code) {
+  /* Variante 2 (D37) : la même erreur, expliquée autrement (autre image, ou vérification avec des nombres). */
+  function autrement(r, regle) { return Object.assign(r, { regle, variante: 2 }); }
+  /* La valeur d'une écriture pour un x donné : sert à « tester avec x = 1 ». */
+  const valeurEn = (termes, x) => poly(termes).valeur(x);
+  function xTest(a, b) { for (const v of [1, 2, 3, -1, 10]) if (!valeurEn(a, v).egal(valeurEn(b, v))) return v; return null; }
+  function expliquerHorsCatalogue(x, code, variante) {
+    const r = expliquerHorsCatalogue1(x, code);
+    if (variante !== 2) return r;
+    if (x.loc === "remplace" && x.op === "produit") return autrement(r, "Fais-le en deux temps : le signe d'abord, puis " + x.f1.c.abs().texte() + " × " + x.f2.c.abs().texte() + ".");
+    if (x.loc === "remplace" && x.op === "somme") return autrement(r, "Range : les plus ensemble, les moins ensemble. Puis fais la différence.");
+    if (x.loc === "remplace" && x.op === "division") return autrement(r, "Pose la division au brouillon, puis simplifie la fraction.");
+    if (x.loc === "manque" || x.loc === "trop") return autrement(r, "Compte les termes de la ligne d'avant, puis ceux de ta ligne.");
+    return autrement(r, "Relis ta ligne terme par terme. Compare-la à la ligne d'avant.");
+  }
+  function expliquerHorsCatalogue1(x, code) {
     const base = { code: code || null, reflexe: code ? CATALOGUE[code].reflexe : "", suite: "" };
     const autres = (x.communs || []).filter(t => !t.c.estNul());
     const bonAvant = autres.length === 1 ? "Ton " + ecr(autres[0]) + " est bon." : autres.length ? "Le reste de ta ligne est juste." : "Tu es sur la bonne étape.";
@@ -296,7 +312,7 @@
     if (x.loc === "remplace" && x.op === "division") {
       const ab = x.b.texte() + " ÷ " + entrePar(x.a);
       return Object.assign(base, { titre: "Erreur de calcul", bon: "Tu as bien isolé x.", resume: ab + " = " + x.bon.c.texte() + ", pas " + x.faux.c.texte(),
-        ou: "Mais " + ab + " = " + x.bon.c.texte() + ", pas " + x.faux.c.texte() + ".", regle: "Vérifie en remultipliant : " + x.a.texte() + " × " + entrePar(x.bon.c) + " = " + x.b.texte() + "." });
+        ou: "Mais " + ab + " ne fait pas " + x.faux.c.texte() + ".", regle: "Vérifie en remultipliant : " + x.a.texte() + " × " + entrePar(x.faux.c) + " = " + x.a.fois(x.faux.c).texte() + ", pas " + x.b.texte() + "." });
     }
     if (x.loc === "remplace" && x.op === "degre") return Object.assign(base, { titre: "Un x s'est égaré", bon: bonAvant, resume: ecr(x.bon) + " attendu, pas " + ecr(x.faux),
       ou: "Mais ce terme devait être " + ecr(x.bon) + ", pas " + ecr(x.faux) + ".", regle: x.bon.d === 0 ? "Un nombre seul n'a pas de x." : "Ce terme garde son x." });
@@ -312,10 +328,10 @@
       ou: x.expression ? "Ta ligne n'est plus égale à l'expression de départ." : "Ta ligne n'a plus la même solution que la ligne d'avant.",
       regle: "Compare avec la ligne attendue, juste en dessous." });
   }
-  function expliquer(d) {
+  function expliquer(d, variante) {
     const code = d && d.code, x = d && d.detail;
-    if ((!code || code === "CALC") && x && x.loc) return expliquerHorsCatalogue(x, code);
-    if (!code || !CATALOGUE[code]) return expliquerHorsCatalogue({ loc: "inconnu" });
+    if ((!code || code === "CALC") && x && x.loc) return expliquerHorsCatalogue(x, code, variante);
+    if (!code || !CATALOGUE[code]) return expliquerHorsCatalogue({ loc: "inconnu" }, null, variante);
     const cat = CATALOGUE[code];
     let bon, ou, regle;
     if (!x) { bon = "Ta démarche est bonne jusqu'ici."; ou = "Une erreur connue s'est glissée : " + cat.nom.toLowerCase() + "."; regle = cat.reflexe; }
@@ -338,10 +354,10 @@
     } else if (code === "DIV-INV") {
       bon = "Tu as bien vu qu'il restait une division.";
       ou = "Mais " + x.a.texte() + "x = " + x.b.texte() + " donne x = " + x.b.texte() + " ÷ " + entrePar(x.a) + ", pas l'inverse.";
-      regle = "On divise par le nombre collé au x : x = " + x.bon.texte() + ".";
+      regle = "On divise par le nombre collé au x, jamais l'inverse.";
     } else if (code === "SIG-REL" && x.division) {
       bon = "Tu as bien divisé par le nombre collé au x.";
-      ou = "Mais " + x.b.texte() + " ÷ " + entrePar(x.a) + " = " + x.bon.texte() + ", pas " + x.faux.texte() + ".";
+      ou = "Mais " + x.b.texte() + " ÷ " + entrePar(x.a) + " ne fait pas " + x.faux.texte() + " : regarde le signe.";
       regle = "Signes différents : résultat négatif. Mêmes signes : résultat positif.";
     } else {
       bon = "Tu as regroupé les bons termes.";
@@ -349,9 +365,26 @@
       regle = "L'ascenseur : avec +, tu montes. Avec −, tu descends.";
     }
     const suite = x && x.autres && x.autres.length ? "Même piège dans " + x.autres.join(" et ") + "." : "";
-    return { code, titre: cat.nom, bon, ou, regle, suite, reflexe: cat.reflexe };
+    if (variante === 2 && x) regle = regle2(code, x) || regle;
+    return { code, titre: cat.nom, bon, ou, regle, suite, reflexe: cat.reflexe, variante: variante === 2 ? 2 : 1 };
+  }
+  /* Deuxième formulation : vérifier avec des nombres, ou une autre image. Tout est calculé. */
+  function regle2(code, x) {
+    if ((code === "SIG-PAR" || code === "DIST-PART") && x.t && x.fauxTermes) {
+      const v = xTest([x.t], x.fauxTermes); if (v == null) return null;
+      return "Teste avec x = " + v + " : " + x.terme + " vaut " + valeurEn([x.t], v).texte() + ", ta version vaut " + valeurEn(x.fauxTermes, v).texte() + ".";
+    }
+    if (code === "RED-MIX") {
+      const a = E.lireExpression(x.termes).termes, b = x.faux && x.faux !== "0" ? E.lireExpression(x.faux).termes : [mono(0, 0)], v = xTest(a, b);
+      return v == null ? null : "Teste avec x = " + v + " : " + x.termes + " vaut " + valeurEn(a, v).texte() + ", mais " + x.faux + " vaut " + valeurEn(b, v).texte() + ".";
+    }
+    if (code === "TRANS-SIG") return "Un terme qui traverse le signe = change de signe. Comme sur un pont : il change de côté et de signe.";
+    if (code === "DIV-INV") return "Vérifie en remultipliant : " + x.a.texte() + " × " + entrePar(x.faux) + " = " + x.a.fois(x.faux).texte() + ", pas " + x.b.texte() + ".";
+    if (code === "SIG-REL" && x.division) return "Compte les signes moins : un seul donne un résultat négatif, deux donnent positif.";
+    if (code === "SIG-REL") return "Avec de l'argent : un moins, c'est une dette. Fais le compte terme par terme.";
+    return null;
   }
 
-  MM.diag = { CATALOGUE, PRIORITE, candidats, localiser, diagnostiquer, candidatsExpression, diagnostiquerExpression, reponsesFausses, collisions, diagnostiquerReponse, expliquer, malDevelopper, malReduire };
+  MM.diag = { CATALOGUE, PRIORITE, STRUCTUREL, candidats, localiser, diagnostiquer, candidatsExpression, diagnostiquerExpression, reponsesFausses, collisions, diagnostiquerReponse, expliquer, malDevelopper, malReduire };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;
 })(typeof globalThis !== "undefined" ? globalThis : this);
