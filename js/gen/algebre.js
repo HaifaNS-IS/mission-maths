@@ -217,10 +217,10 @@
     palier: "T", niveaux: [3],
     tirer() { return exoEquation(eq1parTermes(3, { a: 7, p: -4, b: 8, q: -7, c: 69, d: 5, r: 8 })); }
   });
-  const reference = { ex1: () => creer("eq1ref", 3, 0) };
+  const reference = { ex1: () => creer("eq1ref", 3, 0) };          // ex2 : gen/second.js (lot 3)
 
   /* Reconstruit le point de départ du moteur à partir de l'énoncé affiché (une seule source : l'énoncé). */
-  function depart(exo) { return exo.type === "equation" ? E.lireEquation(exo.enonce) : exo.type === "nombre" ? E.arbre(exo.enonce) : E.lireExpression(exo.enonce).termes; }
+  function depart(exo) { return exo.type === "second" ? null : exo.type === "equation" ? E.lireEquation(exo.enonce) : exo.type === "nombre" ? E.arbre(exo.enonce) : E.lireExpression(exo.enonce).termes; }
 
   MM.gen = { definir, creer, depart, exoEquation, exoExpression, reference, liste: () => Object.keys(REGISTRE), def: id => REGISTRE[id] };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;

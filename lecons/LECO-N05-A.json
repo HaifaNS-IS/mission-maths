@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N05-A",
+  "categorie": "lecon",
+  "palier": "P5",
+  "niveau": 5,
+  "version": "1.0",
+  "source": "Mission Maths, lot 3 : leçon du palier P5",
+  "verifie_le": "2026-11-24",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "second-degre",
+    "titre": "L'équation du second degré",
+    "duree_min": 5,
+    "idee": "Le discriminant Δ est un détecteur : il dit combien il y a de solutions.",
+    "exemple": {
+      "gen": "deg2",
+      "niveau": 1,
+      "graine": 38
+    },
+    "piege": {
+      "code": "DELTA-SQ",
+      "parade": "b négatif : écris-le entre parenthèses avant de le mettre au carré."
+    },
+    "a_toi": [
+      {
+        "gen": "abc",
+        "niveau": 1
+      },
+      {
+        "gen": "delta",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-DELTA-SQ",
+      "texte": "b négatif : entre parenthèses avant le carré, et le carré est positif."
+    }
+  },
+  "questions": []
+}

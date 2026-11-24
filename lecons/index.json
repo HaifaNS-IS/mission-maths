@@ -1,5 +1,5 @@
 {
-  "version_lecons": "2026.11.23",
+  "version_lecons": "2026.11.24",
   "lecons": [
     {
       "pack_id": "LECO-N01-A",
@@ -24,6 +24,12 @@
       "palier": "P4",
       "version": "1.0",
       "fichier": "lecons/LECO-N04-A.json"
+    },
+    {
+      "pack_id": "LECO-N05-A",
+      "palier": "P5",
+      "version": "1.0",
+      "fichier": "lecons/LECO-N05-A.json"
     }
   ]
 }

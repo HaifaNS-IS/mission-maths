@@ -151,7 +151,10 @@ mark.pointe{background:transparent;color:inherit;border:2.5px solid var(--trap);
 .trous{display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-family:var(--f-display);font-size:1.2rem;background:var(--surface);border:2px solid var(--primary);border-radius:12px;padding:6px 10px;min-height:50px}
 .trous .c{white-space:pre}
 .trous input.trou{font:inherit;color:var(--ink);background:var(--notyet-soft);border:2px dashed var(--notyet);border-radius:8px;min-height:44px;min-width:44px;width:4.2em;padding:2px 6px;text-align:center}
-.trous input.trou[data-sorte="signe"]{width:2.2em} .trous input.trou[data-sorte="valeur"]{width:3em}
+.trous input.trou[data-sorte="signe"]{width:2.2em} .trous input.trou[data-sorte="valeur"]{width:3em} .trous input.trou[data-sorte="coef"]{width:2.9em;padding:2px 2px}
+.trous input.trou.ko{border-color:var(--trap);border-style:solid}
+.enonce .formules{font-size:.85rem;color:var(--muted);font-family:var(--f-display);margin-top:2px;white-space:nowrap;overflow-x:auto}
+.saisie .pre{font-family:var(--f-display);font-weight:600;font-size:1.2rem;white-space:nowrap;align-self:center}
 .trous input.trou:focus{border-style:solid;border-color:var(--primary);outline:none}
 .fb.recopie{background:var(--warn-soft)} .fb.recopie h3{color:var(--warn)}
 .ligne.fait.neutre .coche{color:var(--muted)}
@@ -235,33 +238,36 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.3.2"></script>
-<script src="js/expr.js?v=0.3.2"></script>
-<script src="js/saisie.js?v=0.3.2"></script>
-<script src="js/etapes.js?v=0.3.2"></script>
-<script src="js/diag.js?v=0.3.2"></script>
-<script src="js/outils.js?v=0.3.2"></script>
-<script src="js/nombres.js?v=0.3.2"></script>
-<script src="js/gen/algebre.js?v=0.3.2"></script>
-<script src="js/gen/nombres.js?v=0.3.2"></script>
-<script src="js/aide.js?v=0.3.2"></script>
-<script src="js/lecon.js?v=0.3.2"></script>
-<script src="js/progression.js?v=0.3.2"></script>
-<script src="js/parcours.js?v=0.3.2"></script>
-<script src="js/rapport.js?v=0.3.2"></script>
-<script src="js/file.js?v=0.3.2"></script>
-<script src="js/config.js?v=0.3.2"></script>
-<script src="js/base.js?v=0.3.2"></script>
+<script src="js/fraction.js?v=0.4.0"></script>
+<script src="js/expr.js?v=0.4.0"></script>
+<script src="js/saisie.js?v=0.4.0"></script>
+<script src="js/etapes.js?v=0.4.0"></script>
+<script src="js/diag.js?v=0.4.0"></script>
+<script src="js/outils.js?v=0.4.0"></script>
+<script src="js/nombres.js?v=0.4.0"></script>
+<script src="js/gen/algebre.js?v=0.4.0"></script>
+<script src="js/gen/nombres.js?v=0.4.0"></script>
+<script src="js/second.js?v=0.4.0"></script>
+<script src="js/gen/second.js?v=0.4.0"></script>
+<script src="js/aide.js?v=0.4.0"></script>
+<script src="js/lecon.js?v=0.4.0"></script>
+<script src="js/progression.js?v=0.4.0"></script>
+<script src="js/parcours.js?v=0.4.0"></script>
+<script src="js/rapport.js?v=0.4.0"></script>
+<script src="js/file.js?v=0.4.0"></script>
+<script src="js/config.js?v=0.4.0"></script>
+<script src="js/base.js?v=0.4.0"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
    Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
-   Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention. */
-const APP_VERSION = "0.3.2";
+   Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention.
+   Lot 3 : palier P5 (second degré) : a, b, c en trois cases, Δ, nombre de solutions, √Δ, x₁ et x₂, jugés à partir de SES valeurs. */
+const APP_VERSION = "0.4.0";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
-const N = MM.nombres, A = MM.aide, PA = MM.parcours;
+const N = MM.nombres, A = MM.aide, PA = MM.parcours, S2 = MM.second;
 
 const SEMI = ["reduit", "solution"];
 const NOMS_MODE = { guide: "Guidé", semi: "Semi-guidé", seul: "Seul", controle: "Sans aide", diag: "Sans aide", lecon: "Leçon" };
@@ -308,7 +314,7 @@ let RAPPORT = null;
 const LECONS = {}, LECONS_TITRES = LS.lire("mm.titres") || {}, ouverts = new Set();
 let clavierPC = LS.lire("mm.clavier") === true;
 
-/* Les paliers : l'élève commence à P0 ; dans la zone d'essai du parent, P0 à P4 sont tous ouverts. */
+/* Les paliers : l'élève commence à P0 ; dans la zone d'essai du parent, tous les paliers livrés sont ouverts. */
 function paliersDefaut(essai) {
   const e = P.etatInitial();
   for (const id of Object.keys(e)) e[id] = PA.completerPalier(e[id]);
@@ -336,6 +342,8 @@ function completer(s) {
     cible.paliers = cible.paliers && typeof cible.paliers === "object" ? cible.paliers : {};
     for (const id of Object.keys(defaut)) cible.paliers[id] = PA.completerPalier(Object.assign({}, defaut[id], cible.paliers[id]));
   }
+  // zone d'essai du parent : un palier livré depuis (P5 au lot 3) s'ouvre aussi pour les familles déjà créées
+  for (const id of PA.LIVRES) if (s.essai.paliers[id].statut === "verrouille") s.essai.paliers[id].statut = "en_cours";
   if (!Array.isArray(s.fiches)) s.fiches = [];
   if (!Array.isArray(s.essai.fiches)) s.essai.fiches = [];
   return s;
@@ -486,11 +494,11 @@ function retour() {
 }
 function plier(ouvrir) { document.querySelectorAll("#app details.panel, #app details.pas").forEach(d => { d.open = ouvrir; }); }
 function suivrePanneaux() { document.querySelectorAll("#app details.panel").forEach(d => d.addEventListener("toggle", () => { d.open ? ouverts.add(d.dataset.k) : ouverts.delete(d.dataset.k); })); }
-/* Le palier sur lequel il travaille, parmi ceux livrés (P0 à P4). */
+/* Le palier sur lequel il travaille, parmi ceux livrés (P0 à P5). */
 function palierCourant() { const id = P.palierActuel(prog()); return PA.LIVRES.includes(id) ? id : null; }
 function sectionSuivante() {
   const id = palierCourant();
-  if (!id) { toast("P0 à P4 sont validés. Le second degré (P5) arrive au prochain lot."); return; }
+  if (!id) { toast("P0 à P5 sont validés. Les graphiques (P6) arrivent au prochain lot."); return; }
   const s = PA.sectionSuivante(id, prog()[id]);
   if (!s) { toast("Rien de nouveau ici pour l'instant."); return; }
   lancer(id, s);
@@ -526,11 +534,12 @@ function joursAvantControle() {
   return j >= 0 ? j : null;
 }
 const DETAIL = {
-  P0: { diagnostic: "12 questions · environ 10 min · sans aide" },
+  P0: { diagnostic: "14 questions · environ 12 min · sans aide" },
   P1: { guide: "6 calculs · chaque étape vérifiée", semi: "6 calculs · seul le résultat demandé", seul: "6 calculs · tu écris ta démarche", examen: "10 calculs · 80 % pour passer" },
   P2: { guide: "4 exercices · chaque étape vérifiée", semi: "4 exercices · le résultat réduit", seul: "4 exercices · tu écris ta démarche", examen: "10 exercices · 80 % pour passer" },
   P3: { guide: "4 équations · chaque étape vérifiée", semi: "4 équations · 2 étapes demandées", seul: "4 équations · tu écris ta démarche", examen: "10 équations · 80 % pour passer" },
-  P4: { guide: "3 équations · avec la vérification", semi: "3 équations · 2 étapes demandées", seul: "3 équations · tu écris ta démarche", examen: "10 équations · pause possible entre deux" }
+  P4: { guide: "3 équations · avec la vérification", semi: "3 équations · 2 étapes demandées", seul: "3 équations · tu écris ta démarche", examen: "10 équations · pause possible entre deux" },
+  P5: { guide: "a, b, c · puis Δ · puis une équation entière", semi: "3 équations · Δ, puis les solutions", seul: "3 équations · étapes sans aide, corrigé à la fin", examen: "5 équations · 80 % pour passer" }
 };
 function detailSection(palier, s, p) {
   if (s.id === "lecon") return (LECONS_TITRES[PA.CONTENU[palier].lecon] || "Leçon courte") + " · 4 min";
@@ -560,7 +569,7 @@ function renderAccueil() {
   const textes = LS.lire("mm.fiches") || {}, fiches = fichesVues().map(id => textes[id]).filter(Boolean);
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>Salut${S.eleve.nom ? " " + esc(S.eleve.nom) : ""}</h1>${pastille()}</div>
-    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève. P0 à P4 sont ouverts pour tester.</p>' : ""}
+    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève. P0 à P5 sont ouverts pour tester.</p>' : ""}
     ${j != null ? `<p class="compte">Prochain contrôle ${j === 0 ? "<strong>aujourd'hui</strong>" : `dans <strong>${j}</strong> jour${j > 1 ? "s" : ""}`}.</p>` : ""}
     ${refuse ? '<p class="compte">Tes exercices restent sur cet appareil : demande à ton parent de te renvoyer ton lien.</p>' : ""}
     <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
@@ -570,7 +579,7 @@ function renderAccueil() {
       ${fiches.length ? `<ul class="fiches">${fiches.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : '<p class="sub">Chaque leçon terminée ajoute ici sa fiche réflexe.</p>'}
     </details>
     <button class="linkbtn" onclick="ouvrirParent()">Espace parent</button>
-    <p class="note">Mission Maths ${APP_VERSION} · lot 2 : algèbre, paliers P0 à P4.</p></div>`;
+    <p class="note">Mission Maths ${APP_VERSION} · lot 3 : algèbre et second degré, paliers P0 à P5.</p></div>`;
   suivrePanneaux();
 }
 
@@ -641,29 +650,41 @@ function commencerRemediation() { const id = LC.palierId; marquerFait(id, "remed
 
 /* ---------- module Saisie par étapes + diagnostic + échelle d'aide ---------- */
 function repriseVide(o) { return Object.assign({ palier: null, section: null, mode: null, lecon: null, fiche: null, i: 0, exos: [], resultats: [], k: 0, acceptees: [], journal: [], libres: [],
-  essais: 0, codePrec: null, indice: false, trous: null, recopie: null, jumeau: false, prevTexte: null, maj: Date.now() }, o); }
+  essais: 0, codePrec: null, indice: false, trous: null, recopie: null, jumeau: false, prevTexte: null, p5: null, maj: Date.now() }, o); }
 function lancerSerie(palier, section, specs, opt) {
   X = { palier, section, mode: MODE_SECTION[section], exos: specs.map(s => ({ gen: s.gen, niveau: s.niveau, graine: O.nouvelleGraine(), notion: s.notion || null })), i: 0, resultats: [],
     lecon: opt && opt.lecon || null, fiche: opt && opt.fiche || null };
   ouvrirExo(null);
 }
 const typeEtape = et => (et && et.type) || Q.exo.type;
-const lireLigne = (type, t) => type === "equation" ? E.lireEquation(t) : type === "expression" ? E.lireExpression(t).termes : E.arbre(t);
-const ecrireLigne = (type, l) => type === "equation" ? E.ecrireEquation(l) : type === "expression" ? E.ecrireCote(l) : N.ecrire(l);
-const ligneDe = (v, type) => type === "equation" ? v.eq : type === "expression" ? v.termes : v.ast;
+const lireLigne = (type, t) => type === "coefs" ? null : type === "equation" ? E.lireEquation(t) : type === "expression" ? E.lireExpression(t).termes : E.arbre(t);
+const ecrireLigne = (type, l) => type === "coefs" || !l ? "" : type === "equation" ? E.ecrireEquation(l) : type === "expression" ? E.ecrireCote(l) : N.ecrire(l);
+const ligneDe = (v, type) => type === "coefs" ? null : type === "equation" ? v.eq : type === "expression" ? v.termes : v.ast;
 /* « Vérifie » (P4, guidé) : remplacer x dans chaque côté de l'énoncé. */
 function etapesVerif(v) {
   const x = MM.F(v.x).texte(), val = MM.F(v.valeur).texte();
   return [["g", "à gauche", v.gauche], ["d", "à droite", v.droite]].map(([c, ou, dep]) => ({ id: "verifie-" + c, nom: "Vérifie " + ou, type: "nombre", forme: "nombre", depart: dep,
     consigne: "Avec x = " + x + ", calcule : " + dep, indice: "Calcule d'abord les parenthèses, puis les ×, puis le reste.", attendu: val }));
 }
-function entrerEtape() { const et = Q.etapes[Q.k]; if (et && et.depart) Q.prev = E.arbre(et.depart); }
+/* L'étape qui commence : « Vérifie » (P4) part d'un calcul donné ; P5 part de la formule remplacée avec SES valeurs, ou des trois cases a, b, c. */
+const casesCoefs = () => ({ coefs: true, valeurs: [], fautes: [], jetons: [{ fixe: "a = " }, { trou: 0, sorte: "coef", label: "a" }, { fixe: "  b = " }, { trou: 1, sorte: "coef", label: "b" }, { fixe: "  c = " }, { trou: 2, sorte: "coef", label: "c" }] });
+function entrerEtape() {
+  const et = Q.etapes[Q.k];
+  if (et && et.p5) {
+    if (et.id === "coefs") { Q.prev = null; if (!(Q.trous && Q.trous.coefs) && Q.mode !== "diag") Q.trous = casesCoefs(); return; }
+    const d = S2.departEtape(et, Q.p5); Q.prev = d == null ? null : E.arbre(d); return;
+  }
+  if (et && et.depart) Q.prev = E.arbre(et.depart);
+}
 function ouvrirExo(repr) {
   const sp = X.exos[X.i];
   let exo; try { exo = GEN.creer(sp.gen, sp.niveau, sp.graine); } catch (e) { toast("Exercice indisponible."); return aller("accueil"); }
-  const m = sp.jumeau ? "controle" : X.mode;
+  // P5, série seul : étapes nommées, sans aide ni correction avant la fin, puis la démarche modèle (D56)
+  const p5 = exo.type === "second", seulP5 = p5 && X.mode === "seul" && !sp.jumeau;
+  const m = sp.jumeau || seulP5 ? "controle" : X.mode, modeP5 = m === "guide" || m === "semi" ? m : "complet";
   let etapes = exo.etapes;
-  if (m === "semi") {
+  if (p5) etapes = S2.etapes(exo, modeP5, S2.etatInitial(exo));
+  else if (m === "semi") {
     if (exo.type === "equation") { etapes = exo.etapes.filter(e => SEMI.includes(e.id)); if (!etapes.length || etapes[etapes.length - 1].id !== exo.etapes[exo.etapes.length - 1].id) etapes = etapes.concat(exo.etapes.slice(-1)); }
     else etapes = exo.etapes.slice(-1);
   }
@@ -672,18 +693,19 @@ function ouvrirExo(repr) {
   const depart = GEN.depart(exo);
   activite();
   Q = { exo, mode: m, type: exo.type, depart, etapes, k: 0, prev: depart, acceptees: [], journal: [], libres: [], essais: 0, codePrec: null, indice: false, trous: null, recopie: null, jumeau: false,
-    fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null };
+    fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null, p5: p5 ? S2.etatInitial(exo) : null, modeP5, seulP5 };
   if (repr && repr.i === X.i) {
     try {
       Object.assign(Q, { acceptees: clone(repr.acceptees || []), journal: clone(repr.journal || []), libres: clone(repr.libres || []), essais: repr.essais || 0, codePrec: repr.codePrec || null,
         indice: !!repr.indice, trous: repr.trous ? clone(repr.trous) : null, recopie: repr.recopie || null, jumeau: !!repr.jumeau });
+      if (p5 && repr.p5) { Q.p5 = clone(repr.p5); if (m !== "diag") Q.etapes = S2.etapes(exo, modeP5, Q.p5); }   // le chemin suit SES valeurs
       Q.k = Math.min(repr.k || 0, Q.etapes.length ? Q.etapes.length - 1 : 0);
       entrerEtape();
       if (repr.prevTexte && Q.etapes[Q.k]) Q.prev = lireLigne(typeEtape(Q.etapes[Q.k]), repr.prevTexte);
       if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie };
-      if (Q.trous) Q.fb = { t: "trous" };
-    } catch (e) { Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart }); }
-  }
+      if (Q.trous && (!Q.trous.coefs || Q.trous.marche3)) Q.fb = { t: "trous" };
+    } catch (e) { Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart, p5: p5 ? S2.etatInitial(exo) : null, etapes }); entrerEtape(); }
+  } else entrerEtape();
   sauverReprise();
   vue = "exo"; render();
 }
@@ -691,7 +713,7 @@ function sauverReprise() {
   const et = Q && Q.etapes[Q.k];
   const r = repriseVide({ palier: X.palier, section: X.section, mode: X.mode, lecon: X.lecon, fiche: X.fiche, i: X.i, exos: clone(X.exos), resultats: clone(X.resultats) });
   if (Q) Object.assign(r, { k: Q.k, acceptees: clone(Q.acceptees), journal: clone(Q.journal), libres: clone(Q.libres), essais: Q.essais, codePrec: Q.codePrec, indice: Q.indice,
-    trous: Q.trous ? clone(Q.trous) : null, recopie: Q.recopie, jumeau: Q.jumeau, prevTexte: et && Q.prev ? ecrireLigne(typeEtape(et), Q.prev) : null });
+    trous: Q.trous ? clone(Q.trous) : null, recopie: Q.recopie, jumeau: Q.jumeau, prevTexte: et && Q.prev ? ecrireLigne(typeEtape(et), Q.prev) : null, p5: Q.p5 ? clone(Q.p5) : null });
   majReprise(r);
 }
 const clavierVisible = () => tactile || clavierPC;
@@ -754,12 +776,13 @@ function corrigeHTML(ouvert) {
 }
 function champHTML(cv) {
   if (Q.trous) return `<div class="trous m" id="trous">${Q.trous.jetons.map(j => j.fixe != null ? `<span class="c">${esc(j.fixe)}</span>`
-    : `<input class="trou" data-i="${j.trou}" data-sorte="${j.sorte}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Case ${j.trou + 1}${j.sorte === "signe" ? " : un signe" : ""}"${cv && tactile ? ' inputmode="none"' : ""} size="${j.sorte === "signe" ? 1 : 4}" value="${esc((Q.trous.valeurs || [])[j.trou] || "")}">`).join("")}</div>
+    : `<input class="trou${(Q.trous.fautes || []).includes(j.trou) ? " ko" : ""}" data-i="${j.trou}" data-sorte="${j.sorte}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${j.label ? "Valeur de " + j.label : "Case " + (j.trou + 1) + (j.sorte === "signe" ? " : un signe" : "")}"${cv && tactile ? ' inputmode="none"' : ""} size="${j.sorte === "signe" ? 1 : 4}" value="${esc((Q.trous.valeurs || [])[j.trou] || "")}">`).join("")}</div>
     ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}`;
-  return `<div class="saisie"><input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
+  const et = Q.etapes[Q.k], pre = et && et.p5 && ["delta", "rac", "x1", "x2", "x0"].includes(et.id) ? et.prefixe.trim() : "";
+  return `<div class="saisie">${pre ? `<span class="pre" aria-hidden="true">${esc(pre)}</span>` : ""}<input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
     ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>`;
 }
-const nomEtape = id => T.ETAPES[id] ? T.ETAPES[id].nom : N.ETAPES[id] ? N.ETAPES[id].nom : /^verifie/.test(id) ? "Vérifie" : "Ligne";
+const nomEtape = id => S2.ETAPES[id] ? S2.ETAPES[id].nom : T.ETAPES[id] ? T.ETAPES[id].nom : N.ETAPES[id] ? N.ETAPES[id].nom : /^verifie/.test(id) ? "Vérifie" : "Ligne";
 function barreBloc() {
   if (!SEANCE) return "";
   const dans = Math.max(0, SEANCE.dureeActive - (SEANCE.blocsVus || 0) * BLOC), pct = Math.min(100, Math.round(dans / BLOC * 100));
@@ -778,24 +801,25 @@ function renderExo() {
     if (!Q.fini) {
       const et = Q.etapes[Q.k];
       corps += `<div class="ligne active" id="active"><label class="etq" for="champ">${esc(et.nom)}<small>${esc(et.consigne)}</small></label>
-        ${champHTML(cv)}${outils(!ctl && !Q.recopie && !Q.trous)}</div>`;
+        ${champHTML(cv)}${outils(!ctl && !Q.recopie && !(Q.trous && (!Q.trous.coefs || Q.trous.marche3)))}</div>`;
     }
   } else if (!Q.fini) {
     const diag = Q.mode === "diag";
-    const aide = diag ? (Q.type === "equation" ? "Écris seulement la solution : x = …" : Q.type === "expression" ? "Écris seulement le résultat final." : "Écris seulement le résultat.")
+    const aide = diag ? (Q.type === "equation" ? "Écris seulement la solution : x = …" : Q.type === "second" ? "Écris seulement cette solution : x = …" : Q.type === "expression" ? "Écris seulement le résultat final." : "Écris seulement le résultat.")
       : Q.type === "equation" ? "Écris ta démarche. Termine par x = …" : Q.type === "expression" ? "Écris ta démarche, jusqu'à l'expression réduite." : "Écris ta démarche, jusqu'à un seul nombre.";
     corps += Q.libres.map((t, i) => ligneFaite("Ligne " + (i + 1), maths(t), "", "·")).join("");
     corps += `<div class="ligne active" id="active"><label class="etq" for="champ">${diag ? "Ta réponse" : "Ligne " + (Q.libres.length + 1)}<small>${esc(aide)}</small></label>
       ${champHTML(cv)}<div class="outils">${Q.libres.length ? '<button class="linkbtn" onclick="effacerDerniere()">Effacer ma dernière ligne</button>' : ""}${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div></div>`;
   } else if (Q.mode === "seul") corps += verdictHTML();
-  const montrerCorrige = Q.fini && (Q.mode === "seul" || (Q.mode === "controle" && sp.jumeau));
+  const direct = Q.mode === "controle" && (sp.jumeau || Q.seulP5);          // jumeau, série seul de P5 : corrigé tout de suite
+  const montrerCorrige = Q.fini && (Q.mode === "seul" || direct);
   const fin = Q.fini ? `<div class="fb ${Q.bilan.cls} pop"><h3>${esc(Q.bilan.titre)}</h3>${Q.bilan.texte ? `<p>${esc(Q.bilan.texte)}</p>` : ""}
       <div class="actions"><button class="btn" id="suite" onclick="exoSuivant()">${X.i + 1 < n ? (X.section === "diagnostic" ? "Question suivante" : "Exercice suivant") : "Voir le bilan"}</button></div></div>
-      ${Q.mode === "controle" && sp.jumeau ? verdictControleHTML() : ""}${montrerCorrige ? corrigeHTML(Q.mode === "seul" || sp.jumeau) : Q.fini && Q.mode !== "controle" && Q.mode !== "diag" ? corrigeHTML(false) : ""}` : "";
+      ${direct ? verdictControleHTML() : ""}${montrerCorrige ? corrigeHTML(Q.mode === "seul" || direct) : Q.fini && Q.mode !== "controle" && Q.mode !== "diag" ? corrigeHTML(false) : ""}` : "";
   const titre = sp.jumeau ? "Exercice jumeau · sans aide" : (X.section === "lecon" ? "À toi" : PA.NOMS[X.section] || "À toi") + " · " + (X.section === "diagnostic" ? "question " : "exercice ") + (X.i + 1) + " sur " + n;
   $("#focus").innerHTML = `
     <div class="xtete"><span class="titre">${esc(titre)}</span>${barreBloc()}<div class="dots" aria-hidden="true">${dots}</div></div>
-    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div></div></div>
+    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div>${exo.formules && Q.mode !== "diag" ? '<div class="formules">Δ = b² − 4ac · x = (−b ± √Δ) ÷ 2a</div>' : ""}</div></div>
     <div id="lignes"><div class="in">${corps}<div id="fb" aria-live="polite">${Q.fini ? "" : fbHTML()}</div>${fin}</div></div>
     ${cv && !Q.fini ? clavierHTML() : ""}`;
   brancherClavier();
@@ -835,7 +859,14 @@ const BRAVO = {
   parenthese: ["Parenthèse d'abord : bon réflexe.", "Bien commencé par la parenthèse."],
   produit: ["Le × avant le + : priorité respectée.", "Multiplication faite d'abord, bien vu."],
   nombre: ["Calcul juste, signe compris.", "Bon résultat, et le bon signe."],
-  "verifie-g": ["Côté gauche calculé juste."], "verifie-d": ["Les deux côtés sont égaux : x est bien la solution."]
+  "verifie-g": ["Côté gauche calculé juste."], "verifie-d": ["Les deux côtés sont égaux : x est bien la solution."],
+  coefs: ["a, b et c bien repérés, signes compris.", "Les trois nombres avec leur signe : c'était le piège."],
+  delta: ["Δ juste : remplacement propre, calcul juste.", "Bon Δ. Le carré de b est bien positif."],
+  nb: ["Bonne lecture du signe de Δ.", "Le détecteur a parlé : bon nombre de solutions."],
+  rac: ["Bonne racine : fois elle-même, elle redonne Δ.", "√Δ juste : le chemin retour du carré."],
+  x1: ["Première solution trouvée. −b bien pris.", "Bonne division : le haut d'abord, puis ÷ 2a."],
+  x2: ["Deuxième solution : l'équation est résolue.", "Les deux solutions sont là."],
+  x0: ["La solution unique est trouvée.", "Bon calcul de −b ÷ 2a."]
 };
 let tourBravo = 0;
 function bravo(id, avant) {
@@ -844,8 +875,9 @@ function bravo(id, avant) {
   return liste[tourBravo++ % liste.length];
 }
 /* Pour une erreur hors catalogue, le rapport parent garde le calcul exact : « Erreur de calcul : 3 × (−5) = −15, pas −12 ». */
-function precisionDe(diag) { if (!diag || diag.nombre || (diag.code && diag.code !== "CALC")) return null; const x = D.expliquer(diag); return x.resume ? x.titre + " : " + x.resume : null; }
+function precisionDe(diag, v) { if (v && v.precision) return v.precision; if (!diag || diag.nombre || diag.p5 || (diag.code && diag.code !== "CALC")) return null; const x = D.expliquer(diag); return x.resume ? x.titre + " : " + x.resume : null; }
 function juger(et, texte) {
+  if (et.p5) return S2.juger(et, Q.p5, Q.prev, S2.premiereLigne(Q, et), texte);
   const type = typeEtape(et);
   if (type === "equation") return T.jugerLigne(Q.prev, texte, et.forme);
   if (type === "expression") return T.jugerExpression(Q.prev, texte, et.forme);
@@ -855,7 +887,11 @@ function validerLigne() {
   if (!Q || Q.fini) return;
   lireTrous();
   let texte;
-  if (Q.trous) {
+  if (Q.trous && Q.trous.coefs) {
+    const vals = Q.trous.valeurs || [];
+    if ([0, 1, 2].some(i => !String(vals[i] || "").trim())) { Q.fb = { t: "lecture", message: "Remplis les trois cases : a, b et c." }; return majFb(); }
+    texte = vals.slice(0, 3);
+  } else if (Q.trous) {
     const a = A.assembler(Q.trous.jetons, Q.trous.valeurs || []);
     if (a.incomplet) { Q.fb = { t: "lecture", message: "Remplis chaque case avant de valider." }; return majFb(); }
     texte = a.texte;
@@ -864,31 +900,34 @@ function validerLigne() {
   if (Q.mode === "seul") return ligneLibre(texte);
   if (Q.mode === "diag") return reponseDiag(texte);
   const et = Q.etapes[Q.k], type = typeEtape(et), avant = Q.prev;
+  if (et.p5 && Q.mode === "controle") return ligneControleP5(texte);
   const v = juger(et, texte);
   if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
   if (Q.mode === "controle") return ligneControle(et, v, type);
   if (v.statut === "incomplet") {
-    if (!Q.recopie && ecrireLigne(type, Q.prev) !== v.ecrit) {
-      Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, inter: true }); Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true, incomplet: true });
+    if (!Q.recopie && ((et.p5 && S2.premiereLigne(Q, et)) || ecrireLigne(type, Q.prev) !== v.ecrit)) {    // P5 : le remplacement de la formule est une vraie ligne
+      Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, inter: true }); Q.journal.push({ etape: et.id, saisie: v.saisie || v.ecrit, juste: true, incomplet: true });
       Q.prev = ligneDe(v, type); Q.brouillon = ""; Q.trous = null; sauverReprise(); Q.fb = { t: "info", message: v.message }; return renderExo();
     }
     Q.fb = { t: "info", message: v.message }; return majFb();
   }
   if (v.statut === "juste") {
     const niv = A.niveau(Q.essais, Q.indice);
-    Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: true, niveau: niv });
+    Q.journal.push({ etape: et.id, saisie: v.saisie || v.ecrit, juste: true, niveau: niv });
     if (niv === 4) Q.jumeau = true;
     return accepter(et, v, type, niv, avant);
   }
   // faux : l'échelle d'aide (D37)
   Q.essais++;
   const marche = A.marche(Q.essais), cur = ligneDe(v, type);
-  Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: false, code: v.code || null, precision: precisionDe(v.diag), marche });
+  Q.journal.push({ etape: et.id, saisie: v.saisie || v.ecrit, juste: false, code: v.code || null, precision: precisionDe(v.diag, v), marche });
+  if (et.id === "coefs") return aideCoefs(v, marche);
+  const fl = et.multi ? null : et.forme;                 // P5 : la 1re ligne peut être le remplacement, la ligne d'après un calcul
   if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: "Ce n'est pas tout à fait la ligne. Recopie-la exactement, puis valide." };
   else if (marche === 1) { const va = A.variante(Q.essais, v.code || null, Q.codePrec); Q.fb = { t: "faux", x: A.expliquer(type, v.diag, va), variante: va }; }
-  else if (marche === 2) Q.fb = { t: "pointe", p: A.pointer(type, Q.prev, cur, et.forme, v.code) };
+  else if (marche === 2) Q.fb = { t: "pointe", p: A.pointer(type, Q.prev, cur, fl, v.code) };
   else if (marche === 3) {
-    const t = A.aTrous(type, Q.prev, cur, et.forme);
+    const t = A.aTrous(type, Q.prev, cur, fl);
     Q.trous = { jetons: t.jetons.map(j => j.trou != null ? { trou: j.trou, sorte: j.sorte, premier: j.premier } : { fixe: j.fixe }), valeurs: [] };  // ni la réponse ni sa saisie ne sont gardées
     Q.trouActif = 0; Q.fb = { t: "trous" };
   } else { Q.recopie = A.fautes(type, Q.prev, cur, et.forme).ecritModele; Q.trous = null; Q.brouillon = ""; Q.fb = { t: "recopie", attendu: Q.recopie }; }
@@ -901,8 +940,18 @@ function accepter(et, v, type, niv, avant) {
   Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, niveau: niv });
   Q.prev = ligneDe(v, type);
   Object.assign(Q, { essais: 0, indice: false, trous: null, recopie: null, codePrec: null, brouillon: "" });
+  if (et.p5) {
+    // P5 : SES valeurs deviennent l'état, le chemin peut changer (Δ = 0, Δ < 0), l'étape suivante part de la formule remplacée
+    const direct = et.multi && Q.acceptees.filter(a => a.etape === et.id).length === 1;
+    S2.terminer(Q, et, v); Q.fini = false;
+    Q.fb = niv === 4 ? { t: "info", message: "Ligne recopiée. Continue : un exercice jumeau suivra, sans aide." }
+      : niv === 3 ? { t: "bon", message: "Cases complétées : ta ligne tient.", note: "" }
+      : { t: "bon", message: bravo(et.id, avant), note: direct ? "Sur ta copie, écris aussi le remplacement : il rapporte des points." : "" };
+    if (Q.k >= Q.etapes.length) return finExo();
+    entrerEtape(); sauverReprise(); return renderExo();
+  }
   let k = Q.k + 1, sautees = 0;
-  const formeAtteinte = e => { const t = typeEtape(e); if (t !== type || e.depart) return false; return t === "equation" ? T.FORMES[e.forme](Q.prev) : t === "expression" ? T.FORMES_EXPR[e.forme](Q.prev) : N.FORMES[e.forme](Q.prev); };
+  const formeAtteinte = e => { const t = typeEtape(e); if (t !== type || e.depart || e.p5) return false; return t === "equation" ? T.FORMES[e.forme](Q.prev) : t === "expression" ? T.FORMES_EXPR[e.forme](Q.prev) : N.FORMES[e.forme](Q.prev); };
   while (k < Q.etapes.length && formeAtteinte(Q.etapes[k])) { Q.acceptees.push({ etape: Q.etapes[k].id, nom: Q.etapes[k].nom, texte: null, saute: true }); k++; sautees++; }
   Q.k = k; entrerEtape();
   Q.fb = niv === 4 ? { t: "info", message: "Ligne recopiée. Continue : un exercice jumeau suivra, sans aide." }
@@ -911,8 +960,37 @@ function accepter(et, v, type, niv, avant) {
   if (k >= Q.etapes.length) return finExo();
   sauverReprise(); renderExo();
 }
+/* P5, a, b, c : la même échelle d'aide, sur les trois cases. Marche 2 : les cases fausses entourées ; marche 3 : vidées ; marche 4 : les valeurs montrées. */
+const MESSAGES_COEFS = { aun: "Regarde la case entourée : quel nombre se cache devant x² ?", signe: "Regarde le signe de la case entourée.",
+  x: "La case entourée attend un nombre, sans x.", echange: "Relis l'équation : quel nombre est devant x ?", autre: "Relis l'équation : à quelle place est ce nombre ?" };
+function aideCoefs(v, marche) {
+  const cases = v.diag.detail.cases, faux = cases.map((c, i) => c.ok ? -1 : i).filter(i => i >= 0);
+  if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: "Ce ne sont pas tout à fait les valeurs. Recopie-les exactement, puis valide." };
+  else if (marche === 1) { const va = A.variante(Q.essais, v.code || null, Q.codePrec); Q.fb = { t: "faux", x: A.expliquer("coefs", v.diag, va), variante: va }; Q.trous.fautes = []; }
+  else if (marche === 2) {
+    const segments = []; cases.forEach((c, i) => { if (i) segments.push({ texte: " ; ", faux: false }); segments.push({ texte: c.lettre + " = " + c.saisi, faux: !c.ok }); });
+    const premiere = cases.find(c => !c.ok);
+    Q.trous.fautes = faux;
+    Q.fb = { t: "pointe", p: { segments: [segments], message: MESSAGES_COEFS[premiere.sorte] + (v.code && D.CATALOGUE[v.code] ? " " + D.CATALOGUE[v.code].reflexe : "") } };
+  } else if (marche === 3) { Q.trous.valeurs = (Q.trous.valeurs || []).map((x, i) => faux.includes(i) ? "" : x); Q.trous.fautes = faux; Q.trous.marche3 = true; Q.fb = { t: "trous" }; }
+  else { Q.recopie = v.attendu; Q.trous.valeurs = []; Q.trous.fautes = []; Q.trous.marche3 = false; Q.fb = { t: "recopie", attendu: Q.recopie, message: "Tape ces trois valeurs dans les cases, puis valide. Un exercice jumeau t'attend juste après." }; }
+  Q.codePrec = v.code || null;
+  sauverReprise(); renderExo();
+}
 function indice() { activite(); Q.indice = true; Q.fb = { t: "info", message: Q.etapes[Q.k].indice }; sauverReprise(); majFb(); }
 
+/* P5 sans aide (examen, série seul, jumeau) : le déroulé du moteur (MM.second.pas), le même que celui des tests.
+   Une étape de calcul continue tant que sa ligne n'est pas un seul nombre ; la suite part de SES valeurs. */
+function ligneControleP5(entree) {
+  const v = S2.pas(Q, entree);
+  if (!v) return;
+  if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
+  Q.brouillon = ""; Q.fb = null;
+  const et = Q.etapes[Q.k];
+  if (!et || et.id !== "coefs") Q.trous = null;
+  if (Q.fini || Q.k >= Q.etapes.length) return finExo();
+  sauverReprise(); renderExo();
+}
 /* Sans aide (examen, jumeau) : étapes nommées, aucune correction avant la fin, chaque ligne jugée à partir de la sienne. */
 function ligneControle(et, v, type) {
   Q.journal.push({ etape: et.id, saisie: v.ecrit, juste: v.statut === "juste", statut: v.statut, code: v.code || null, precision: v.statut === "faux" ? precisionDe(v.diag) : null });
@@ -920,7 +998,7 @@ function ligneControle(et, v, type) {
   Q.prev = ligneDe(v, type);
   let k = Q.k + 1;
   if (v.statut === "juste") {
-    const atteinte = e => typeEtape(e) === "equation" ? T.FORMES[e.forme](Q.prev) : typeEtape(e) === "expression" ? T.FORMES_EXPR[e.forme](Q.prev) : N.FORMES[e.forme](Q.prev);
+    const atteinte = e => e.p5 ? false : typeEtape(e) === "equation" ? T.FORMES[e.forme](Q.prev) : typeEtape(e) === "expression" ? T.FORMES_EXPR[e.forme](Q.prev) : N.FORMES[e.forme](Q.prev);
     while (k < Q.etapes.length && atteinte(Q.etapes[k])) { Q.journal.push({ etape: Q.etapes[k].id, juste: true, saute: true }); Q.acceptees.push({ etape: Q.etapes[k].id, nom: Q.etapes[k].nom, texte: null, saute: true }); k++; }
   }
   Q.k = k; Q.brouillon = ""; Q.fb = null;
@@ -940,7 +1018,10 @@ function verdictControleHTML() {
 function reponseDiag(texte) {
   const exo = Q.exo, et = exo.etapes[exo.etapes.length - 1];
   let juste = false, ecrit = texte, code = null;
-  if (exo.type === "equation") {
+  if (exo.type === "second") {          // D53 : sans les étapes, une réponse fausse ne sert qu'au placement (pas de code)
+    const s = MM.saisie.lireSolution(texte); if (!s.ok) { Q.fb = { t: "lecture", message: s.message }; return majFb(); }
+    juste = s.valeur.egal(MM.F(exo.diag.reponse)); ecrit = "x = " + S2.ecr(s.valeur);
+  } else if (exo.type === "equation") {
     const s = MM.saisie.lireSolution(texte); if (!s.ok) { Q.fb = { t: "lecture", message: s.message }; return majFb(); }
     juste = s.valeur.egal(MM.F(exo.reponse)); ecrit = "x = " + s.valeur.texte();
     if (!juste) { const d = D.diagnostiquerReponse(exo.erreurs, s.valeur); code = d ? d.code : null; }
@@ -1004,8 +1085,12 @@ function finExo() {
     else if (nbErreurs === 1) bilan = { cls: "faux", titre: "Une seule erreur, à la ligne " + (r.premiereErreur + 1) + ".", texte: "Le reste est juste à partir de ta ligne. Résultat attendu : " + exo.reponseTexte + "." };
     else bilan = { cls: "faux", titre: nbErreurs > 1 ? nbErreurs + " lignes à revoir." : "Ce n'est pas le bon résultat.", texte: "Résultat attendu : " + exo.reponseTexte + "." };
   } else if (Q.mode === "controle") {
-    points = Q.journal.filter(l => l.juste).length; total = Q.etapes.length; resultatJuste = points === total;
-    if (!sp.jumeau) bilan = { cls: "info", titre: "Exercice enregistré.", texte: "La correction arrive à la fin de l'examen." };
+    if (Q.type === "second") { const sc = S2.score(Q.journal, Q.etapes); points = sc.points; total = sc.total; }       // 1 point par étape de SON chemin (D54)
+    else { points = Q.journal.filter(l => l.juste).length; total = Q.etapes.length; }
+    resultatJuste = points === total;
+    if (Q.seulP5) bilan = resultatJuste ? { cls: "bon", titre: "Tout juste, sans aide.", texte: "Sur ta copie, écris chaque ligne comme ici." }
+      : { cls: "info", titre: points + " étape" + (points > 1 ? "s" : "") + " juste" + (points > 1 ? "s" : "") + " sur " + total + ".", texte: "Regarde les lignes marquées et la démarche modèle." };
+    else if (!sp.jumeau) bilan = { cls: "info", titre: "Exercice enregistré.", texte: "La correction arrive à la fin de l'examen." };
     else bilan = resultatJuste ? { cls: "bon", titre: "Jumeau réussi, sans aide : c'est acquis.", texte: "" } : { cls: "info", titre: "Jumeau : " + points + " étape" + (points > 1 ? "s" : "") + " juste" + (points > 1 ? "s" : "") + " sur " + total + ".", texte: "Regarde les lignes marquées et la démarche modèle." };
   } else if (Q.mode === "diag") {
     resultatJuste = !!(Q.journal[0] && Q.journal[0].juste);
@@ -1108,8 +1193,8 @@ function renderBilan() {
       : is.pts + " points sur " + is.tot + " : il faut 80 %. " + (is.codes.length ? "Ce qui coince : " + is.codes.map(c => D.CATALOGUE[c].nom.toLowerCase()).join(" et ") + ". " : "") + "Mini-leçon, 4 exercices, puis un nouvel examen.";
   } else if (sec === "diagnostic") {
     titre = "Test diagnostic terminé";
-    texte = (is.depart && PA.LIVRES.includes(is.depart) ? "Tu commences au palier " + is.depart + " : " + P.PALIERS.find(p => p.id === is.depart).nom.toLowerCase() + "." : "P1 à P4 sont acquis.")
-      + " " + ["P1", "P2", "P3", "P4"].filter(k => is.bilan && is.bilan[k]).map(k => k + " : " + is.bilan[k].justes + "/" + is.bilan[k].total).join(" · ");
+    texte = (is.depart && PA.LIVRES.includes(is.depart) ? "Tu commences au palier " + is.depart + " : " + P.PALIERS.find(p => p.id === is.depart).nom.toLowerCase() + "." : "P1 à P5 sont acquis.")
+      + " " + ["P1", "P2", "P3", "P4", "P5"].filter(k => is.bilan && is.bilan[k]).map(k => k + " : " + is.bilan[k].justes + "/" + is.bilan[k].total).join(" · ");
   } else if (sec === "lecon") titre = "Leçon terminée";
   else {
     titre = is.aRefaire ? "Série à refaire" : "Série terminée";

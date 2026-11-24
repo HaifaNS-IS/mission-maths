@@ -2,7 +2,8 @@
 const { MM, test, egal, vrai } = require("./_harnais.js");
 const E = MM.expr, T = MM.etapes, D = MM.diag, Gn = MM.gen;
 const CODES_CDC = ["SIG-PAR", "SIG-REL", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "ABC-SIG", "DELTA-SQ", "RAC-SQ", "M-MX", "B-SIG", "ORD-INV", "M-ZERO", "XY-INV", "AXE-INV", "PENTE-ORD", "AIRE-2"];
-const ACTIFS = ["SIG-PAR", "SIG-REL", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV"];
+const ACTIFS = ["SIG-PAR", "SIG-REL", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV"];      // codes des équations (lots 1 et 2)
+const ACTIFS_P5 = ["ABC-SIG", "DELTA-SQ", "RAC-SQ"];                                       // lot 3 : second degré, testés dans 16 et 17
 const mots = phrase => (phrase.match(/[A-Za-zÀ-ÿ]{2,}/g) || []).length;
 const phrases = txt => txt.split(/(?<=[.!?])\s+/).filter(Boolean);
 function explicationValable(x, code) {
@@ -12,11 +13,11 @@ function explicationValable(x, code) {
   egal(x.reflexe, D.CATALOGUE[code].reflexe);
 }
 
-test("catalogue : les 17 codes du cahier des charges + CALC (validé le 15/11) + PRIO (validé le 23/11), chacun avec nom, exemple et réflexe", () => {
-  const AJOUTS = ["CALC", "PRIO"];
+test("catalogue : les 17 codes du cahier des charges + CALC (validé le 15/11) + PRIO (validé le 23/11) + SOL-NB et A-UN (validés le 24/11), chacun avec nom, exemple et réflexe", () => {
+  const AJOUTS = ["CALC", "PRIO", "SOL-NB", "A-UN"];
   egal(Object.keys(D.CATALOGUE).sort().join(), CODES_CDC.concat(AJOUTS).sort().join());
   for (const c of CODES_CDC.concat(AJOUTS)) { const k = D.CATALOGUE[c]; vrai(k.nom && k.exemple && k.reflexe, c); vrai(mots(k.reflexe) < 15, c); vrai(k.actif || k.lot >= 3, c + " : ni actif ni planifié"); }
-  egal(Object.keys(D.CATALOGUE).filter(c => D.CATALOGUE[c].actif).sort().join(), ACTIFS.concat(AJOUTS).sort().join());
+  egal(Object.keys(D.CATALOGUE).filter(c => D.CATALOGUE[c].actif).sort().join(), ACTIFS.concat(ACTIFS_P5, AJOUTS).sort().join());
 });
 test("le moteur reproduit les exemples du catalogue (SIG-PAR, DIST-PART, RED-MIX)", () => {
   const ex = (depart, saisie, forme) => T.jugerExpression(E.lireExpression(depart).termes, saisie, forme);

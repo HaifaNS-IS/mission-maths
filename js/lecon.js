@@ -79,7 +79,7 @@
     const depart = MM.gen.depart(exo);
     let piege = null;
     if (l.piege && l.piege.code) {
-      const f = exo.type === "equation" ? piegeEquation : exo.type === "expression" ? piegeExpression : piegeNombre;
+      const f = exo.type === "equation" ? piegeEquation : exo.type === "expression" ? piegeExpression : exo.type === "second" ? (d, c, p) => MM.second.piege(exo, c, p) : piegeNombre;
       piege = f(depart, l.piege.code, l.piege.parade);
       if (!piege) throw new Error("piège : l'erreur " + l.piege.code + " ne peut pas se produire sur l'exemple");
     }

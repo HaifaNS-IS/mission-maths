@@ -37,13 +37,14 @@
 
   /* ---------- écriture affichée : « −7 − (−3) », « 4 × (−2) », « 12 − 2 × (5 − 8) » ---------- */
   const abs = v => v.abs().texte();
+  const absNum = v => { const a = v.abs(); return a.estEntier() ? a.texte() : (a.decimal() || a.texte()); };   // un décimal tapé reste décimal : 6,7
   function ecrire(n, premier) {
     if (premier === undefined) premier = true;
     const entre = s => "(" + s + ")";
     switch (n.t) {
-      case "num": return n.v.signe() < 0 ? (premier ? MOINS + abs(n.v) : entre(MOINS + abs(n.v))) : abs(n.v);
+      case "num": return n.v.signe() < 0 ? (premier ? MOINS + absNum(n.v) : entre(MOINS + absNum(n.v))) : absNum(n.v);
       case "neg": {
-        const simple = (n.a.t === "num" && n.a.v.signe() >= 0) || n.a.t === "grp";
+        const simple = (n.a.t === "num" && n.a.v.signe() >= 0) || n.a.t === "grp" || (n.a.t === "pow" && n.a.a.t === "num");     // « −13² » s'écrit comme il est tapé
         const s = MOINS + (simple ? ecrire(n.a, true) : entre(ecrire(n.a, true)));
         return premier ? s : entre(s);
       }
@@ -159,11 +160,13 @@
     const s = E.normaliser(ecrire(n));
     let p = 0;
     const lireNombre = () => { const m = /^\d+(\.\d+)?/.exec(s.slice(p)); if (!m) throw new Error("PRIO : lecture"); p += m[0].length; return F(m[0]); };
+    // un carré (lot 3) se calcule toujours en premier : il colle au nombre ou à la parenthèse juste avant
+    const carre = v => { while (s[p] === "^") { p++; const k = Number(lireNombre().cle()); let r = F(1); for (let i = 0; i < k; i++) r = r.fois(v); v = r; } return v; };
     function primaire() {
       if (s[p] === "-") { p++; return primaire().oppose(); }
       if (s[p] === "+") { p++; return primaire(); }
-      if (s[p] === "(") { p++; const v = suite(); p++; return v; }
-      return lireNombre();
+      if (s[p] === "(") { p++; const v = suite(); p++; return carre(v); }
+      return carre(lireNombre());
     }
     function suite() {
       let v = primaire();
@@ -241,13 +244,13 @@
           const i = diff[0], src = plats(sansParentheses(prev));
           if (f === "nombre") return { code: "CALC", nombre: true, detail: { sorte: "calcul", calcul: ecrire(prev), bon: A[0], faux: B[0], seul: true } };
           // un produit faux : on l'écrit tel qu'il est posé (« 2 × (−3) = −6, pas −5 »), signe d'écriture retiré
-          if (f === "produit" && src.length === A.length && src[i].sorte === "produit")
+          if (f === "produit" && src.length === A.length && (src[i].sorte === "produit" || src[i].n.t === "pow"))
             return { code: "CALC", nombre: true, detail: { sorte: "calcul", calcul: ecrire(src[i].n), bon: valeur(src[i].n), faux: B[i].fois(src[i].s), seul: false } };
         }
         // plusieurs nombres faux (recette du 23/11) : chacun est nommé, avec le calcul à refaire
         if (diff.length >= 2) {
           const src = plats(sansParentheses(prev));
-          const fautes = diff.map(i => ({ bon: A[i], faux: B[i], calcul: f === "produit" && src.length === A.length && src[i].sorte === "produit" ? ecrire(src[i].n) : null,
+          const fautes = diff.map(i => ({ bon: A[i], faux: B[i], calcul: f === "produit" && src.length === A.length && (src[i].sorte === "produit" || src[i].n.t === "pow") ? ecrire(src[i].n) : null,
             nature: A[i].abs().egal(B[i].abs()) ? "signe" : A[i].signe() === B[i].signe() ? "valeur" : "tout" }));
           const code = fautes.every(x => x.nature === "signe") ? "SIG-REL" : fautes.every(x => x.calcul) ? "CALC" : null;
           return { code, nombre: true, detail: { sorte: "plusieurs", fautes, justes: A.length - diff.length } };

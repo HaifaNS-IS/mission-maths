@@ -155,7 +155,8 @@
 
   /* ---------- marche 1 : l'explication, première ou deuxième formulation ---------- */
   function expliquer(type, d, variante) {
-    return type === "nombre" ? N.expliquer(d, variante) : D.expliquer(d, variante);
+    if (d && d.p5 && MM.second) return MM.second.expliquer(d, variante);          // second degré (lot 3)
+    return type === "nombre" || type === "coefs" ? N.expliquer(d, variante) : D.expliquer(d, variante);
   }
   /* La variante de l'explication : la 2e erreur du même type est formulée autrement ; un autre type a sa première explication. */
   const variante = (nbErreurs, code, codePrecedent) => nbErreurs === 2 && code === codePrecedent ? 2 : 1;

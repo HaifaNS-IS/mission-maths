@@ -1,5 +1,5 @@
 /* Mission Maths — parcours.js
-   Le contenu des paliers P0 à P4 (leçon, séries, examen, diagnostic) et les règles de passage du lot 2 :
+   Le contenu des paliers P0 à P5 (leçon, séries, examen, diagnostic) et les règles de passage du lot 2 :
      leçon → série guidée → semi-guidée → seule → examen (ouvert quand les 3 séries sont validées)
      examen raté → 1 ou 2 erreurs dominantes → mini-leçon ciblée → série de remédiation (4 exercices) → nouvel examen
      diagnostic P0 → paliers validés d'office, seulement à la suite (P1 exige 5/5).
@@ -7,7 +7,7 @@
 (function (G) {
   "use strict";
   const MM = G.MM || (G.MM = {});
-  if (typeof require === "function") { if (!MM.progression) require("./progression.js"); if (!MM.gen) require("./gen/algebre.js"); }
+  if (typeof require === "function") { if (!MM.progression) require("./progression.js"); if (!MM.gen) require("./gen/algebre.js"); if (!MM.second) require("./gen/second.js"); }
   const P = MM.progression;
   const s = (gen, niveau) => ({ gen, niveau });
   const serie = (...l) => l.map(([g, n]) => s(g, n));
@@ -18,7 +18,8 @@
       Object.assign(s("relmul", 2), { notion: "P1" }), Object.assign(s("prio", 2), { notion: "P1" }),
       Object.assign(s("dev1", 2), { notion: "P2" }), Object.assign(s("red", 2), { notion: "P2" }), Object.assign(s("devred", 2), { notion: "P2" }),
       Object.assign(s("eqs", 1), { notion: "P3" }), Object.assign(s("eqs", 3), { notion: "P3" }),
-      Object.assign(s("eqxx", 1), { notion: "P4" }), Object.assign(s("eq1par", 2), { notion: "P4" })] },
+      Object.assign(s("eqxx", 1), { notion: "P4" }), Object.assign(s("eq1par", 2), { notion: "P4" }),
+      Object.assign(s("deg2d", 1), { notion: "P5" }), Object.assign(s("deg2d", 2), { notion: "P5" })] },
     P1: { lecon: "LECO-N01-A",
       guide: serie(["rel", 1], ["rel", 2], ["relmul", 1], ["prio", 1], ["rel", 3], ["prio", 2]),
       semi: serie(["rel", 2], ["relmul", 2], ["prio", 2], ["rel", 3], ["relmul", 3], ["prio", 3]),
@@ -38,9 +39,15 @@
       guide: serie(["eqxx", 1], ["eq1par", 1], ["eq1par", 2]),
       semi: serie(["eqxx", 2], ["eq1par", 2], ["eq1par", 3]),
       seul: serie(["eqxx", 1], ["eq1par", 2], ["eq1par", 3]),
-      examen: serie(["eqxx", 1], ["eqxx", 2], ["eq1par", 1], ["eq1par", 2], ["eq1par", 2], ["eq1par", 2], ["eq1par", 3], ["eq1par", 3], ["eq1par", 3], ["eqxx", 1]) }
+      examen: serie(["eqxx", 1], ["eqxx", 2], ["eq1par", 1], ["eq1par", 2], ["eq1par", 2], ["eq1par", 2], ["eq1par", 3], ["eq1par", 3], ["eq1par", 3], ["eqxx", 1]) },
+    /* Lot 3 : séries d'environ 5 minutes ; examen de 5 équations (D55), au format de l'ex. 2 du contrôle, avec un a ≠ 1 et un Δ ≤ 0 possible. */
+    P5: { lecon: "LECO-N05-A",
+      guide: serie(["abc", 1], ["delta", 1], ["deg2", 1]),
+      semi: serie(["deg2", 1], ["deg2", 2], ["deg2", 3]),
+      seul: serie(["deg2", 1], ["deg2", 3], ["deg2", 2]),
+      examen: serie(["deg2", 1], ["deg2", 1], ["deg2", 2], ["deg2", 3], ["deg2", 1]) }
   };
-  const LIVRES = ["P0", "P1", "P2", "P3", "P4"];
+  const LIVRES = ["P0", "P1", "P2", "P3", "P4", "P5"];
   const SECTIONS = ["lecon", "guide", "semi", "seul", "examen"];
   const NOMS = { diagnostic: "Test diagnostic", lecon: "Leçon", guide: "Série guidée", semi: "Série semi-guidée", seul: "Série seul", examen: "Examen de palier",
     remedLecon: "Mini-leçon ciblée", remed: "Série de remédiation" };
@@ -52,6 +59,11 @@
     "DIV-INV": "Dernière ligne : on divise par le nombre collé au x.",
     "SIG-REL": "Entoure chaque signe avant de calculer.",
     "PRIO": "Repère les × et les ÷ : ils passent en premier.",
+    "ABC-SIG": "Avant de remplir, entoure chaque nombre avec le signe juste devant.",
+    "A-UN": "Devant un x² seul, écris le 1 caché au crayon.",
+    "DELTA-SQ": "b négatif : des parenthèses avant le carré, et −b change de signe.",
+    "SOL-NB": "Avant la suite, dis à voix haute le signe de Δ.",
+    "RAC-SQ": "Racine : cherche le nombre qui, fois lui-même, redonne Δ.",
     "CALC": "Pose chaque calcul au brouillon, un à la fois."
   };
 
@@ -108,22 +120,24 @@
     const bilan = {};
     for (const r of resultats) { const b = bilan[r.notion] || (bilan[r.notion] = { justes: 0, total: 0 }); b.total++; if (r.juste) b.justes++; }
     let suite = true;
-    for (const id of ["P1", "P2", "P3", "P4"]) {
+    for (const id of ["P1", "P2", "P3", "P4", "P5"]) {
       o[id] = completerPalier(o[id]);
       if (o[id].statut === "valide") continue;
       const b = bilan[id], acquis = suite && b && b.total > 0 && b.justes === b.total;
       if (acquis) Object.assign(o[id], { statut: "valide", valideLe: maintenant, parDiagnostic: true });
       else { if (o[id].statut === "verrouille") o[id].statut = "en_cours"; suite = false; break; }
     }
-    if (suite) { const p5 = o.P5 = completerPalier(o.P5); if (p5.statut === "verrouille") p5.statut = "en_cours"; }
+    if (suite) { const p6 = o.P6 = completerPalier(o.P6); if (p6.statut === "verrouille") p6.statut = "en_cours"; }
     return { paliers: o, bilan };
   }
 
   /* ---------- remédiation : les exercices du palier où ce piège peut se produire ---------- */
+  /* Le piège se produit sur au moins la moitié des 8 premiers tirages (lot 3 : au niveau 3 de P5, √Δ n'existe pas toujours). */
   function peutProduire(spec, code) {
     if (!code) return true;
-    for (let g = 1; g <= 12; g++) { try { const e = MM.gen.creer(spec.gen, spec.niveau, g); if (e.erreurs[code] && e.erreurs[code].length) return true; } catch (x) { /* graine sans tirage */ } }
-    return false;
+    let n = 0;
+    for (let g = 1; g <= 8; g++) { try { const e = MM.gen.creer(spec.gen, spec.niveau, g); if (e.erreurs[code] && e.erreurs[code].length) n++; } catch (x) { /* graine sans tirage */ } }
+    return n >= 4;
   }
   function specsRemediation(id, codes) {
     const c = CONTENU[id], vus = new Set(), base = [];

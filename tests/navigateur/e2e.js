@@ -132,17 +132,26 @@ const MAUVAISE = (code) => {
 const REPONSE_DIAG = (juste) => {
   const ex = Q.exo; let t;
   if (ex.type === "equation") t = "x=" + MM.F(ex.reponse).plus(juste ? 0 : 1).texte();
+  else if (ex.type === "second") t = "x=" + MM.F(ex.diag.reponse).plus(juste ? 0 : 1).texte();
   else if (ex.type === "expression") t = ex.reponse + (juste ? "" : "+1");
   else t = MM.F(ex.reponse).plus(juste ? 0 : 1).texte();
   return t.replace(/−/g, "-");
 };
 /* Écrit une ligne d'un coup dans le champ (clavier physique), puis valide avec la touche OK du clavier maths. */
 async function ecrire(page, t) { await page.fill("#champ", t); await valider(page); }
-async function etapeJuste(page) { await ecrire(page, await page.evaluate(BONNE)); }
+/* P5 : les trois cases a, b, c (valeurs lues dans l'état du moteur). */
+const COEFS = () => ["a", "b", "c"].map(k => MM.F(Q.p5[k]).texte().replace(/−/g, "-"));
+async function cases(page, vals) { const c = page.locator("input.trou"); for (let i = 0; i < vals.length; i++) await c.nth(i).fill(vals[i]); await valider(page); }
+async function etapeJuste(page) {
+  if (await page.evaluate(() => !!(Q.trous && Q.trous.coefs))) return cases(page, await page.evaluate(COEFS));
+  await ecrire(page, await page.evaluate(BONNE));
+}
 async function etapeFausse(page, code) { await ecrire(page, await page.evaluate(MAUVAISE, code || null)); }
 /* Résout l'exercice en cours, quel que soit le mode, en ne faisant que des lignes justes. */
 async function resoudre(page) {
   for (let s = 0; s < 12; s++) {
+    // une mini-pause (toutes les 8 questions) ou une fin de bloc peut s'intercaler : on la passe (lot 3 : le diagnostic a 2 questions de plus)
+    if (await page.evaluate(() => vue === "pause")) { await page.locator("#app .btn").first().tap(); continue; }
     if (await page.evaluate(() => Q.fini)) return;
     const mode = await page.evaluate(() => Q.mode);
     if (mode === "seul") await ecrire(page, await page.evaluate(() => { const ex = Q.exo; return (ex.type === "equation" ? "x=" + MM.F(ex.reponse).texte() : ex.type === "expression" ? ex.reponse : ex.reponseTexte).replace(/−/g, "-"); }));
@@ -253,15 +262,16 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
 
   /* ================= P0 : test diagnostic ================= */
   await pe.tap("#bSuivant");
-  await verif("Section suivante ouvre le diagnostic : 12 questions sans aide, une seule réponse demandée", async () => {
-    egal(await pe.evaluate(() => [X.section, X.exos.length, Q.mode].join()), "diagnostic,12,diag");
+  await verif("Section suivante ouvre le diagnostic : 14 questions sans aide (2 sur P5), une seule réponse demandée", async () => {
+    egal(await pe.evaluate(() => [X.section, X.exos.length, Q.mode].join()), "diagnostic,14,diag");
     vrai(!(await pe.isVisible("text=Un indice"))); vrai(/Ta réponse/.test(await pe.textContent("label.etq")));
     vrai(await pe.isVisible("#clavier")); egal(await pe.getAttribute("#champ", "inputmode"), "none");
   });
   await verif("diagnostic : réponses au clavier maths, aucune correction montrée, mini-pause proposée après 8 questions", async () => {
     let miniPause = false;
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 14; i++) {
       const juste = i !== 6;                                                 // une faute en P2 (réduire)
+      if (i >= 12) vrai(/plus (grande|petite) solution/.test(await pe.textContent(".enonce")), "question P5 : " + await pe.textContent(".enonce"));
       const t = await pe.evaluate(REPONSE_DIAG, juste);
       if (i === 0) { await taper(pe, t); await valider(pe); } else await ecrire(pe, t);
       vrai(/Réponse enregistrée/.test(await pe.textContent("#lignes")), "question " + (i + 1) + " : pas enregistrée");
@@ -501,9 +511,10 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
 
   /* ================= retour au téléphone du parent : le rapport ================= */
   await pp.tap("#bRetour");
-  await verif("appareil parent : accueil marqué « Appareil parent », P0 à P4 ouverts pour l'essai", async () => {
+  await verif("appareil parent : accueil marqué « Appareil parent », P0 à P5 ouverts pour l'essai", async () => {
     vrai(/Appareil parent/.test(await pp.textContent("#app")));
     vrai(!/S'ouvre quand le palier/.test(await pp.textContent("details[data-k='P4']")));
+    vrai(!/S'ouvre quand le palier/.test(await pp.textContent("details[data-k='P5']")) && !/Bientôt/.test(await pp.textContent("details[data-k='P5'] summary")));
   });
   await pp.getByRole("button", { name: "Espace parent" }).tap();
   await code(pp, "1986");
@@ -563,6 +574,75 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     egal(cle(apres), cle(avant));
     await pp.tap("#bRetour").catch(() => {});
   });
+
+  /* ================= lot 3 : P5 (second degré), dans la zone d'essai du parent ================= */
+  await verif("P5 : une famille créée avant le lot 3 voit P5 ouvert dans sa zone d'essai ; la progression de l'élève ne change pas", async () => {
+    egal(await pp.evaluate(() => completer({ essai: { paliers: { P5: { statut: "verrouille" } } } }).essai.paliers.P5.statut), "en_cours");
+    egal(await pp.evaluate(() => completer({ paliers: { P5: { statut: "verrouille" } } }).paliers.P5.statut), "verrouille");
+  });
+  await verif("P5 guidé, a, b, c : trois cases au clavier maths, formules sous l'énoncé, a = 0 expliqué (A-UN) sans donner la réponse", async () => {
+    await pp.tap("#bRetour").catch(() => {});
+    await ouvrirPalier(pp, "P5"); await pp.locator("details[data-k='P5'] .etape", { hasText: "Série guidée" }).tap();
+    egal(await pp.evaluate(() => Q.exo.gen + ":" + Q.etapes.map(e => e.id).join()), "abc:coefs");
+    egal(await pp.locator("input.trou").count(), 3);
+    vrai(/Δ = b² − 4ac/.test(await pp.textContent(".enonce")), "formules absentes"); vrai(await pp.isVisible("#clavier"));
+    await pp.locator("input.trou").nth(0).tap(); await taper(pp, "0");
+    egal(await pp.inputValue("input.trou >> nth=0"), "0");
+    const bc = await pp.evaluate(COEFS);
+    await pp.locator("input.trou").nth(1).fill(bc[1]); await pp.locator("input.trou").nth(2).fill(bc[2]); await valider(pp);
+    egal(await titreFb(pp), "Nombre caché devant x², lu comme 0");
+    await pp.screenshot({ path: SHOTS + "/7-p5-abc.png" });
+    vrai(!/=\s*1(?!\d)/.test(await pp.textContent("#fb")), "la réponse est donnée : " + await pp.textContent("#fb"));
+    vrai(await pasDeDefilementHorizontal(pp)); egal((await petitsBoutons(pp)).join(" | "), "");
+    await etapeJuste(pp); vrai(await pp.evaluate(() => Q.fini), "a, b, c pas acceptés");
+  });
+  await verif("P5 guidé, Δ : −b² sans parenthèses → DELTA-SQ ; puis Δ en 3 lignes au clavier maths (², ×, parenthèses) ; énoncé et champ visibles", async () => {
+    await suite(pp);
+    egal(await pp.evaluate(() => Q.exo.gen + ":" + Q.etapes.map(e => e.id).join()), "delta:delta");
+    const dep = await pp.evaluate(() => MM.second.departEtape(Q.etapes[Q.k], Q.p5).replace(/−/g, "-"));
+    vrai(/^\(-\d+\)²/.test(dep), "le niveau 1 du calcul de Δ a un b négatif : " + dep);
+    await ecrire(pp, dep.replace(/^\((-\d+)\)²/, "$1²")); egal(await titreFb(pp), "(−b)² ou −b mal calculé");
+    await pp.screenshot({ path: SHOTS + "/7-p5-delta-faux.png" });
+    await vider(pp); await taper(pp, dep); await valider(pp);
+    vrai(/en cours/.test(await pp.textContent("#lignes")), "le remplacement n'est pas gardé comme ligne en cours");
+    const b = await boites(pp); vrai(visible(b.enonce, b.hauteur) && visible(b.champ, b.hauteur) && b.champ.bas <= b.clavier.haut + 1, "énoncé ou champ caché : " + JSON.stringify(b));
+    await ecrire(pp, await pp.evaluate(() => MM.nombres.prochaine(Q.prev, "produit").replace(/−/g, "-")));
+    await etapeJuste(pp);
+    vrai(await pp.evaluate(() => Q.fini), "Δ pas accepté");
+    egal(await pp.evaluate(() => Q.journal.filter(l => l.juste).length), 3);
+  });
+  await pp.screenshot({ path: SHOTS + "/7-p5-delta.png" });
+  await verif("P5 guidé, équation entière : « Reprendre » au milieu du calcul de Δ ramène à sa ligne, puis √Δ, x₁, x₂", async () => {
+    await suite(pp);
+    egal(await pp.evaluate(() => Q.etapes.map(e => e.id).join()), "coefs,delta,nb,rac,x1,x2");
+    await etapeJuste(pp);
+    await ecrire(pp, await pp.evaluate(() => MM.second.departEtape(Q.etapes[Q.k], Q.p5).replace(/−/g, "-")));
+    const avant = await pp.evaluate(() => [Q.etapes[Q.k].id, Q.acceptees.length, MM.nombres.ecrire(Q.prev)].join(" | "));
+    await pause(300);
+    await pp.reload({ waitUntil: "domcontentloaded" }); await pastilleOK(pp);
+    vrai(!(await pp.isDisabled("#bReprendre"))); await pp.tap("#bReprendre");
+    egal(await pp.evaluate(() => [Q.etapes[Q.k].id, Q.acceptees.length, MM.nombres.ecrire(Q.prev)].join(" | ")), avant);
+    vrai(/en cours/.test(await pp.textContent("#lignes")));
+    for (let s = 0; s < 10 && !(await pp.evaluate(() => Q.fini)); s++) await etapeJuste(pp);
+    vrai(await pp.evaluate(() => Q.fini), "équation pas finie");
+    egal(await pp.evaluate(() => Q.acceptees.filter(a => !a.inter).map(a => a.etape).join()), "coefs,delta,nb,rac,x1,x2");
+    await suite(pp); egal(await pp.textContent("h1"), "Série terminée");
+  });
+  await verif("P5, série seul (D56) : étapes sans aide ; Δ faux (−13²) puis juste à partir de sa ligne → 0 solution ; corrigé à la fin, 2 étapes sur 3", async () => {
+    await pp.getByRole("button", { name: "Accueil" }).tap();
+    await ouvrirPalier(pp, "P5"); await pp.locator("details[data-k='P5'] .etape", { hasText: "Série seul" }).tap();
+    await pp.evaluate(() => { X.exos[0] = { gen: "eq2ref", niveau: 1, graine: 0 }; ouvrirExo(null); });      // l'exercice 2 du contrôle, valeurs exactes
+    egal(await pp.evaluate(() => [Q.mode, Q.exo.enonce].join()), "controle,x² − 13x + 30 = 0");
+    vrai(!(await pp.isVisible("text=Un indice")));
+    await etapeJuste(pp);
+    for (const l of ["-13²-4×1×30", "-169-120", "-289", "0"]) { await taper(pp, l); await valider(pp); vrai(!(await pp.isVisible(".fb.faux")) || await pp.evaluate(() => Q.fini), "correction montrée avant la fin"); }
+    vrai(await pp.evaluate(() => Q.fini), "l'exercice doit s'arrêter : son Δ est négatif");
+    const t = await pp.textContent("#lignes");
+    vrai(/2 étapes justes sur 3/.test(t), t); vrai(/\(−b\)² ou −b mal calculé/.test(t), "erreur non expliquée"); vrai(/Démarche modèle/.test(t), "corrigé absent");
+    egal(await pp.evaluate(() => Q.tentative.points + "/" + Q.tentative.total + " " + Q.tentative.codeErreur), "2/3 DELTA-SQ");
+    await pp.screenshot({ path: SHOTS + "/8-p5-seul.png", fullPage: true });
+    await pp.tap("#bRetour").catch(() => {});
+  });
   /* ================= clé oubliée, lien abîmé, refus de la base ================= */
   await verif("clé oubliée sur le téléphone de l'élève : écran d'appairage, puis lien rouvert → rien de perdu", async () => {
     await pe.evaluate(() => localStorage.clear());
@@ -605,4 +685,4 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
   for (const r of resultats) console.log(r[0] + " " + r[1]);
   console.log("\nNAVIGATEUR " + (resultats.length - ko.length) + "/" + resultats.length + (ko.length ? " ✗" : " ✓"));
   process.exit(ko.length ? 1 : 0);
-})().catch(e => { for (const r of resultats) console.log(r[0] + " " + r[1]); console.error("ARRÊT", e && e.message ? e.message.split("\n").slice(0, 6).join(" / ") : e); process.exit(2); });
+})().catch(e => { for (const r of resultats) console.log(r[0] + " " + r[1]); if (erreursPage.length) console.log("ARRÊT erreurs de page : " + erreursPage.join(" | ")); console.error("ARRÊT", e && e.message ? e.message.split("\n").slice(0, 6).join(" / ") : e); process.exit(2); });

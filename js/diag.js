@@ -8,7 +8,7 @@
   if (typeof require === "function" && !MM.etapes) require("./etapes.js");
   const E = MM.expr, T = MM.etapes, Fraction = MM.Fraction, mono = E.mono, poly = E.polyDeTermes;
 
-  /* Les 17 codes du cahier des charges, plus CALC et PRIO. actif = détection livrée ; sinon, lot prévu. */
+  /* Les 17 codes du cahier des charges, plus CALC, PRIO, SOL-NB et A-UN. actif = détection livrée ; sinon, lot prévu. */
   const CATALOGUE = {
     "SIG-PAR":   { nom: "Signe moins non distribué", exemple: "−5(x + 8) → −5x + 40", reflexe: "Le moins se colle à chaque terme de la parenthèse.", actif: true },
     "SIG-REL":   { nom: "Règle des signes", exemple: "−3 × −4 = −12", reflexe: "Moins par moins donne plus. Pense à l'ascenseur.", actif: true },
@@ -20,9 +20,14 @@
     "CALC":      { nom: "Erreur de calcul", exemple: "3 × 5 = 12", reflexe: "Un calcul à la fois, au brouillon.", actif: true, ajout: "2026-11-15" },
     /* Ajout validé le 23/11/2026 (lot 2, palier P1). */
     "PRIO":      { nom: "Priorités de calcul", exemple: "2 + 3 × 4 = 20", reflexe: "Le × et le ÷ passent avant le + et le −.", actif: true, ajout: "2026-11-23" },
-    "ABC-SIG":   { nom: "b ou c pris sans son signe", exemple: "b = 13 au lieu de −13", reflexe: "Le signe fait partie du nombre.", lot: 3 },
-    "DELTA-SQ":  { nom: "(−b)² ou −b mal calculé", exemple: "−(−13) = −13", reflexe: "Parenthèses obligatoires quand b est négatif.", lot: 3 },
-    "RAC-SQ":    { nom: "Racine confondue avec carré", exemple: "√49 = 49²", reflexe: "La racine, c'est le chemin retour du carré.", lot: 3 },
+    /* Lot 3 (palier P5). ABC-SIG vaut aussi pour a quand a est négatif (−x²). */
+    "ABC-SIG":   { nom: "b ou c pris sans son signe", exemple: "b = 13 au lieu de −13", reflexe: "Le signe fait partie du nombre.", actif: true },
+    "DELTA-SQ":  { nom: "(−b)² ou −b mal calculé", exemple: "−(−13) = −13", reflexe: "Parenthèses obligatoires quand b est négatif.", actif: true },
+    "RAC-SQ":    { nom: "Racine confondue avec carré", exemple: "√49 = 49²", reflexe: "La racine, c'est le chemin retour du carré.", actif: true },
+    /* Ajouts validés le 24/11/2026 (D57). */
+    /* Le nom et le réflexe s'affichent à l'élève dès la 1re erreur : ils ne donnent ni a = 1, ni la règle complète du signe de Δ (D50). */
+    "SOL-NB":    { nom: "Nombre de solutions mal déduit de Δ", exemple: "Δ = −23 → deux solutions", reflexe: "Le signe de Δ décide du nombre de solutions.", actif: true, ajout: "2026-11-24" },
+    "A-UN":      { nom: "Nombre caché devant x², lu comme 0", exemple: "x² − 13x + 30 = 0 → a = 0", reflexe: "Un x² seul cache un nombre, jamais 0.", actif: true, ajout: "2026-11-24" },
     "M-MX":      { nom: "m confondu avec mx", exemple: "m = −3x", reflexe: "m est le nombre devant x, sans le x.", lot: 4 },
     "B-SIG":     { nom: "b sans son signe", exemple: "y = −3x − 5 → b = 5", reflexe: "b garde son signe.", lot: 4 },
     "ORD-INV":   { nom: "Forme inversée mal lue", exemple: "y = 6 − 5x → m = 6", reflexe: "On réécrit d'abord y = −5x + 6.", lot: 4 },
@@ -33,7 +38,7 @@
     "AIRE-2":    { nom: "Oubli du / 2", exemple: "aire = 24", reflexe: "Un triangle, c'est la moitié d'un rectangle.", lot: 4 }
   };
   /* À égalité, le code le plus précis l'emporte : une faute de signe sur une parenthèse est toujours SIG-PAR. */
-  const PRIORITE = ["SIG-PAR", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "SIG-REL"];
+  const PRIORITE = ["SIG-PAR", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "SIG-REL", "A-UN", "ABC-SIG", "DELTA-SQ", "SOL-NB", "RAC-SQ"];
   /* Doublons de structure, pas des coïncidences : un signe retourné sur un produit de parenthèse est aussi une faute de signe,
      un terme qui change de côté sans changer de signe aussi. Le code précis garde la réponse, SIG-REL la lâche. */
   const STRUCTUREL = [["SIG-PAR", "SIG-REL"], ["TRANS-SIG", "SIG-REL"]];
