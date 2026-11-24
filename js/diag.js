@@ -310,6 +310,7 @@
     if (e) {
       const detail = { loc: e.loc, cote: e.cote, faux: e.faux, bon: e.bon, communs: e.communs };
       if (e.loc === "remplace" && e.faux.d === e.bon.d) Object.assign(detail, origine(e.k.sorte, ch, prev, e.cote, e.bon, e.index));
+      else if (e.loc === "manque") { const o = origine(e.k.sorte, ch, prev, e.cote, e.bon, null); if (o.op === "produit") Object.assign(detail, { op: "produit-manque", f1: o.f1, f2: o.f2 }); }
       else if (e.loc === "remplace") detail.op = "degre";
       const calcul = ["produit", "somme", "division"].includes(detail.op);       // table, addition, division : code CALC
       return { code: calcul ? "CALC" : null, localise: true, detail };
@@ -353,13 +354,13 @@
     if (x.loc === "remplace" && x.op === "produit") {
       const v = x.f1.c.fois(x.f2.c).abs();
       return Object.assign(base, { titre: "Erreur de calcul", bon: bonAvant, resume: ecr(x.f1) + " × " + termePar(x.f2) + " = " + ecr(x.bon) + ", pas " + ecr(x.faux),
-        ou: "Mais " + ecr(x.f1) + " × " + termePar(x.f2) + " = " + ecr(x.bon) + ", pas " + ecr(x.faux) + ".",
-        regle: x.f1.d + x.f2.d === 0 ? "Vérifie ta table : " + x.f1.c.abs().texte() + " × " + x.f2.c.abs().texte() + " = " + v.texte() + "." : "Refais ce produit au brouillon." });
+        ou: "Mais " + ecr(x.f1) + " × " + termePar(x.f2) + " ne fait pas " + ecr(x.faux) + " : " + (x.bon.c.abs().egal(x.faux.c.abs()) ? "regarde le signe." : "refais le calcul.") + "",
+        regle: x.f1.d + x.f2.d === 0 ? "Le signe d'abord, puis la table de " + x.f1.c.abs().texte() + "." : "Refais ce produit au brouillon." });
     }
     if (x.loc === "remplace" && x.op === "somme") {
       const calc = E.ecrireCote(x.termes);
       return Object.assign(base, { titre: "Erreur de calcul", bon: bonAvant, resume: calc + " = " + ecr(x.bon) + ", pas " + ecr(x.faux),
-        ou: "Mais " + calc + " = " + ecr(x.bon) + ", pas " + ecr(x.faux) + ".", regle: "Calcule un terme après l'autre, au brouillon." });
+        ou: "Mais " + calc + " ne fait pas " + ecr(x.faux) + " : " + (x.bon.c.abs().egal(x.faux.c.abs()) ? "regarde le signe." : "refais le calcul.") + "", regle: "Calcule un terme après l'autre, au brouillon." });
     }
     if (x.loc === "remplace" && x.op === "division") {
       const ab = x.b.texte() + " ÷ " + entrePar(x.a);
@@ -367,11 +368,11 @@
         ou: "Mais " + ab + " ne fait pas " + x.faux.c.texte() + ".", regle: "Vérifie en remultipliant : " + x.a.texte() + " × " + entrePar(x.faux.c) + " = " + x.a.fois(x.faux.c).texte() + ", pas " + x.b.texte() + "." });
     }
     if (x.loc === "remplace" && x.op === "degre") return Object.assign(base, { titre: "Un x s'est égaré", bon: bonAvant, resume: ecr(x.bon) + " attendu, pas " + ecr(x.faux),
-      ou: "Mais ce terme devait être " + ecr(x.bon) + ", pas " + ecr(x.faux) + ".", regle: x.bon.d === 0 ? "Un nombre seul n'a pas de x." : "Ce terme garde son x." });
+      ou: x.bon.d === 0 ? "Mais " + ecr(x.faux) + " ne doit pas avoir de x." : "Mais il manque le x dans " + ecr(x.faux) + ".", regle: x.bon.d === 0 ? "Un nombre seul n'a pas de x." : "Ce terme garde son x." });
     if (x.loc === "remplace") return Object.assign(base, { titre: "Erreur de recopie", bon: bonAvant, resume: ecr(x.bon) + " attendu, pas " + ecr(x.faux),
-      ou: "Mais ce terme devait être " + ecr(x.bon) + ", pas " + ecr(x.faux) + ".", regle: "Recopie chaque terme avec son signe." });
+      ou: "Mais " + ecr(x.faux) + " ne vient pas de la ligne d'avant : relis-la.", regle: "Recopie chaque terme avec son signe." });
     if (x.loc === "manque") return Object.assign(base, { titre: "Un terme a disparu", bon: bonAvant, resume: "terme oublié : " + ecr(x.bon),
-      ou: "Mais il manque le terme " + signe(x.bon) + ".", regle: "Chaque terme doit se retrouver dans la ligne suivante." });
+      ou: x.op === "produit-manque" ? "Mais il manque le terme qui vient de " + ecr(x.f1) + " × " + termePar(x.f2) + "." : "Mais il manque un terme de la ligne d'avant.", regle: "Chaque terme doit se retrouver dans la ligne suivante." });
     if (x.loc === "trop") return Object.assign(base, { titre: "Un terme en trop", bon: bonAvant, resume: "terme en trop : " + ecr(x.faux),
       ou: "Mais le terme " + signe(x.faux) + " n'a rien à faire là.", regle: "Vérifie d'où vient chaque terme." });
     if (x.loc === "plusieurs") return Object.assign(base, plusieursTextes(x, bonAvant));
@@ -415,22 +416,22 @@
     else if (code === "SIG-PAR") {
       bon = x.facteur.abs().egal(1) ? "Tu as bien enlevé la parenthèse." : "Tu as bien multiplié par " + x.facteur.abs().texte() + ".";
       ou = "Mais dans " + x.terme + ", le moins touche aussi le terme " + signe(x.u) + ".";
-      regle = x.facteur.texte() + " × " + termePar(x.u) + " = " + signe(x.bon) + ", pas " + signe(x.faux) + ".";
+      regle = x.facteur.texte() + " × " + termePar(x.u) + " ne fait pas " + signe(x.faux) + " : " + (x.u.c.signe() < 0 ? "moins par moins donne plus." : "moins par plus donne moins.");
     } else if (code === "DIST-PART") {
       bon = "Ton " + E.ecrireTerme(x.premier) + " est bon.";
       ou = "Mais dans " + x.terme + ", le " + x.facteur.texte() + " multiplie aussi le terme " + signe(x.u) + ".";
-      regle = x.facteur.texte() + " × " + termePar(x.u) + " = " + signe(x.bon) + ".";
+      regle = "Refais " + x.facteur.texte() + " × " + termePar(x.u) + ", et garde le signe du résultat.";
     } else if (code === "RED-MIX") {
       bon = "Tu as bien vu qu'il fallait réduire.";
       ou = "Mais " + x.termes + " ne donne pas " + x.faux + ".";
-      regle = "Les x et les nombres ne se mélangent pas. Ici, on garde " + x.bon + ".";
+      regle = "Les x et les nombres ne se mélangent pas : garde-les séparés.";
     } else if (code === "TRANS-SIG") {
       bon = "Tu as bien rangé : les x d'un côté, les nombres de l'autre.";
       ou = "Mais " + x.terme + " a changé de côté sans changer de signe.";
       regle = "La balance : pour faire partir " + x.terme + ", on " + x.inverse + " des deux côtés.";
     } else if (code === "DIV-INV") {
       bon = "Tu as bien vu qu'il restait une division.";
-      ou = "Mais " + x.a.texte() + "x = " + x.b.texte() + " donne x = " + x.b.texte() + " ÷ " + entrePar(x.a) + ", pas l'inverse.";
+      ou = "Mais tu as divisé dans le mauvais sens.";
       regle = "On divise par le nombre collé au x, jamais l'inverse.";
     } else if (code === "SIG-REL" && x.division) {
       bon = "Tu as bien divisé par le nombre collé au x.";
@@ -438,7 +439,7 @@
       regle = "Signes différents : résultat négatif. Mêmes signes : résultat positif.";
     } else {
       bon = "Tu as regroupé les bons termes.";
-      ou = "Mais " + x.calcul + " = " + x.bon + ", pas " + x.faux + ".";
+      ou = "Mais " + x.calcul + " ne fait pas " + x.faux + " : regarde le signe.";
       regle = "L'ascenseur : avec +, tu montes. Avec −, tu descends.";
     }
     const suite = x && x.autres && x.autres.length ? "Même piège dans " + x.autres.join(" et ") + "." : "";

@@ -35,7 +35,7 @@ test("explication ciblée : les nombres cités sont ceux de l'erreur commise", (
   const v = T.jugerLigne(E.lireEquation("7(x − 4) − 8(x − 7) = 69 − 5(x + 8)"), "7x − 28 − 8x − 56 = 69 − 5x + 40", "developpe");
   const x = D.expliquer(v.diag);
   egal(x.ou, "Mais dans −8(x − 7), le moins touche aussi le terme −7.");
-  egal(x.regle, "−8 × (−7) = +56, pas −56.");
+  egal(x.regle, "−8 × (−7) ne fait pas −56 : moins par moins donne plus.");             // recette du 24/11 : la règle, pas la valeur
   egal(x.suite, "Même piège dans −5(x + 8).");
 });
 test("erreur inconnue : explication générale, pas de code inventé", () => {

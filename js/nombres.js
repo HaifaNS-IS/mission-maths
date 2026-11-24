@@ -264,7 +264,8 @@
   function expliquer(d, variante) {
     const CAT = MM.diag ? MM.diag.CATALOGUE : {};
     const code = d && d.code, x = (d && d.detail) || {}, v2 = variante === 2, cacher = !!(d && d.cacher);
-    const egalA = (calcul, bon, faux) => cacher ? "Mais " + calcul + " ne fait pas " + t(faux) + "." : "Mais " + calcul + " = " + t(bon) + ", pas " + t(faux) + ".";
+    // jamais la valeur juste (D37, recette du 24/11) : le calcul à refaire, et ce qui cloche (signe ou valeur)
+    const egalA = (calcul, bon, faux) => "Mais " + calcul + " ne fait pas " + t(faux) + (bon && bon.abs().egal(faux.abs()) ? " : regarde le signe." : ".");
     const fin = (titre, bon, ou, regle) => ({ code: code || null, titre, bon, ou, regle, suite: "", reflexe: code && CAT[code] ? CAT[code].reflexe : "", variante: v2 ? 2 : 1 });
     if (x.sorte === "plusieurs") {
       const NAT = { signe: "regarde son signe.", valeur: "la valeur est fausse.", tout: "signe et valeur." };
@@ -278,11 +279,11 @@
       v2 ? "Compte les nombres de la ligne d'avant : chacun doit se retrouver." : "Chaque nombre de la ligne d'avant doit se retrouver, une fois.");
     if (code === "PRIO") return fin(CAT.PRIO.nom, "Tes calculs sont justes.", "Mais tu as calculé de gauche à droite. Le × passe avant.",
       v2 ? "Les × et ÷ sont prioritaires, comme un piéton au passage clouté. Ici : " + x.produit + " d'abord."
-         : "D'abord " + x.produit + " = " + t(x.valeurProduit) + ". Ensuite le reste.");
+         : "D'abord " + x.produit + ", ensuite le reste.");
     if (code === "SIG-REL" && x.sorte === "double") return fin(CAT["SIG-REL"].nom, "Tu as bien gardé les nombres.",
       "Mais dans " + x.ecrit + ", il y a deux signes collés.",
-      v2 ? "L'ascenseur : enlever une descente, c'est monter. Donc " + x.ecrit + " devient " + (x.bon.signe() < 0 ? MOINS : "+") + " " + abs(x.bon) + "."
-         : "Signes pareils : +. Signes différents : −. Donc " + x.ecrit + " = " + (x.bon.signe() < 0 ? MOINS : "+") + " " + abs(x.bon) + ".");
+      v2 ? "L'ascenseur : enlever une descente, c'est monter. Ajouter une descente, c'est descendre."
+         : "Signes collés pareils : +. Signes collés différents : −.");
     if (code === "SIG-REL" && x.sorte === "terme") return fin(CAT["SIG-REL"].nom, "Tes nombres sont bons.",
       "Mais le signe de " + x.ecrit + " a changé en route.", v2 ? "Entoure chaque signe avant de calculer. Il voyage avec son nombre." : "Chaque nombre garde le signe écrit juste devant lui.");
     if (code === "SIG-REL" && x.sorte === "produit") return fin(CAT["SIG-REL"].nom, "Ta valeur est bonne, sans le signe.",

@@ -8,29 +8,30 @@ const expr = (dep, saisie) => T.jugerExpression(E.lireExpression(dep).termes, sa
 const lig = (prev, saisie, forme) => T.jugerLigne(E.lireEquation(prev), saisie, forme || null);
 const X1 = "7(x − 4) − 8(x − 7) = 69 − 5(x + 8)";
 
-test("recette du 15/11 : 3(x − 5) → 3X-12 : erreur de table repérée, avec les bons nombres", () => {
+test("recette du 15/11 : 3(x − 5) → 3X-12 : erreur de table repérée ; l'élève a le calcul à refaire, le parent le détail chiffré", () => {
   const v = expr("3(x − 5)", "3X-12"), x = D.expliquer(v.diag);
   egal(v.statut, "faux"); egal(v.code, "CALC"); vrai(v.diag.localise);
-  egal(x.titre, "Erreur de calcul"); egal(x.reflexe, "Un calcul à la fois, au brouillon."); egal(x.bon, "Ton 3x est bon."); egal(x.ou, "Mais 3 × (−5) = −15, pas −12."); egal(x.regle, "Vérifie ta table : 3 × 5 = 15.");
+  egal(x.titre, "Erreur de calcul"); egal(x.reflexe, "Un calcul à la fois, au brouillon."); egal(x.bon, "Ton 3x est bon."); egal(x.ou, "Mais 3 × (−5) ne fait pas −12 : refais le calcul."); egal(x.regle, "Le signe d'abord, puis la table de 3.");
   egal(x.resume, "3 × (−5) = −15, pas −12"); vrai(phrasesCourtes(x));
 });
-test("ex. 1 du contrôle : une erreur de calcul à chaque étape est repérée là où elle naît", () => {
+/* Recette du 24/11 : l'explication donne le calcul à refaire, jamais sa valeur juste ; le parent garde le détail chiffré (resume). */
+test("ex. 1 du contrôle : une erreur de calcul à chaque étape est repérée là où elle naît, sans donner la bonne valeur", () => {
   const cas = [
-    [X1, "7x − 28 − 8x + 54 = 69 − 5x − 40", "developpe", "Mais −8 × (−7) = 56, pas 54."],
-    [X1, "7x − 28 − 8x + 56 = 69 − 5x − 45", "developpe", "Mais −5 × 8 = −40, pas −45."],
-    ["7x − 28 − 8x + 56 = 69 − 5x − 40", "−x + 26 = 29 − 5x", "reduit", "Mais −28 + 56 = 28, pas 26."],
-    ["7x − 28 − 8x + 56 = 69 − 5x − 40", "−x + 28 = 19 − 5x", "reduit", "Mais 69 − 40 = 29, pas 19."],
-    ["−x + 28 = 29 − 5x", "4x = 2", "regroupe", "Mais 29 − 28 = 1, pas 2."],
-    ["−x + 28 = 29 − 5x", "5x = 1", "regroupe", "Mais −x + 5x = 4x, pas 5x."],
+    [X1, "7x − 28 − 8x + 54 = 69 − 5x − 40", "developpe", "Mais −8 × (−7) ne fait pas 54 : refais le calcul.", "−8 × (−7) = 56, pas 54"],
+    [X1, "7x − 28 − 8x + 56 = 69 − 5x − 45", "developpe", "Mais −5 × 8 ne fait pas −45 : refais le calcul.", "−5 × 8 = −40, pas −45"],
+    ["7x − 28 − 8x + 56 = 69 − 5x − 40", "−x + 26 = 29 − 5x", "reduit", "Mais −28 + 56 ne fait pas 26 : refais le calcul.", "−28 + 56 = 28, pas 26"],
+    ["7x − 28 − 8x + 56 = 69 − 5x − 40", "−x + 28 = 19 − 5x", "reduit", "Mais 69 − 40 ne fait pas 19 : refais le calcul.", "69 − 40 = 29, pas 19"],
+    ["−x + 28 = 29 − 5x", "4x = 2", "regroupe", "Mais 29 − 28 ne fait pas 2 : refais le calcul.", "29 − 28 = 1, pas 2"],
+    ["−x + 28 = 29 − 5x", "5x = 1", "regroupe", "Mais −x + 5x ne fait pas 5x : refais le calcul.", "−x + 5x = 4x, pas 5x"],
     ["4x = 1", "x = 1/3", "solution", "Mais 1 ÷ 4 ne fait pas 1/3."],          // lot 2 (D37) : la solution n'est pas donnée dans l'explication
     ["4x = 1", "x = 0,4", "solution", "Mais 1 ÷ 4 ne fait pas 2/5."]
   ];
-  for (const [p, s, f, ou] of cas) { const v = lig(p, s, f), x = D.expliquer(v.diag); egal(v.statut, "faux", s); egal(v.code, "CALC", s); egal(x.ou, ou, s); vrai(phrasesCourtes(x), s); }
+  for (const [p, s, f, ou, resume] of cas) { const v = lig(p, s, f), x = D.expliquer(v.diag); egal(v.statut, "faux", s); egal(v.code, "CALC", s); egal(x.ou, ou, s); vrai(phrasesCourtes(x), s); if (resume) egal(x.resume, resume, s); }
 });
 test("recopie, terme oublié, terme en trop, x égaré : chacun nommé, sans code (pas des erreurs de calcul)", () => {
   for (const v of [lig(X1, "7x − 28 − 8x + 56 = 68 − 5x − 40", "developpe"), expr("3(x − 5)", "3x"), expr("3(x − 5)", "3x + 1 − 15"), expr("3(x − 5)", "3x − 15x")]) egal(v.code, null, v.ecrit);
-  let x = D.expliquer(lig(X1, "7x − 28 − 8x + 56 = 68 − 5x − 40", "developpe").diag); egal(x.titre, "Erreur de recopie"); egal(x.ou, "Mais ce terme devait être 69, pas 68.");
-  x = D.expliquer(expr("3(x − 5)", "3x").diag); egal(x.titre, "Un terme a disparu"); egal(x.ou, "Mais il manque le terme −15.");
+  let x = D.expliquer(lig(X1, "7x − 28 − 8x + 56 = 68 − 5x − 40", "developpe").diag); egal(x.titre, "Erreur de recopie"); egal(x.ou, "Mais 68 ne vient pas de la ligne d'avant : relis-la."); egal(x.resume, "69 attendu, pas 68");
+  x = D.expliquer(expr("3(x − 5)", "3x").diag); egal(x.titre, "Un terme a disparu"); egal(x.ou, "Mais il manque le terme qui vient de 3 × (−5)."); egal(x.resume, "terme oublié : −15");
   x = D.expliquer(expr("3(x − 5)", "3x + 1 − 15").diag); egal(x.titre, "Un terme en trop"); egal(x.ou, "Mais le terme +1 n'a rien à faire là.");
   x = D.expliquer(expr("3(x − 5)", "3x − 15x").diag); egal(x.titre, "Un x s'est égaré"); egal(x.regle, "Un nombre seul n'a pas de x.");
 });
@@ -80,7 +81,7 @@ test("les codes du catalogue gardent la priorité quand l'erreur est vraiment la
   egal(lig("x + 5 = 9", "x = 14").code, "TRANS-SIG"); egal(lig("4x = 1", "x = 4").code, "DIV-INV"); egal(lig("−x + 28 = 29 − 5x", "x = −1/6").code, "TRANS-SIG");
   egal(lig("7x − 28 − 8x + 56 = 69 − 5x − 40", "27x = 29 − 5x").code, "RED-MIX");
   const v = lig("−x + 28 = 29 − 5x", "6x = 1", "regroupe");                 // le moins devant x oublié en regroupant : faute de signe
-  egal(v.code, "SIG-REL"); egal(D.expliquer(v.diag).ou, "Mais −x + 5x = 4x, pas 6x.");
+  egal(v.code, "SIG-REL"); egal(D.expliquer(v.diag).ou, "Mais −x + 5x ne fait pas 6x : regarde le signe.");
 });
 test("pas de faux « mélange » : 3x − 15x n'est pas une fusion ; 69 recopié 68 n'est pas un mélange par coïncidence", () => {
   egal(expr("3(x − 5)", "3x − 15x").code, null);
@@ -97,7 +98,13 @@ function verifierCas(prev, ligneFausse, forme, attendu) {
   const codeVoulu = /devait être/.test(attendu) ? null : "CALC";
   if (v.code !== codeVoulu) return "mauvais code (" + v.code + " au lieu de " + codeVoulu + ") : " + x.ou;
   if (!v.diag.localise) return "non localisé : " + E.ecrireEquation(prev) + " → " + E.ecrireEquation(ligneFausse);
-  if (x.ou.indexOf(attendu) < 0) return "mauvais endroit : " + E.ecrireEquation(ligneFausse) + " / " + x.ou + " / attendu « " + attendu + " »";
+  // l'endroit exact est dans le détail du parent ; l'élève a le calcul à refaire, sans sa valeur juste (recette du 24/11)
+  const m = /^devait être (.*), pas (.*)$/.exec(attendu) || /^(.*) = (.*), pas (.*)$/.exec(attendu);
+  const recopie = /^devait être/.test(attendu), bon = recopie ? m[1] : m[2], faux = recopie ? m[2] : m[3];
+  const resumeVoulu = recopie ? bon + " attendu, pas " + faux : attendu, ouVoulu = recopie ? "Mais " + faux + " ne vient pas" : "Mais " + m[1] + " ne fait pas " + faux;
+  if (x.resume !== resumeVoulu) return "détail parent faux : " + x.resume + " / attendu « " + resumeVoulu + " »";
+  if (x.ou.indexOf(ouVoulu) < 0) return "mauvais endroit : " + E.ecrireEquation(ligneFausse) + " / " + x.ou + " / attendu « " + ouVoulu + " »";
+  if (new RegExp("= " + bon.replace(/[()+]/g, "\\$&") + "(?![0-9x/])").test((x.ou + " " + x.regle).replace(/Vérifie en remultipliant[^.]*\./, ""))) return "valeur juste donnée : " + x.ou + " " + x.regle;   // la remultiplication porte sur SA valeur
   if (!phrasesCourtes(x)) return "explication trop longue : " + x.ou;
   return "ok";
 }
@@ -142,13 +149,8 @@ test("élève simulé, erreur de division à la dernière étape (x = 0 compris)
     if (a.egal(1)) continue;                                              // x déjà seul : pas de division
     const x = T.resoudre(rr).x, faux = g % 10 === 0 ? MM.Fraction.ZERO : decale(x, rnd);
     const ab = b.texte() + " ÷ " + (a.signe() < 0 ? "(" + a.texte() + ")" : a.texte());
-    const r = verifierCas(rr, T.eqSolution(faux), "solution", ab + " ne fait pas " + faux.texte());
-    if (r === "ok") {
-      const v = T.jugerLigne(rr, E.ecrireEquation(T.eqSolution(faux)), "solution"), xp = D.expliquer(v.diag);
-      if (xp.resume !== ab + " = " + x.texte() + ", pas " + faux.texte()) bilan.ko.push("précision parent : " + xp.resume);
-      else if ((xp.ou + " " + xp.regle).includes("= " + x.texte() + ".")) bilan.ko.push("solution donnée : " + xp.ou + " " + xp.regle);
-      else { bilan.ok++; if (faux.estNul()) bilan.zero++; }
-    } else if (r === "ignoré") bilan.ignoré++; else bilan.ko.push(r);
+    const r = verifierCas(rr, T.eqSolution(faux), "solution", ab + " = " + x.texte() + ", pas " + faux.texte());   // vérifie aussi : solution jamais donnée, exacte pour le parent
+    if (r === "ok") { bilan.ok++; if (faux.estNul()) bilan.zero++; } else if (r === "ignoré") bilan.ignoré++; else bilan.ko.push(r);
   }
   egal(bilan.ko.slice(0, 3).join(" || "), ""); vrai(bilan.ok >= 400 && bilan.zero >= 20, "trop peu de cas : " + JSON.stringify(bilan));
 });
@@ -160,7 +162,8 @@ test("développer une expression (générateur dev1) : erreur de table sur le no
     const v = T.jugerExpression(dep, E.ecrireCote([bon[0], faux]), "developpe");
     if (v.code && v.code !== "CALC") continue;
     const x = D.expliquer(v.diag);
-    egal(v.code, "CALC", exo.enonce); egal(x.titre, "Erreur de calcul", exo.enonce); vrai(x.ou.endsWith("= " + E.ecrireTerme(bon[1]) + ", pas " + E.ecrireTerme(faux) + "."), exo.enonce + " / " + x.ou); ok++;
+    egal(v.code, "CALC", exo.enonce); egal(x.titre, "Erreur de calcul", exo.enonce); vrai(x.resume.endsWith("= " + E.ecrireTerme(bon[1]) + ", pas " + E.ecrireTerme(faux)), exo.enonce + " / " + x.resume);
+    vrai(/ ne fait pas /.test(x.ou) && !x.ou.includes("= " + E.ecrireTerme(bon[1])), "valeur juste donnée : " + x.ou); ok++;
   }
   vrai(ok >= 500, "trop peu de cas : " + ok);
 });

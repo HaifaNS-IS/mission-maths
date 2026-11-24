@@ -96,3 +96,36 @@ test("D37 : l'explication de la marche 1 ne donne jamais le résultat final atte
   }
   vrai(vus >= 300, "trop peu de cas : " + vus);
 });
+/* Recette du 24/11 : « dans l'explication tu donnes la réponse ». Aux marches 1 et 2, aucune explication ne donne la valeur juste
+   d'un terme que l'élève a raté (catalogue, hors catalogue, calculs de P1 ; 1re et 2e formulation ; indice « où regarder »). */
+test("recette du 24/11 : aux marches 1 et 2, jamais la valeur juste d'un terme raté (tous générateurs, 1re et 2e formulation)", () => {
+  const esc = t => t.replace(/[()+.*?[\]\\/]/g, "\\$&");
+  const donne = (texte, terme) => new RegExp("(=|donne|devient|garde|être|vaut|fait)\\s*\\+?\\s*" + esc(terme) + "(?![0-9x²/,])").test(texte.replace(/Teste avec x = −?\d+ : [^.]*\./g, ""));
+  let vus = 0;
+  const ko = [];
+  for (const [id, niveaux] of [["rel", [1, 2, 3]], ["relmul", [1, 2, 3]], ["prio", [1, 2, 3]], ["red", [1, 2]], ["dev1", [1, 2, 3]], ["devred", [1, 2, 3]], ["eqs", [1, 2, 3]], ["eqxx", [1, 2]], ["eq1par", [1, 2, 3]]]) for (const niveau of niveaux) for (let g = 1; g <= 15; g++) {
+    const exo = Gn.creer(id, niveau, g), type = exo.type;
+    let prev = Gn.depart(exo);
+    for (const et of exo.etapes) {
+      // lignes fausses : les erreurs du catalogue, et la bonne ligne avec un terme décalé (erreur de calcul)
+      const bonne = type === "equation" ? E.ecrireEquation(T.prochaine(prev, et.forme)) : type === "expression" ? E.ecrireCote(T.attenduExpr(prev, et.forme)) : N.prochaine(prev, et.forme);
+      const fausses = [];
+      if (type === "equation") D.candidats(prev).filter(c => c.stade === T.ORDRE.indexOf(et.forme) || (et.forme === "regroupe" && c.stade === 2)).slice(0, 3).forEach(c => fausses.push(E.ecrireEquation(c.stade === 2 ? T.reduire(c.eq) : c.eq)));
+      else if (type === "expression") D.candidatsExpression(prev).filter(c => c.stade === (et.forme === "developpe" ? 0 : 1)).slice(0, 3).forEach(c => fausses.push(E.ecrireCote(et.forme === "reduit" ? T.redCote(c.termes) : c.termes)));
+      else N.candidats(prev).slice(0, 3).forEach(c => fausses.push(c.valeur.texte()));
+      fausses.push(bonne.replace(/(\d+)(?!.*\d)/, m => String(Number(m) + 2)));
+      for (const f of fausses) {
+        const v = type === "equation" ? T.jugerLigne(prev, f, et.forme) : type === "expression" ? T.jugerExpression(prev, f, et.forme) : N.juger(prev, f, et.forme);
+        if (v.statut !== "faux") continue;
+        const cur = type === "equation" ? v.eq : type === "expression" ? v.termes : v.ast;
+        const fa = A.fautes(type, prev, cur, et.forme);
+        const rates = fa.cotes.flatMap(c => c.res.filter(r => !r.ok && r.m).map(r => r.m).concat(c.manques)).map(m => (m.signe < 0 ? "−" : "") + m.corps);
+        const textes = [1, 2].map(va => { const x = A.expliquer(type, v.diag, va); return [x.bon, x.ou, x.regle, x.suite].join(" "); }).concat([A.pointer(type, prev, cur, et.forme, v.code).message]);
+        for (const tx of textes) for (const r of rates) if (r !== "0" && donne(tx, r)) ko.push(id + " n" + niveau + " g" + g + " " + et.id + " : " + f + " → « " + tx + " » donne " + r);
+        vus++;
+      }
+      prev = type === "equation" ? T.jugerLigne(prev, bonne, et.forme).eq : type === "expression" ? T.jugerExpression(prev, bonne, et.forme).termes : N.juger(prev, bonne, et.forme).ast;
+    }
+  }
+  egal(ko.slice(0, 4).join(" || "), ""); vrai(vus >= 600, "trop peu de cas : " + vus);
+});

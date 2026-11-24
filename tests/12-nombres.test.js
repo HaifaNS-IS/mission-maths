@@ -56,7 +56,7 @@ test("explications : ce qui est juste, l'endroit exact, la règle ; la 2e formul
     for (const x of [x1, x2]) for (const f of [x.bon, x.ou, x.regle]) vrai(phrasesCourtes(f), "phrase trop longue : " + f);
   }
   vrai(/deux signes collés/.test(N.expliquer(N.juger(A("−7 − (−3)"), "−7 − 3", null).diag, 1).ou));
-  vrai(/4 × \(−2\) = −8, pas −6/.test(N.expliquer(N.juger(A("−3 + 4 × (−2)"), "−3 − 6", null).diag, 1).ou));
+  vrai(/4 × \(−2\) ne fait pas −6\./.test(N.expliquer(N.juger(A("−3 + 4 × (−2)"), "−3 − 6", null).diag, 1).ou));
 });
 test("démarche libre (mode seul) : une erreur à la ligne 1, la suite jugée à partir de sa ligne", () => {
   const r = N.evaluerDemarche(A("−3 + 4 × (−2)"), ["−3 + 8", "5"]);
