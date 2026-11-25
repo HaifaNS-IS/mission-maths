@@ -47,6 +47,17 @@
       seul: serie(["deg2", 1], ["deg2", 3], ["deg2", 2]),
       examen: serie(["deg2", 1], ["deg2", 1], ["deg2", 2], ["deg2", 3], ["deg2", 1]) }
   };
+  /* Lot express (contrôle du 29/11, D69) : une révision G1 à G6 hors paliers, ouverte d'office, sans leçon ni examen.
+     Chaque fiche : la méthode (formule + exercice de la prof corrigé), une série avec aide, une série sans aide (corrigé à la fin). */
+  const REVISION = [
+    { id: "G1", nom: "Distance entre deux points", fiche: 3, guide: serie(["dist", 1], ["dist", 2], ["dist", 2]), seul: serie(["dist", 1], ["dist", 2], ["dist", 2]) },
+    { id: "G2", nom: "Milieu d'un segment", fiche: 9, guide: serie(["mil", 1], ["mil", 2], ["mil", 2]), seul: serie(["mil", 1], ["mil", 2], ["mil", 2]) },
+    { id: "G3", nom: "Pente et équation d'une droite", fiche: 4, guide: serie(["pente", 1], ["pente", 2], ["pente", 2]), seul: serie(["pente", 1], ["pente", 2], ["pente", 2]) },
+    { id: "G4", nom: "Intersections avec les axes", fiche: 8, guide: serie(["axes", 1], ["axes", 1], ["axes", 2]), seul: serie(["axes", 1], ["axes", 2], ["axes", 2]) },
+    { id: "G5", nom: "Exercice combiné", fiche: 6, guide: serie(["comb", 1], ["comb", 2]), seul: serie(["comb", 1], ["comb", 2]) },
+    { id: "G6", nom: "Pythagore", fiche: 11, guide: serie(["pyth", 1], ["pyth", 2], ["pyth", 3]), seul: serie(["pyth", 1], ["pyth", 2], ["pyth", 3]) }
+  ];
+  for (const g of REVISION) CONTENU[g.id] = { guide: g.guide, seul: g.seul };
   const LIVRES = ["P0", "P1", "P2", "P3", "P4", "P5"];
   const SECTIONS = ["lecon", "guide", "semi", "seul", "examen"];
   const NOMS = { diagnostic: "Test diagnostic", lecon: "Leçon", guide: "Série guidée", semi: "Série semi-guidée", seul: "Série seul", examen: "Examen de palier",
@@ -172,7 +183,7 @@
     return sans;
   }
 
-  MM.parcours = { CONTENU, LIVRES, SECTIONS, NOMS, PARADES, completerPalier, sections, sectionSuivante, examenOuvert, codesDominants,
+  MM.parcours = { CONTENU, REVISION, LIVRES, SECTIONS, NOMS, PARADES, completerPalier, sections, sectionSuivante, examenOuvert, codesDominants,
     apresExamenPalier, apresDiagnostic, specsRemediation, packRemediation };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;
 })(typeof globalThis !== "undefined" ? globalThis : this);

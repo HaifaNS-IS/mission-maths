@@ -171,7 +171,7 @@ async function serie(page) {
   }
 }
 async function tagsFait(page, palier) { return page.$$eval(`details[data-k='${palier}'] .etape .tag.fait`, t => t.length); }
-async function ouvrirPalier(page, id) { if (!(await page.$eval(`details[data-k='${id}']`, d => d.open))) await page.locator(`details[data-k='${id}'] summary`).tap(); }
+async function ouvrirPalier(page, id) { if (!(await page.$eval(`details[data-k='${id}']`, d => d.open))) await page.locator(`details[data-k='${id}'] > summary`).tap(); }
 async function suite(page) { await page.tap("#suite"); for (let i = 0; i < 3 && await page.evaluate(() => vue === "pause"); i++) await page.locator("#app .btn").first().tap(); }
 async function petitsBoutons(page) {
   return page.evaluate(() => [...document.querySelectorAll("button, summary, input")].filter(b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(b).visibility !== "hidden"; })
@@ -241,12 +241,12 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     vrai(!/Appareil parent/.test(await pe.textContent("#app")));
     egal(JSON.stringify(await pe.evaluate(() => JSON.parse(localStorage.getItem("mm.famille")))), JSON.stringify({ cle: CLE, role: "eleve" }));
   });
-  await verif("accueil : 11 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
+  await verif("accueil : révision du 29/11 (6 fiches), 11 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
     const etat = await pe.$$eval("#app details.panel", ds => ds.map(d => [d.dataset.k, d.open]));
-    egal(etat.length, 12); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
+    egal(etat.length, 19); egal(etat.slice(0, 7).map(([k]) => k).join(), "rev,G1,G2,G3,G4,G5,G6"); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
   });
   await verif("Tout déplier puis Tout replier", async () => {
-    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 12);
+    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 19);
     await pe.getByRole("button", { name: "Tout replier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 0);
     await pe.getByRole("button", { name: "Tout déplier" }).tap();
   });
@@ -641,6 +641,57 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     vrai(/2 étapes justes sur 3/.test(t), t); vrai(/\(−b\)² ou −b mal calculé/.test(t), "erreur non expliquée"); vrai(/Démarche modèle/.test(t), "corrigé absent");
     egal(await pp.evaluate(() => Q.tentative.points + "/" + Q.tentative.total + " " + Q.tentative.codeErreur), "2/3 DELTA-SQ");
     await pp.screenshot({ path: SHOTS + "/8-p5-seul.png", fullPage: true });
+    await pp.tap("#bRetour").catch(() => {});
+  });
+  /* ================= lot express : révision du 29/11 (G1 à G6), exercices des fiches de la prof ================= */
+  const fiche = async (page, sec, n) => { await page.evaluate(([s, k]) => { lancer("G1", s); X.exos[0] = { gen: "georef", niveau: k, graine: 0 }; ouvrirExo(null); }, [sec, n]); };
+  await verif("révision 29/11 : panneau G1 à G6 ouvert d'office, la méthode montre la formule et l'exercice de la fiche corrigé", async () => {
+    await pp.tap("#bRetour").catch(() => {});
+    await ouvrirPalier(pp, "rev"); await ouvrirPalier(pp, "G1");
+    egal(await pp.locator("details[data-k='rev'] details.panel").count(), 6);
+    await pp.locator("details[data-k='G1'] .etape", { hasText: "La méthode" }).tap();
+    const t = await pp.textContent("#app");
+    vrai(/√\(\(x₂ − x₁\)² \+ \(y₂ − y₁\)²\)/.test(t) && /E\(−3, −1\)/.test(t) && /√41 ≈ 6,40/.test(t), t.slice(0, 400));
+    await pp.screenshot({ path: SHOTS + "/9-g1-methode.png", fullPage: true });
+    vrai(await pasDeDefilementHorizontal(pp));
+  });
+  await verif("G1 avec aide : E(−3, −1), F(2, 3) au clavier maths (parenthèses, ², √) ; « EF = 41 » → racine oubliée, sans donner la valeur", async () => {
+    await fiche(pp, "guide", 3);
+    egal(await pp.evaluate(() => Q.etapes.map(e => e.id).join()), "EF2,EF");
+    vrai(await pp.evaluate(() => { const b = document.querySelector('#clavier button[data-k="x"]'), f = document.querySelector('#clavier button[data-k="×"]'); return b.classList.contains("lettre") && getComputedStyle(b).fontStyle === "italic" && getComputedStyle(f).fontStyle !== "italic"; }), "x et × se ressemblent");
+    egal(await pp.textContent(".saisie .pre"), "EF² =");
+    await ligne(pp, "(2-(-3))²+(3-(-1))²"); vrai(/en cours/.test(await pp.textContent("#lignes")));
+    await ligne(pp, "41");
+    await ligne(pp, "41"); egal(await titreFb(pp), "Racine oubliée");
+    vrai(!/6,4|√41/.test(await pp.textContent("#fb")), "valeur juste donnée : " + await pp.textContent("#fb"));
+    await vider(pp); await ligne(pp, "√41");
+    vrai(await pp.evaluate(() => Q.fini), "√41 pas accepté");
+    const b = await boites(pp); vrai(visible(b.enonce, b.hauteur), JSON.stringify(b));
+  });
+  await verif("G3 avec aide (partie B, ex. 1) : pente puis droite tapée avec la touche y ; 5 erreurs sur la droite → ligne à recopier (D74)", async () => {
+    await suite(pp).catch(() => {});
+    await fiche(pp, "guide", 4);
+    for (const l of ["(5-1)²+(3-1)²", "20", "√20", "(3-1)/(5-1)", "0,5"]) await ligne(pp, l);
+    egal(await pp.evaluate(() => Q.etapes[Q.k].id), "eqAB");
+    await ligne(pp, "y-1=0,5(x-1)"); vrai(/en cours/.test(await pp.textContent("#lignes")));
+    await pp.screenshot({ path: SHOTS + "/9-g3-droite.png" });
+    for (let i = 0; i < 4; i++) { await vider(pp); await ligne(pp, "y=0,5x+2"); vrai(await pp.isVisible(".fb.faux"), "erreur " + (i + 1) + " sans explication"); }
+    vrai(/Indice/.test(await pp.textContent("#fb")), "marche 3 sans indice");
+    await vider(pp); await ligne(pp, "y=0,5x+2");
+    egal(await pp.evaluate(() => Q.recopie), "y = 0,5x + 0,5");
+    await vider(pp); await ligne(pp, "y=0,5x+0,5");
+    vrai(await pp.evaluate(() => Q.fini && Q.jumeau), "droite recopiée sans jumeau");
+  });
+  await verif("G5 sans aide (triangle isocèle de la prof) : aucune correction en route, AC = 25 marqué à la fin avec le corrigé", async () => {
+    await fiche(pp, "seul", 6);
+    egal(await pp.evaluate(() => Q.mode + " " + Q.etapes.length), "controle 10");
+    for (const l of ["(3-0)²+(4-0)²", "25", "25"]) { await ligne(pp, l); vrai(!(await pp.isVisible(".fb.faux")), "correction montrée en route"); }
+    for (const l of ["25", "5", "3", "0", "16", "4", "4/3", "y=4/3x"]) await ligne(pp, l);
+    vrai(await pp.evaluate(() => Q.fini), "exercice pas fini");
+    const t = await pp.textContent("#lignes");
+    vrai(/9 étapes justes sur 10/.test(t), t.slice(0, 300)); vrai(/Racine oubliée/.test(t)); vrai(/Démarche modèle/.test(t) && /isocèle en C/.test(t));
+    egal(await pp.evaluate(() => Q.tentative.codeErreur + " " + Q.tentative.palier), "RAC-OUB G1");
+    await pp.screenshot({ path: SHOTS + "/9-g5-seul.png", fullPage: true });
     await pp.tap("#bRetour").catch(() => {});
   });
   /* ================= clé oubliée, lien abîmé, refus de la base ================= */

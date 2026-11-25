@@ -33,12 +33,16 @@
     "ORD-INV":   { nom: "Forme inversée mal lue", exemple: "y = 6 − 5x → m = 6", reflexe: "On réécrit d'abord y = −5x + 6.", lot: 4 },
     "M-ZERO":    { nom: "Fonction constante", exemple: "y = 8 → m = 8", reflexe: "Pas de x, donc m = 0.", lot: 4 },
     "XY-INV":    { nom: "Coordonnées inversées", exemple: "(−1 ; 4) au lieu de (4 ; −1)", reflexe: "x d'abord : la rue, puis l'étage.", lot: 4 },
-    "AXE-INV":   { nom: "Mauvais axe pour l'intersection", exemple: "axe des ordonnées avec y = 0", reflexe: "Sur l'axe des ordonnées, x vaut 0.", lot: 4 },
-    "PENTE-ORD": { nom: "Ordre des points mélangé", exemple: "(11 − 5) / (1 − 4)", reflexe: "Même point en premier en haut et en bas.", lot: 4 },
-    "AIRE-2":    { nom: "Oubli du / 2", exemple: "aire = 24", reflexe: "Un triangle, c'est la moitié d'un rectangle.", lot: 4 }
+    /* Lot express du 29/11 (géométrie, js/geo.js) : AXE-INV et PENTE-ORD détectés. */
+    "AXE-INV":   { nom: "Mauvais axe pour l'intersection", exemple: "axe des ordonnées avec y = 0", reflexe: "Sur l'axe des ordonnées, x vaut 0.", actif: true },
+    "PENTE-ORD": { nom: "Ordre des points mélangé", exemple: "(11 − 5) / (1 − 4)", reflexe: "Même point en premier en haut et en bas.", actif: true },
+    "AIRE-2":    { nom: "Oubli du / 2", exemple: "aire = 24", reflexe: "Un triangle, c'est la moitié d'un rectangle.", lot: 4 },
+    /* Ajouts validés le 25/11/2026 (lot express, D70). Le réflexe ne donne pas la valeur juste (D50). */
+    "RAC-OUB":   { nom: "Racine oubliée", exemple: "AB² = 25 → AB = 25", reflexe: "La distance, c'est la racine du résultat.", actif: true, ajout: "2026-11-25" },
+    "HYPO":      { nom: "Hypoténuse mal repérée", exemple: "côté² = 10² + 6²", reflexe: "L'hypoténuse est en face de l'angle droit.", actif: true, ajout: "2026-11-25" }
   };
   /* À égalité, le code le plus précis l'emporte : une faute de signe sur une parenthèse est toujours SIG-PAR. */
-  const PRIORITE = ["SIG-PAR", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "SIG-REL", "A-UN", "ABC-SIG", "DELTA-SQ", "SOL-NB", "RAC-SQ"];
+  const PRIORITE = ["SIG-PAR", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "SIG-REL", "A-UN", "ABC-SIG", "DELTA-SQ", "SOL-NB", "RAC-SQ", "HYPO", "PENTE-ORD", "AXE-INV", "RAC-OUB"];
   /* Doublons de structure, pas des coïncidences : un signe retourné sur un produit de parenthèse est aussi une faute de signe,
      un terme qui change de côté sans changer de signe aussi. Le code précis garde la réponse, SIG-REL la lâche. */
   const STRUCTUREL = [["SIG-PAR", "SIG-REL"], ["TRANS-SIG", "SIG-REL"]];

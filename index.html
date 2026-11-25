@@ -171,6 +171,7 @@ mark.pointe{background:transparent;color:inherit;border:2.5px solid var(--trap);
 #clavier .in{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:520px;margin:0 auto}
 #clavier button{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-family:var(--f-display);font-size:1.3rem;font-weight:500;padding:0;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 #clavier button.op{background:var(--surface)}
+#clavier button.lettre{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:1.4rem}
 #clavier button.ok{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-size:1.05rem;font-weight:600}
 #clavier button:active{border-color:var(--primary)}
 
@@ -238,36 +239,41 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.4.0"></script>
-<script src="js/expr.js?v=0.4.0"></script>
-<script src="js/saisie.js?v=0.4.0"></script>
-<script src="js/etapes.js?v=0.4.0"></script>
-<script src="js/diag.js?v=0.4.0"></script>
-<script src="js/outils.js?v=0.4.0"></script>
-<script src="js/nombres.js?v=0.4.0"></script>
-<script src="js/gen/algebre.js?v=0.4.0"></script>
-<script src="js/gen/nombres.js?v=0.4.0"></script>
-<script src="js/second.js?v=0.4.0"></script>
-<script src="js/gen/second.js?v=0.4.0"></script>
-<script src="js/aide.js?v=0.4.0"></script>
-<script src="js/lecon.js?v=0.4.0"></script>
-<script src="js/progression.js?v=0.4.0"></script>
-<script src="js/parcours.js?v=0.4.0"></script>
-<script src="js/rapport.js?v=0.4.0"></script>
-<script src="js/file.js?v=0.4.0"></script>
-<script src="js/config.js?v=0.4.0"></script>
-<script src="js/base.js?v=0.4.0"></script>
+<script src="js/fraction.js?v=0.5.0"></script>
+<script src="js/expr.js?v=0.5.0"></script>
+<script src="js/saisie.js?v=0.5.0"></script>
+<script src="js/etapes.js?v=0.5.0"></script>
+<script src="js/diag.js?v=0.5.0"></script>
+<script src="js/outils.js?v=0.5.0"></script>
+<script src="js/nombres.js?v=0.5.0"></script>
+<script src="js/gen/algebre.js?v=0.5.0"></script>
+<script src="js/gen/nombres.js?v=0.5.0"></script>
+<script src="js/second.js?v=0.5.0"></script>
+<script src="js/gen/second.js?v=0.5.0"></script>
+<script src="js/geo.js?v=0.5.0"></script>
+<script src="js/gen/geo.js?v=0.5.0"></script>
+<script src="js/aide.js?v=0.5.0"></script>
+<script src="js/lecon.js?v=0.5.0"></script>
+<script src="js/progression.js?v=0.5.0"></script>
+<script src="js/parcours.js?v=0.5.0"></script>
+<script src="js/rapport.js?v=0.5.0"></script>
+<script src="js/file.js?v=0.5.0"></script>
+<script src="js/config.js?v=0.5.0"></script>
+<script src="js/base.js?v=0.5.0"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
    Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
    Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention.
    Lot 3 : palier P5 (second degré) : a, b, c en trois cases, Δ, nombre de solutions, √Δ, x₁ et x₂, jugés à partir de SES valeurs. */
-const APP_VERSION = "0.4.0";
+const APP_VERSION = "0.5.0";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
-const N = MM.nombres, A = MM.aide, PA = MM.parcours, S2 = MM.second;
+const N = MM.nombres, A = MM.aide, PA = MM.parcours, S2 = MM.second, GEO = MM.geo;
+/* Lot express : la géométrie (G1 à G6) a la même interface que P5 ; le moteur se choisit selon l'exercice. */
+const moteurDe = exo => exo && exo.type === "geo" ? GEO : S2;
+const MOT = () => moteurDe(Q && Q.exo);
 
 const SEMI = ["reduit", "solution"];
 const NOMS_MODE = { guide: "Guidé", semi: "Semi-guidé", seul: "Seul", controle: "Sans aide", diag: "Sans aide", lecon: "Leçon" };
@@ -480,6 +486,7 @@ function render() {
   if (vue === "exo") return renderExo();
   montrer("app");
   if (vue === "lecon") return renderLecon();
+  if (vue === "methode") return renderMethode();
   if (vue === "bilan") return renderBilan();
   if (vue === "pause") return renderPause();
   if (vue === "pin") return renderPin();
@@ -504,6 +511,7 @@ function sectionSuivante() {
   lancer(id, s);
 }
 function lancer(palier, section) {
+  if (/^G\d$/.test(palier)) return section === "methode" ? ouvrirMethode(palier) : lancerSerie(palier, section, PA.CONTENU[palier][section]);   // révision du 29/11 : ouverte d'office
   const p = PA.completerPalier(prog()[palier]);
   if (section === "diagnostic") {
     if (p.statut === "valide") { toast("Le test diagnostic est déjà fait."); return; }
@@ -566,6 +574,15 @@ function renderAccueil() {
   const bientot = q => `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}>
       <summary><h2><span class="pid">${q.id === "FINAL" ? "Final" : q.id}</span>${esc(q.nom)}</h2><span class="tag soon">Bientôt</span></summary>
       <p class="sub">${esc(q.resume)}</p><p class="note">Ce contenu n'est pas encore livré.</p></details>`;
+  const revision = () => {
+    const g = q => { const p = PA.completerPalier(pr[q.id]), n = PA.CONTENU[q.id].guide.length;
+      const b = (sec, num, titre, detail, fait) => `<button class="etape" onclick="lancer('${q.id}','${sec}')"><span class="num">${num}</span><span class="txt"><strong>${titre}</strong><small>${detail}</small></span>${fait ? '<span class="tag fait">Fait</span>' : ""}</button>`;
+      return `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}><summary><h2><span class="pid">${q.id}</span>${esc(q.nom)}</h2>${p.fait.seul ? '<span class="tag fait">Fait</span>' : ""}</summary>
+        <div class="parcours">${b("methode", 1, "La méthode", "La formule et un exercice de la fiche, corrigé", false)}${b("guide", 2, "Avec aide", n + " exercices · chaque étape vérifiée", p.fait.guide)}${b("seul", 3, "Sans aide", n + " exercices · comme au contrôle, corrigé à la fin", p.fait.seul)}</div></details>`; };
+    return `<details class="panel encours" data-k="rev"${ouverts.has("rev") ? " open" : ""}><summary><h2><span class="pid">29/11</span>Révision du contrôle</h2><span class="tag actuel">Ouvert</span></summary>
+      <p class="sub">Géométrie et Pythagore, au format des fiches de la prof. Calculatrice permise : valeur exacte (√…) ou arrondie au centième.</p>
+      ${PA.REVISION.map(g).join("")}</details>`;
+  };
   const textes = LS.lire("mm.fiches") || {}, fiches = fichesVues().map(id => textes[id]).filter(Boolean);
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>Salut${S.eleve.nom ? " " + esc(S.eleve.nom) : ""}</h1>${pastille()}</div>
@@ -573,14 +590,34 @@ function renderAccueil() {
     ${j != null ? `<p class="compte">Prochain contrôle ${j === 0 ? "<strong>aujourd'hui</strong>" : `dans <strong>${j}</strong> jour${j > 1 ? "s" : ""}`}.</p>` : ""}
     ${refuse ? '<p class="compte">Tes exercices restent sur cet appareil : demande à ton parent de te renvoyer ton lien.</p>' : ""}
     <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
+    ${revision()}
     ${P.PALIERS.map(q => PA.LIVRES.includes(q.id) ? palierLivre(q.id) : bientot(q)).join("")}
     <details class="panel" data-k="memo"${ouverts.has("memo") ? " open" : ""}>
       <summary><h2>Mémo</h2><span class="tag soon">${pluriel(fiches.length, "fiche")}</span></summary>
       ${fiches.length ? `<ul class="fiches">${fiches.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : '<p class="sub">Chaque leçon terminée ajoute ici sa fiche réflexe.</p>'}
     </details>
     <button class="linkbtn" onclick="ouvrirParent()">Espace parent</button>
-    <p class="note">Mission Maths ${APP_VERSION} · lot 3 : algèbre et second degré, paliers P0 à P5.</p></div>`;
+    <p class="note">Mission Maths ${APP_VERSION} · lot express : révision du contrôle du 29/11 (G1 à G6), paliers P0 à P5.</p></div>`;
   suivrePanneaux();
+}
+
+/* ---------- révision du 29/11 : la méthode d'une fiche (formule + exercice de la prof, corrigé calculé) ---------- */
+let MET = null;
+function ouvrirMethode(id) { activite(); MET = id; aller("methode"); }
+function renderMethode() {
+  const q = PA.REVISION.find(g => g.id === MET); if (!q) return aller("accueil");
+  let exo; try { exo = GEN.creer("georef", q.fiche, 0); } catch (e) { toast("Méthode indisponible."); return aller("accueil"); }
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>${esc(q.nom)}</h1><span class="pill">${q.id} · méthode</span></div>
+    <section class="bloc"><h2><span class="num">1</span>La formule</h2><p class="idee">${esc(exo.formules)}</p></section>
+    <section class="bloc"><h2><span class="num">2</span>Un exercice de la fiche, corrigé</h2>
+      <p class="sub">${esc(exo.consigne)}</p><div class="mscroll">${maths(exo.enonce)}</div>
+      <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
+      <div class="pas-a-pas">${exo.corrige.map((p, i) => `<details class="pas"><summary>Ligne ${i + 1} · ${esc(p.nom)}</summary><div class="mscroll">${maths(p.ligne)}</div><p class="sub">${esc(p.pourquoi)}</p></details>`).join("")}</div>
+    </section>
+    <section class="bloc"><h2><span class="num">3</span>À toi</h2>
+      <div class="row"><button class="btn" onclick="lancer('${q.id}','guide')">Avec aide</button><button class="btn ghost" onclick="lancer('${q.id}','seul')">Sans aide</button></div></section>
+  </div>`;
 }
 
 /* ---------- module Leçons ---------- */
@@ -657,8 +694,8 @@ function lancerSerie(palier, section, specs, opt) {
   ouvrirExo(null);
 }
 const typeEtape = et => (et && et.type) || Q.exo.type;
-const lireLigne = (type, t) => type === "coefs" ? null : type === "equation" ? E.lireEquation(t) : type === "expression" ? E.lireExpression(t).termes : E.arbre(t);
-const ecrireLigne = (type, l) => type === "coefs" || !l ? "" : type === "equation" ? E.ecrireEquation(l) : type === "expression" ? E.ecrireCote(l) : N.ecrire(l);
+const lireLigne = (type, t) => type === "coefs" ? null : type === "racine" || type === "droite" ? t : type === "equation" ? E.lireEquation(t) : type === "expression" ? E.lireExpression(t).termes : E.arbre(t);
+const ecrireLigne = (type, l) => type === "coefs" || !l ? "" : type === "racine" || type === "droite" ? String(l) : type === "equation" ? E.ecrireEquation(l) : type === "expression" ? E.ecrireCote(l) : N.ecrire(l);
 const ligneDe = (v, type) => type === "coefs" ? null : type === "equation" ? v.eq : type === "expression" ? v.termes : v.ast;
 /* « Vérifie » (P4, guidé) : remplacer x dans chaque côté de l'énoncé. */
 function etapesVerif(v) {
@@ -672,6 +709,7 @@ function entrerEtape() {
   const et = Q.etapes[Q.k];
   if (et && et.p5) {
     if (et.id === "coefs") { Q.prev = null; if (!(Q.trous && Q.trous.coefs) && Q.mode !== "diag") Q.trous = casesCoefs(); return; }
+    if (et.geo) { Q.prev = GEO.lireDepart(et, Q.p5, Q.exo); return; }
     const d = S2.departEtape(et, Q.p5); Q.prev = d == null ? null : E.arbre(d); return;
   }
   if (et && et.depart) Q.prev = E.arbre(et.depart);
@@ -680,10 +718,10 @@ function ouvrirExo(repr) {
   const sp = X.exos[X.i];
   let exo; try { exo = GEN.creer(sp.gen, sp.niveau, sp.graine); } catch (e) { toast("Exercice indisponible."); return aller("accueil"); }
   // P5, série seul : étapes nommées, sans aide ni correction avant la fin, puis la démarche modèle (D56)
-  const p5 = exo.type === "second", seulP5 = p5 && X.mode === "seul" && !sp.jumeau;
+  const p5 = exo.type === "second" || exo.type === "geo", seulP5 = p5 && X.mode === "seul" && !sp.jumeau, M5 = moteurDe(exo);
   const m = sp.jumeau || seulP5 ? "controle" : X.mode, modeP5 = m === "guide" || m === "semi" ? m : "complet";
   let etapes = exo.etapes;
-  if (p5) etapes = S2.etapes(exo, modeP5, S2.etatInitial(exo));
+  if (p5) etapes = M5.etapes(exo, modeP5, M5.etatInitial(exo));
   else if (m === "semi") {
     if (exo.type === "equation") { etapes = exo.etapes.filter(e => SEMI.includes(e.id)); if (!etapes.length || etapes[etapes.length - 1].id !== exo.etapes[exo.etapes.length - 1].id) etapes = etapes.concat(exo.etapes.slice(-1)); }
     else etapes = exo.etapes.slice(-1);
@@ -693,18 +731,18 @@ function ouvrirExo(repr) {
   const depart = GEN.depart(exo);
   activite();
   Q = { exo, mode: m, type: exo.type, depart, etapes, k: 0, prev: depart, acceptees: [], journal: [], libres: [], essais: 0, codePrec: null, indice: false, trous: null, recopie: null, jumeau: false,
-    fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null, p5: p5 ? S2.etatInitial(exo) : null, modeP5, seulP5 };
+    fb: null, brouillon: "", fini: false, verdict: null, actif0: SEANCE.dureeActive, tentative: null, p5: p5 ? M5.etatInitial(exo) : null, modeP5, seulP5 };
   if (repr && repr.i === X.i) {
     try {
       Object.assign(Q, { acceptees: clone(repr.acceptees || []), journal: clone(repr.journal || []), libres: clone(repr.libres || []), essais: repr.essais || 0, codePrec: repr.codePrec || null,
         indice: !!repr.indice, trous: repr.trous ? clone(repr.trous) : null, recopie: repr.recopie || null, jumeau: !!repr.jumeau });
-      if (p5 && repr.p5) { Q.p5 = clone(repr.p5); if (m !== "diag") Q.etapes = S2.etapes(exo, modeP5, Q.p5); }   // le chemin suit SES valeurs
+      if (p5 && repr.p5) { Q.p5 = clone(repr.p5); if (m !== "diag") Q.etapes = M5.etapes(exo, modeP5, Q.p5); }   // le chemin suit SES valeurs
       Q.k = Math.min(repr.k || 0, Q.etapes.length ? Q.etapes.length - 1 : 0);
       entrerEtape();
       if (repr.prevTexte && Q.etapes[Q.k]) Q.prev = lireLigne(typeEtape(Q.etapes[Q.k]), repr.prevTexte);
       if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie };
       if (Q.trous && (!Q.trous.coefs || Q.trous.marche3)) Q.fb = { t: "trous" };
-    } catch (e) { Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart, p5: p5 ? S2.etatInitial(exo) : null, etapes }); entrerEtape(); }
+    } catch (e) { Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart, p5: p5 ? M5.etatInitial(exo) : null, etapes }); entrerEtape(); }
   } else entrerEtape();
   sauverReprise();
   vue = "exo"; render();
@@ -718,8 +756,10 @@ function sauverReprise() {
 }
 const clavierVisible = () => tactile || clavierPC;
 function clavierHTML() {
-  const t = [["7"], ["8"], ["9"], ["(", "op"], [")", "op"], ["⌫", "op", "del", "Effacer"],
-    ["4"], ["5"], ["6"], ["x", "op"], ["²", "op", "²", "Au carré"], ["/", "op", "/", "Divisé par"],
+  // lot express (D71) : y, √, « ; », a, b, c ; les lettres en italique, pour ne jamais confondre x et ×
+  const t = [["x", "op lettre", "x", "Lettre x"], ["y", "op lettre", "y", "Lettre y"], ["a", "op lettre", "a", "Lettre a"], ["b", "op lettre", "b", "Lettre b"], ["c", "op lettre", "c", "Lettre c"], ["√", "op", "√", "Racine carrée"],
+    ["7"], ["8"], ["9"], ["(", "op"], [")", "op"], ["⌫", "op", "del", "Effacer"],
+    ["4"], ["5"], ["6"], [";", "op", ";", "Point-virgule"], ["²", "op", "²", "Au carré"], ["/", "op", "/", "Divisé par"],
     ["1"], ["2"], ["3"], ["+", "op"], ["−", "op", "−", "Moins"], ["=", "op"],
     ["0"], [",", "", ",", "Virgule"], ["×", "op", "×", "Fois"], ["←", "op", "g", "Curseur à gauche"], ["→", "op", "d", "Curseur à droite"], ["OK", "ok", "ok", "Valider"]];
   return `<div id="clavier" role="group" aria-label="Clavier maths"><div class="in">${t.map(([l, c, k, a]) => `<button type="button" class="${c || ""}" data-k="${esc(k || l)}"${a ? ` aria-label="${a}"` : ""}>${esc(l)}</button>`).join("")}</div></div>`;
@@ -778,7 +818,7 @@ function champHTML(cv) {
   if (Q.trous) return `<div class="trous m" id="trous">${Q.trous.jetons.map(j => j.fixe != null ? `<span class="c">${esc(j.fixe)}</span>`
     : `<input class="trou${(Q.trous.fautes || []).includes(j.trou) ? " ko" : ""}" data-i="${j.trou}" data-sorte="${j.sorte}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${j.label ? "Valeur de " + j.label : "Case " + (j.trou + 1) + (j.sorte === "signe" ? " : un signe" : "")}"${cv && tactile ? ' inputmode="none"' : ""} size="${j.sorte === "signe" ? 1 : 4}" value="${esc((Q.trous.valeurs || [])[j.trou] || "")}">`).join("")}</div>
     ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}`;
-  const et = Q.etapes[Q.k], pre = et && et.p5 && ["delta", "rac", "x1", "x2", "x0"].includes(et.id) ? et.prefixe.trim() : "";
+  const et = Q.etapes[Q.k], pre = et && et.p5 && (et.voirPrefixe || (!et.geo && ["delta", "rac", "x1", "x2", "x0"].includes(et.id))) ? et.prefixe.trim() : "";
   return `<div class="saisie">${pre ? `<span class="pre" aria-hidden="true">${esc(pre)}</span>` : ""}<input id="champ" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"${cv && tactile ? ' inputmode="none"' : ""} aria-describedby="fb">
     ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}</div>`;
 }
@@ -819,7 +859,7 @@ function renderExo() {
   const titre = sp.jumeau ? "Exercice jumeau · sans aide" : (X.section === "lecon" ? "À toi" : PA.NOMS[X.section] || "À toi") + " · " + (X.section === "diagnostic" ? "question " : "exercice ") + (X.i + 1) + " sur " + n;
   $("#focus").innerHTML = `
     <div class="xtete"><span class="titre">${esc(titre)}</span>${barreBloc()}<div class="dots" aria-hidden="true">${dots}</div></div>
-    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div>${exo.formules && Q.mode !== "diag" ? '<div class="formules">Δ = b² − 4ac · x = (−b ± √Δ) ÷ 2a</div>' : ""}</div></div>
+    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div>${exo.formules && Q.mode !== "diag" ? `<div class="formules">${esc(typeof exo.formules === "string" ? exo.formules : "Δ = b² − 4ac · x = (−b ± √Δ) ÷ 2a")}</div>` : ""}</div></div>
     <div id="lignes"><div class="in">${corps}<div id="fb" aria-live="polite">${Q.fini ? "" : fbHTML()}</div>${fin}</div></div>
     ${cv && !Q.fini ? clavierHTML() : ""}`;
   brancherClavier();
@@ -866,7 +906,15 @@ const BRAVO = {
   rac: ["Bonne racine : fois elle-même, elle redonne Δ.", "√Δ juste : le chemin retour du carré."],
   x1: ["Première solution trouvée. −b bien pris.", "Bonne division : le haut d'abord, puis ÷ 2a."],
   x2: ["Deuxième solution : l'équation est résolue.", "Les deux solutions sont là."],
-  x0: ["La solution unique est trouvée.", "Bon calcul de −b ÷ 2a."]
+  x0: ["La solution unique est trouvée.", "Bon calcul de −b ÷ 2a."],
+  carres: ["Écarts au carré, bien additionnés.", "Le carré d'un écart négatif est bien positif."],
+  racine: ["Bonne longueur.", "Racine juste : c'est la distance."],
+  milieu: ["Bonne moyenne : somme, puis ÷ 2.", "Coordonnée du milieu juste."],
+  pente: ["Bonne pente : les y en haut, les x en bas.", "Même point en premier, en haut et en bas."],
+  droite: ["Équation juste : y = mx + b.", "Bonne droite, bien réduite."],
+  axeY: ["x = 0 : bien vu.", "Point sur l'axe des ordonnées trouvé."],
+  axeX: ["y = 0, équation résolue.", "Point sur l'axe des abscisses trouvé."],
+  pyth: ["Pythagore bien posé.", "Hypoténuse bien repérée."]
 };
 let tourBravo = 0;
 function bravo(id, avant) {
@@ -877,7 +925,7 @@ function bravo(id, avant) {
 /* Pour une erreur hors catalogue, le rapport parent garde le calcul exact : « Erreur de calcul : 3 × (−5) = −15, pas −12 ». */
 function precisionDe(diag, v) { if (v && v.precision) return v.precision; if (!diag || diag.nombre || diag.p5 || (diag.code && diag.code !== "CALC")) return null; const x = D.expliquer(diag); return x.resume ? x.titre + " : " + x.resume : null; }
 function juger(et, texte) {
-  if (et.p5) return S2.juger(et, Q.p5, Q.prev, S2.premiereLigne(Q, et), texte);
+  if (et.p5) return MOT().juger(et, Q.p5, Q.prev, MOT().premiereLigne(Q, et), texte, Q.exo);
   const type = typeEtape(et);
   if (type === "equation") return T.jugerLigne(Q.prev, texte, et.forme);
   if (type === "expression") return T.jugerExpression(Q.prev, texte, et.forme);
@@ -905,7 +953,7 @@ function validerLigne() {
   if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
   if (Q.mode === "controle") return ligneControle(et, v, type);
   if (v.statut === "incomplet") {
-    if (!Q.recopie && ((et.p5 && S2.premiereLigne(Q, et)) || ecrireLigne(type, Q.prev) !== v.ecrit)) {    // P5 : le remplacement de la formule est une vraie ligne
+    if (!Q.recopie && ((et.p5 && MOT().premiereLigne(Q, et)) || ecrireLigne(type, Q.prev) !== v.ecrit)) {    // P5 : le remplacement de la formule est une vraie ligne
       Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, inter: true }); Q.journal.push({ etape: et.id, saisie: v.saisie || v.ecrit, juste: true, incomplet: true });
       Q.prev = ligneDe(v, type); Q.brouillon = ""; Q.trous = null; sauverReprise(); Q.fb = { t: "info", message: v.message }; return renderExo();
     }
@@ -922,6 +970,7 @@ function validerLigne() {
   const marche = A.marche(Q.essais), cur = ligneDe(v, type);
   Q.journal.push({ etape: et.id, saisie: v.saisie || v.ecrit, juste: false, code: v.code || null, precision: precisionDe(v.diag, v), marche });
   if (et.id === "coefs") return aideCoefs(v, marche);
+  if (et.simple) return aideSimple(et, v, marche);
   const fl = et.multi ? null : et.forme;                 // P5 : la 1re ligne peut être le remplacement, la ligne d'après un calcul
   if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: "Ce n'est pas tout à fait la ligne. Recopie-la exactement, puis valide." };
   else if (marche === 1) { const va = A.variante(Q.essais, v.code || null, Q.codePrec); Q.fb = { t: "faux", x: A.expliquer(type, v.diag, va), variante: va }; }
@@ -943,10 +992,10 @@ function accepter(et, v, type, niv, avant) {
   if (et.p5) {
     // P5 : SES valeurs deviennent l'état, le chemin peut changer (Δ = 0, Δ < 0), l'étape suivante part de la formule remplacée
     const direct = et.multi && Q.acceptees.filter(a => a.etape === et.id).length === 1;
-    S2.terminer(Q, et, v); Q.fini = false;
+    MOT().terminer(Q, et, v); Q.fini = false;
     Q.fb = niv === 4 ? { t: "info", message: "Ligne recopiée. Continue : un exercice jumeau suivra, sans aide." }
       : niv === 3 ? { t: "bon", message: "Cases complétées : ta ligne tient.", note: "" }
-      : { t: "bon", message: bravo(et.id, avant), note: direct ? "Sur ta copie, écris aussi le remplacement : il rapporte des points." : "" };
+      : { t: "bon", message: bravo(et.sorte || et.id, avant), note: direct ? "Sur ta copie, écris aussi le remplacement : il rapporte des points." : "" };
     if (Q.k >= Q.etapes.length) return finExo();
     entrerEtape(); sauverReprise(); return renderExo();
   }
@@ -977,12 +1026,26 @@ function aideCoefs(v, marche) {
   Q.codePrec = v.code || null;
   sauverReprise(); renderExo();
 }
+/* Lot express, √ et droite (D74) : pas de terme à entourer. Marches 1 et 2 : l'explication, puis l'autre façon de voir ;
+   marche 3 : la même, avec l'indice de l'étape ; marche 4 : la ligne attendue à recopier, puis un exercice jumeau. */
+function aideSimple(et, v, marche) {
+  if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: "Ce n'est pas tout à fait la ligne. Recopie-la exactement, puis valide." };
+  else if (marche <= 3) {
+    const va = marche === 1 ? A.variante(Q.essais, v.code || null, Q.codePrec) : 2, x = Object.assign({}, A.expliquer(et.type, v.diag, va));
+    if (marche === 3) x.suite = "Indice : " + et.indice;
+    Q.fb = { t: "faux", x, variante: va };
+  } else { Q.recopie = v.attendu; Q.brouillon = ""; Q.fb = { t: "recopie", attendu: Q.recopie }; }
+  Q.codePrec = v.code || null;
+  sauverReprise();
+  if (marche >= 4) return renderExo();
+  majFb();
+}
 function indice() { activite(); Q.indice = true; Q.fb = { t: "info", message: Q.etapes[Q.k].indice }; sauverReprise(); majFb(); }
 
 /* P5 sans aide (examen, série seul, jumeau) : le déroulé du moteur (MM.second.pas), le même que celui des tests.
    Une étape de calcul continue tant que sa ligne n'est pas un seul nombre ; la suite part de SES valeurs. */
 function ligneControleP5(entree) {
-  const v = S2.pas(Q, entree);
+  const v = MOT().pas(Q, entree);
   if (!v) return;
   if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
   Q.brouillon = ""; Q.fb = null;
@@ -1085,7 +1148,7 @@ function finExo() {
     else if (nbErreurs === 1) bilan = { cls: "faux", titre: "Une seule erreur, à la ligne " + (r.premiereErreur + 1) + ".", texte: "Le reste est juste à partir de ta ligne. Résultat attendu : " + exo.reponseTexte + "." };
     else bilan = { cls: "faux", titre: nbErreurs > 1 ? nbErreurs + " lignes à revoir." : "Ce n'est pas le bon résultat.", texte: "Résultat attendu : " + exo.reponseTexte + "." };
   } else if (Q.mode === "controle") {
-    if (Q.type === "second") { const sc = S2.score(Q.journal, Q.etapes); points = sc.points; total = sc.total; }       // 1 point par étape de SON chemin (D54)
+    if (Q.type === "second" || Q.type === "geo") { const sc = MOT().score(Q.journal, Q.etapes); points = sc.points; total = sc.total; }       // 1 point par étape de SON chemin (D54)
     else { points = Q.journal.filter(l => l.juste).length; total = Q.etapes.length; }
     resultatJuste = points === total;
     if (Q.seulP5) bilan = resultatJuste ? { cls: "bon", titre: "Tout juste, sans aide.", texte: "Sur ta copie, écris chaque ligne comme ici." }

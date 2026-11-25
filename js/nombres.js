@@ -56,7 +56,8 @@
         const d = ["add", "sub", "mul", "div"].includes(n.b.t) ? entre(ecrire(n.b, true)) : ecrire(n.b, false);
         return g + (n.t === "mul" ? " × " : " ÷ ") + d;
       }
-      case "pow": return ecrire(n.a, premier) + (n.n === 2 ? "²" : "^" + n.n);
+      // un nombre négatif mis au carré garde toujours ses parenthèses, même en tête : (−3)², jamais −3² (recette du 25/11)
+      case "pow": return (n.a.t === "num" && n.a.v.signe() < 0 ? entre(MOINS + absNum(n.a.v)) : ecrire(n.a, premier)) + (n.n === 2 ? "²" : "^" + n.n);
     }
     return "?";
   }

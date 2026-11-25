@@ -155,6 +155,7 @@
 
   /* ---------- marche 1 : l'explication, première ou deuxième formulation ---------- */
   function expliquer(type, d, variante) {
+    if (d && d.geo && MM.geo) return MM.geo.expliquer(d, variante);               // géométrie (lot express)
     if (d && d.p5 && MM.second) return MM.second.expliquer(d, variante);          // second degré (lot 3)
     return type === "nombre" || type === "coefs" ? N.expliquer(d, variante) : D.expliquer(d, variante);
   }

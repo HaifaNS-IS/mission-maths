@@ -1,6 +1,6 @@
 /* Harnais de test minimal (Node, sans dépendance). Chaque appel à test() compte pour un contrôle. */
 const path = require("path");
-["fraction", "expr", "saisie", "etapes", "diag", "outils", "nombres", "gen/algebre", "gen/nombres", "second", "gen/second", "aide", "lecon", "progression", "parcours", "rapport", "file", "base"]
+["fraction", "expr", "saisie", "etapes", "diag", "outils", "nombres", "gen/algebre", "gen/nombres", "second", "gen/second", "geo", "gen/geo", "aide", "lecon", "progression", "parcours", "rapport", "file", "base"]
   .forEach(f => require(path.join(__dirname, "..", "js", f + ".js")));
 
 const file = [];
