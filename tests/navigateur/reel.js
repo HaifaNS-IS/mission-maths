@@ -3,7 +3,7 @@
    Crée une famille d'essai, joue une leçon sur un « téléphone élève », vérifie le rapport sur un « téléphone parent »,
    coupe le réseau, oublie la clé, puis efface toutes les données de la famille d'essai. */
 const http = require("http"), fs = require("fs"), path = require("path");
-const { chromium } = require("/opt/npm-tools/node_modules/playwright");
+const MOT = require("./_moteur.js");          // Chrome par défaut, MOTEUR=webkit pour le moteur de Safari (D98)
 const RACINE_APP = path.join(__dirname, "..", "..");
 ["outils", "base", "config"].forEach(f => require(path.join(RACINE_APP, "js", f + ".js")));
 const MM = globalThis.MM, CFG = MM.config.firebase;
@@ -60,7 +60,7 @@ const TELEPHONE = { viewport: { width: 380, height: 800 }, isMobile: true, hasTo
 async function appareil(nav, nom) {
   const ctx = await nav.newContext(TELEPHONE);
   const page = await ctx.newPage();
-  page.on("pageerror", e => erreursPage.push(nom + " : " + e.message));
+  page.on("pageerror", e => { if (!MOT.bruitReseau(e.message)) erreursPage.push(nom + " : " + e.message); });
   return { ctx, page };
 }
 async function taper(page, texte) {
@@ -95,7 +95,7 @@ const code = async (page, c) => { for (const k of c) await page.getByRole("butto
   }
   console.log("Site testé : " + ADRESSE + " · base : " + CFG.projectId + " (vraie base)");
   const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: "127.0.0.1,localhost" } : undefined;
-  const nav = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--no-sandbox"], proxy });
+  const nav = await MOT.lancer(proxy); console.log("Moteur : " + MOT.NOM);
 
   /* ---------- parent : création de la famille d'essai ---------- */
   const P = await appareil(nav, "parent"), pp = P.page;

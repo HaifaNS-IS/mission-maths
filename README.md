@@ -20,4 +20,12 @@ node tests/avec-emulateur.js tests/navigateur/e2e.js         # de bout en bout d
 node tests/navigateur/reel.js [adresse]                      # recette contre la vraie base (famille d'essai effacée à la fin)
 ```
 
+Les deux tests navigateur passent aussi sous le moteur de Safari (WebKit), celui de l'iPhone de l'élève, à chaque lot :
+
+```
+node /opt/npm-tools/node_modules/playwright/cli.js install webkit   # une fois par machine
+MOTEUR=webkit node tests/avec-emulateur.js tests/navigateur/e2e.js
+MOTEUR=webkit node tests/navigateur/reel.js https://haifans-is.github.io/mission-maths/
+```
+
 Le cœur maths (`js/`) est en JavaScript pur : le même fichier tourne dans l'app et dans les tests.

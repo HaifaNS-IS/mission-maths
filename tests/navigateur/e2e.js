@@ -2,7 +2,7 @@
    Lancer : node tests/avec-emulateur.js tests/navigateur/e2e.js
    Trois appareils : le téléphone du parent (crée l'espace famille), le téléphone de l'élève, le PC de l'élève. */
 const http = require("http"), fs = require("fs"), path = require("path");
-const { chromium } = require("/opt/npm-tools/node_modules/playwright");
+const MOT = require("./_moteur.js");          // Chrome par défaut, MOTEUR=webkit pour le moteur de Safari (D98)
 const RACINE_APP = path.join(__dirname, "..", "..");
 const SHOTS = "/home/claude/shots";
 fs.mkdirSync(SHOTS, { recursive: true });
@@ -68,10 +68,11 @@ async function appareil(navigateur, nom, opt) {
     r.fulfill({ status: 200, contentType: "text/javascript; charset=utf-8", body: fs.readFileSync(f, "utf8") });
   });
   await ctx.addInitScript(`window.__emulateur = ${JSON.stringify(EMU)};`);
-  await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:" + serveur.address().port });
+  // le moteur Safari de Playwright ne connaît pas ces permissions : le presse-papiers n'est relu que sous Chrome
+  if (MOT.MOTEUR === "chromium") await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:" + serveur.address().port });
   const page = await ctx.newPage();
-  page.on("pageerror", e => erreursPage.push(nom + " : " + e.message));
-  page.on("console", m => { if (m.type() === "error" && !/fonts\.g|ERR_FAILED|ERR_INTERNET_DISCONNECTED|net::|Firestore|WebChannel|Could not reach/.test(m.text())) erreursPage.push(nom + " console : " + m.text()); });
+  page.on("pageerror", e => { if (!MOT.bruitReseau(e.message)) erreursPage.push(nom + " : " + e.message); });
+  page.on("console", m => { const u = (m.location() && m.location().url) || ""; if (m.type() === "error" && !/fonts\.g|ERR_FAILED|ERR_INTERNET_DISCONNECTED|net::|Firestore|WebChannel|Could not reach/.test(m.text()) && !MOT.bruitConsole(m.text(), u)) erreursPage.push(nom + " console : " + m.text() + (u ? " [" + u + "]" : "")); });
   return { ctx, page };
 }
 const URL_APP = (hash) => "http://127.0.0.1:" + serveur.address().port + "/" + (hash || "");
@@ -181,7 +182,21 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
 
 (async () => {
   await new Promise(r => serveur.listen(0, "127.0.0.1", r));
-  const nav = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--no-sandbox"] });
+  const nav = await MOT.lancer(); console.log("Moteur : " + MOT.NOM);
+
+  /* ================= v0.6.1 : écran blanc sur iPhone (26/11) ================= */
+  await verif("polices Google sans réponse : la page s'affiche quand même, barre du haut comprise, en moins de 5 s", async () => {
+    const ctx = await nav.newContext(Object.assign({ locale: "fr-FR" }, TELEPHONE));
+    await ctx.route(/fonts\.(googleapis|gstatic)\.com/, () => { /* jamais de réponse, comme un réseau qui filtre ou qui pend */ });
+    await ctx.route(/www\.gstatic\.com\/firebasejs/, r => r.abort());
+    const p = await ctx.newPage();
+    try {
+      await p.goto(URL_APP(), { waitUntil: "commit" });
+      await p.waitForSelector("text=Cet appareil n'est pas encore relié", { timeout: 5000 });
+      vrai(await p.evaluate(() => document.querySelector("#barre").getBoundingClientRect().height >= 44), "barre du haut absente");
+      egal(await p.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(238, 242, 248)", "styles de l'app pas appliqués");
+    } finally { await ctx.close(); }
+  });
 
   /* ================= téléphone du parent : création de l'espace famille ================= */
   const parent = await appareil(nav, "parent"); const pp = parent.page;
@@ -226,7 +241,7 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
   await verif("« Copier le lien élève » : le lien est dans le presse-papiers, message de confirmation", async () => {
     await pp.getByRole("button", { name: "Copier le lien élève" }).tap();
     await attendre(async () => /Lien copié/.test(await pp.textContent("#toast")), 3000, "message « Lien copié »");
-    egal(await pp.evaluate(() => navigator.clipboard.readText()), lienEleve);
+    if (MOT.MOTEUR === "chromium") egal(await pp.evaluate(() => navigator.clipboard.readText()), lienEleve);
   });
   await verif("espace parent à 380 px avec les liens : pas de défilement horizontal, cibles d'au moins 44 px", async () => {
     vrai(await pasDeDefilementHorizontal(pp), "défilement horizontal"); egal((await petitsBoutons(pp)).join(" | "), "");
@@ -359,7 +374,8 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     await resoudre(pe); await suite(pe); egal(await pe.textContent("h1"), "Leçon terminée");
   });
   await verif("base : ligne recopiée au niveau 4, jumeau enregistré à part, leçon P2 cochée, fiche F-SIG-PAR gagnée", async () => {
-    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && d.paliers.P2.fait.lecon && d; }, 8000, "leçon cochée");
+    // deux écritures séparées (palier, puis fiche) : on attend que les deux soient arrivées, sans relâcher le délai
+    const app = await attendre(async () => { const d = await lireBase("suivi/app"); return d && d.paliers.P2.fait.lecon && (d.fiches || []).length && d; }, 8000, "leçon cochée et fiche arrivée");
     egal(app.fiches.join(), "F-SIG-PAR");
     const ts = await attendre(async () => { const r = await fetch(URL_BASE + `familles/${CLE}/suivi/app/tentatives?pageSize=1000`, { headers: { Authorization: "Bearer owner" } }); const j = await r.json(); const l = (j.documents || []).map(d => decoder({ mapValue: { fields: d.fields } })); return l.length >= 15 && l; }, 8000, "tentatives");
     vrai(ts.some(t => t.aideMax === 4 && t.lignes.some(l => l.niveau === 4) && t.lignes.filter(l => l.marche).map(l => l.marche).join() === "1,1,2,3,4"), "ligne recopiée absente");
