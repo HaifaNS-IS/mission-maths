@@ -6,7 +6,9 @@
 <title>Mission Maths</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<!-- v0.6.1 : les polices ne bloquent plus l'affichage. Si fonts.googleapis.com ne répond pas, la page s'affiche quand même (polices système). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap"></noscript>
 <style>
 /* Layout : coque plein cadre en colonne. Barre de navigation fixe en haut, puis l'écran :
    menus qui défilent, ou exercice (énoncé collé en haut, lignes qui défilent, clavier maths en bas). */
@@ -264,38 +266,38 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.6.0"></script>
-<script src="js/expr.js?v=0.6.0"></script>
-<script src="js/saisie.js?v=0.6.0"></script>
-<script src="js/etapes.js?v=0.6.0"></script>
-<script src="js/diag.js?v=0.6.0"></script>
-<script src="js/outils.js?v=0.6.0"></script>
-<script src="js/nombres.js?v=0.6.0"></script>
-<script src="js/gen/algebre.js?v=0.6.0"></script>
-<script src="js/gen/nombres.js?v=0.6.0"></script>
-<script src="js/second.js?v=0.6.0"></script>
-<script src="js/gen/second.js?v=0.6.0"></script>
-<script src="js/geo.js?v=0.6.0"></script>
-<script src="js/gen/geo.js?v=0.6.0"></script>
-<script src="js/trigo.js?v=0.6.0"></script>
-<script src="js/repere.js?v=0.6.0"></script>
-<script src="js/affine.js?v=0.6.0"></script>
-<script src="js/gen/affine.js?v=0.6.0"></script>
-<script src="js/aide.js?v=0.6.0"></script>
-<script src="js/lecon.js?v=0.6.0"></script>
-<script src="js/progression.js?v=0.6.0"></script>
-<script src="js/parcours.js?v=0.6.0"></script>
-<script src="js/rapport.js?v=0.6.0"></script>
-<script src="js/file.js?v=0.6.0"></script>
-<script src="js/config.js?v=0.6.0"></script>
-<script src="js/base.js?v=0.6.0"></script>
+<script src="js/fraction.js?v=0.6.1"></script>
+<script src="js/expr.js?v=0.6.1"></script>
+<script src="js/saisie.js?v=0.6.1"></script>
+<script src="js/etapes.js?v=0.6.1"></script>
+<script src="js/diag.js?v=0.6.1"></script>
+<script src="js/outils.js?v=0.6.1"></script>
+<script src="js/nombres.js?v=0.6.1"></script>
+<script src="js/gen/algebre.js?v=0.6.1"></script>
+<script src="js/gen/nombres.js?v=0.6.1"></script>
+<script src="js/second.js?v=0.6.1"></script>
+<script src="js/gen/second.js?v=0.6.1"></script>
+<script src="js/geo.js?v=0.6.1"></script>
+<script src="js/gen/geo.js?v=0.6.1"></script>
+<script src="js/trigo.js?v=0.6.1"></script>
+<script src="js/repere.js?v=0.6.1"></script>
+<script src="js/affine.js?v=0.6.1"></script>
+<script src="js/gen/affine.js?v=0.6.1"></script>
+<script src="js/aide.js?v=0.6.1"></script>
+<script src="js/lecon.js?v=0.6.1"></script>
+<script src="js/progression.js?v=0.6.1"></script>
+<script src="js/parcours.js?v=0.6.1"></script>
+<script src="js/rapport.js?v=0.6.1"></script>
+<script src="js/file.js?v=0.6.1"></script>
+<script src="js/config.js?v=0.6.1"></script>
+<script src="js/base.js?v=0.6.1"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
    Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
    Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention.
    Lot 3 : palier P5 (second degré) : a, b, c en trois cases, Δ, nombre de solutions, √Δ, x₁ et x₂, jugés à partir de SES valeurs. */
-const APP_VERSION = "0.6.0";
+const APP_VERSION = "0.6.1";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
