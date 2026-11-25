@@ -1,6 +1,6 @@
 {
   "name": "mission-maths",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "Outil de rattrapage en maths (équations, second degré, fonctions affines). Site statique, base Firebase.",
   "scripts": {

@@ -249,35 +249,35 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.5.2"></script>
-<script src="js/expr.js?v=0.5.2"></script>
-<script src="js/saisie.js?v=0.5.2"></script>
-<script src="js/etapes.js?v=0.5.2"></script>
-<script src="js/diag.js?v=0.5.2"></script>
-<script src="js/outils.js?v=0.5.2"></script>
-<script src="js/nombres.js?v=0.5.2"></script>
-<script src="js/gen/algebre.js?v=0.5.2"></script>
-<script src="js/gen/nombres.js?v=0.5.2"></script>
-<script src="js/second.js?v=0.5.2"></script>
-<script src="js/gen/second.js?v=0.5.2"></script>
-<script src="js/geo.js?v=0.5.2"></script>
-<script src="js/gen/geo.js?v=0.5.2"></script>
-<script src="js/trigo.js?v=0.5.2"></script>
-<script src="js/aide.js?v=0.5.2"></script>
-<script src="js/lecon.js?v=0.5.2"></script>
-<script src="js/progression.js?v=0.5.2"></script>
-<script src="js/parcours.js?v=0.5.2"></script>
-<script src="js/rapport.js?v=0.5.2"></script>
-<script src="js/file.js?v=0.5.2"></script>
-<script src="js/config.js?v=0.5.2"></script>
-<script src="js/base.js?v=0.5.2"></script>
+<script src="js/fraction.js?v=0.5.3"></script>
+<script src="js/expr.js?v=0.5.3"></script>
+<script src="js/saisie.js?v=0.5.3"></script>
+<script src="js/etapes.js?v=0.5.3"></script>
+<script src="js/diag.js?v=0.5.3"></script>
+<script src="js/outils.js?v=0.5.3"></script>
+<script src="js/nombres.js?v=0.5.3"></script>
+<script src="js/gen/algebre.js?v=0.5.3"></script>
+<script src="js/gen/nombres.js?v=0.5.3"></script>
+<script src="js/second.js?v=0.5.3"></script>
+<script src="js/gen/second.js?v=0.5.3"></script>
+<script src="js/geo.js?v=0.5.3"></script>
+<script src="js/gen/geo.js?v=0.5.3"></script>
+<script src="js/trigo.js?v=0.5.3"></script>
+<script src="js/aide.js?v=0.5.3"></script>
+<script src="js/lecon.js?v=0.5.3"></script>
+<script src="js/progression.js?v=0.5.3"></script>
+<script src="js/parcours.js?v=0.5.3"></script>
+<script src="js/rapport.js?v=0.5.3"></script>
+<script src="js/file.js?v=0.5.3"></script>
+<script src="js/config.js?v=0.5.3"></script>
+<script src="js/base.js?v=0.5.3"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
    Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
    Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention.
    Lot 3 : palier P5 (second degré) : a, b, c en trois cases, Δ, nombre de solutions, √Δ, x₁ et x₂, jugés à partir de SES valeurs. */
-const APP_VERSION = "0.5.2";
+const APP_VERSION = "0.5.3";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
@@ -521,9 +521,9 @@ function sectionSuivante() {
   if (!s) { toast("Rien de nouveau ici pour l'instant."); return; }
   lancer(id, s);
 }
-/* D81 (Kevin, 25/11) : P5 ouvert d'office jusqu'au contrôle du 29/11 inclus, même si P4 n'est pas validé.
-   Le statut du palier ne change pas : ses séries faites restent cochées pour plus tard. */
-const OUVERT_JUSQUA = { P5: "2026-11-29" };
+/* D81-D82 (Kevin, 25/11) : P1 à P5 ouverts d'office jusqu'au contrôle du 29/11 inclus, même si le palier d'avant n'est pas validé.
+   Le statut des paliers ne change pas : les séries faites restent cochées ; après le 29/11, la progression normale reprend. */
+const OUVERT_JUSQUA = { P1: "2026-11-29", P2: "2026-11-29", P3: "2026-11-29", P4: "2026-11-29", P5: "2026-11-29" };
 const ouvertDoffice = id => !!OUVERT_JUSQUA[id] && new Date().toISOString().slice(0, 10) <= OUVERT_JUSQUA[id];
 function lancer(palier, section) {
   if (/^G\d$/.test(palier)) return section === "methode" ? ouvrirMethode(palier) : lancerSerie(palier, section, PA.CONTENU[palier][section]);   // révision du 29/11 : ouverte d'office
@@ -582,7 +582,7 @@ function renderAccueil() {
         ${s.fait ? '<span class="tag fait">Fait</span>' : s.id === suiv ? '<span class="tag actuel">À faire</span>' : ""}</button>`;
     const score = p.meilleurExamen != null ? `<span class="pill">${p.meilleurExamen} %</span>` : p.parDiagnostic ? '<span class="pill">diagnostic</span>' : "";
     return `<details class="panel${id === cour ? " encours" : ""}" data-k="${id}"${ouverts.has(id) ? " open" : ""}>
-      <summary><h2><span class="pid">${id}</span>${esc(meta.nom)}</h2>${score}${TAG_STATUT[p.statut] || ""}</summary>
+      <summary><h2><span class="pid">${id}</span>${esc(meta.nom)}</h2>${score}${p.statut === "verrouille" && ouvertDoffice(id) ? '<span class="tag essai">Ouvert</span>' : TAG_STATUT[p.statut] || ""}</summary>
       <p class="sub">${esc(meta.resume)}</p>
       ${p.statut === "verrouille" && !ouvertDoffice(id) ? '<p class="note">S\'ouvre quand le palier d\'avant est validé.</p>' : `${p.statut === "verrouille" ? '<p class="note">Ouvert pour le contrôle du 29/11.</p>' : ""}<div class="parcours">${secs.map((s, i) => etape(s, i + 1)).join("")}</div>`}</details>`;
   };
