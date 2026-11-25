@@ -55,9 +55,11 @@
     { id: "G3", nom: "Pente et équation d'une droite", fiche: 4, guide: serie(["pente", 1], ["pente", 2], ["pente", 2]), seul: serie(["pente", 1], ["pente", 2], ["pente", 2]) },
     { id: "G4", nom: "Intersections avec les axes", fiche: 8, guide: serie(["axes", 1], ["axes", 1], ["axes", 2]), seul: serie(["axes", 1], ["axes", 2], ["axes", 2]) },
     { id: "G5", nom: "Exercice combiné", fiche: 6, guide: serie(["comb", 1], ["comb", 2]), seul: serie(["comb", 1], ["comb", 2]) },
-    { id: "G6", nom: "Pythagore", fiche: 11, guide: serie(["pyth", 1], ["pyth", 2], ["pyth", 3]), seul: serie(["pyth", 1], ["pyth", 2], ["pyth", 3]) }
+    { id: "G6", nom: "Pythagore", fiche: 11, guide: serie(["pyth", 1], ["pyth", 2], ["pyth", 3]), seul: serie(["pyth", 1], ["pyth", 2], ["pyth", 3]) },
+    /* Ajout demandé par Kevin le 25/11 : la fiche trigo dans l'app (js/trigo.js), à lire et à faire sur papier, corrigé à déplier. */
+    { id: "G7", nom: "Trigonométrie : sin, cos, tan", trigo: true }
   ];
-  for (const g of REVISION) CONTENU[g.id] = { guide: g.guide, seul: g.seul };
+  for (const g of REVISION) if (!g.trigo) CONTENU[g.id] = { guide: g.guide, seul: g.seul };
   const LIVRES = ["P0", "P1", "P2", "P3", "P4", "P5"];
   const SECTIONS = ["lecon", "guide", "semi", "seul", "examen"];
   const NOMS = { diagnostic: "Test diagnostic", lecon: "Leçon", guide: "Série guidée", semi: "Série semi-guidée", seul: "Série seul", examen: "Examen de palier",

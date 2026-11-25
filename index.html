@@ -171,6 +171,16 @@ mark.pointe{background:transparent;color:inherit;border:2.5px solid var(--trap);
 #clavier .in{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:520px;margin:0 auto}
 #clavier button{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-family:var(--f-display);font-size:1.3rem;font-weight:500;padding:0;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 #clavier button.op{background:var(--surface)}
+.fig{display:block;width:100%;max-width:330px;margin:4px auto}
+.fig text{font-family:var(--f-display),system-ui,sans-serif;font-size:15px;fill:var(--ink)}
+.fig text.q{fill:var(--primary);font-weight:700;font-size:18px}
+.fig text.s{font-weight:700;fill:var(--muted)}
+.formules3{display:grid;gap:8px}
+.formule{background:var(--bg);border-radius:12px;padding:10px 12px;font-size:1.05rem;font-family:var(--f-display)}
+.cote-adj{color:var(--good);font-weight:700}.cote-opp{color:var(--star);font-weight:700}.cote-hyp{color:var(--primary);font-weight:700}
+ul.cotes{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.corrige{display:none}.corrige.vu{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.resultat-trigo{font-weight:700;font-size:1.1rem}
 #clavier button.lettre{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:1.4rem}
 #clavier button.ok{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-size:1.05rem;font-weight:600}
 #clavier button:active{border-color:var(--primary)}
@@ -239,34 +249,35 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.5.0"></script>
-<script src="js/expr.js?v=0.5.0"></script>
-<script src="js/saisie.js?v=0.5.0"></script>
-<script src="js/etapes.js?v=0.5.0"></script>
-<script src="js/diag.js?v=0.5.0"></script>
-<script src="js/outils.js?v=0.5.0"></script>
-<script src="js/nombres.js?v=0.5.0"></script>
-<script src="js/gen/algebre.js?v=0.5.0"></script>
-<script src="js/gen/nombres.js?v=0.5.0"></script>
-<script src="js/second.js?v=0.5.0"></script>
-<script src="js/gen/second.js?v=0.5.0"></script>
-<script src="js/geo.js?v=0.5.0"></script>
-<script src="js/gen/geo.js?v=0.5.0"></script>
-<script src="js/aide.js?v=0.5.0"></script>
-<script src="js/lecon.js?v=0.5.0"></script>
-<script src="js/progression.js?v=0.5.0"></script>
-<script src="js/parcours.js?v=0.5.0"></script>
-<script src="js/rapport.js?v=0.5.0"></script>
-<script src="js/file.js?v=0.5.0"></script>
-<script src="js/config.js?v=0.5.0"></script>
-<script src="js/base.js?v=0.5.0"></script>
+<script src="js/fraction.js?v=0.5.1"></script>
+<script src="js/expr.js?v=0.5.1"></script>
+<script src="js/saisie.js?v=0.5.1"></script>
+<script src="js/etapes.js?v=0.5.1"></script>
+<script src="js/diag.js?v=0.5.1"></script>
+<script src="js/outils.js?v=0.5.1"></script>
+<script src="js/nombres.js?v=0.5.1"></script>
+<script src="js/gen/algebre.js?v=0.5.1"></script>
+<script src="js/gen/nombres.js?v=0.5.1"></script>
+<script src="js/second.js?v=0.5.1"></script>
+<script src="js/gen/second.js?v=0.5.1"></script>
+<script src="js/geo.js?v=0.5.1"></script>
+<script src="js/gen/geo.js?v=0.5.1"></script>
+<script src="js/trigo.js?v=0.5.1"></script>
+<script src="js/aide.js?v=0.5.1"></script>
+<script src="js/lecon.js?v=0.5.1"></script>
+<script src="js/progression.js?v=0.5.1"></script>
+<script src="js/parcours.js?v=0.5.1"></script>
+<script src="js/rapport.js?v=0.5.1"></script>
+<script src="js/file.js?v=0.5.1"></script>
+<script src="js/config.js?v=0.5.1"></script>
+<script src="js/base.js?v=0.5.1"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
    Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
    Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention.
    Lot 3 : palier P5 (second degré) : a, b, c en trois cases, Δ, nombre de solutions, √Δ, x₁ et x₂, jugés à partir de SES valeurs. */
-const APP_VERSION = "0.5.0";
+const APP_VERSION = "0.5.1";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
@@ -575,7 +586,9 @@ function renderAccueil() {
       <summary><h2><span class="pid">${q.id === "FINAL" ? "Final" : q.id}</span>${esc(q.nom)}</h2><span class="tag soon">Bientôt</span></summary>
       <p class="sub">${esc(q.resume)}</p><p class="note">Ce contenu n'est pas encore livré.</p></details>`;
   const revision = () => {
-    const g = q => { const p = PA.completerPalier(pr[q.id]), n = PA.CONTENU[q.id].guide.length;
+    const g = q => { if (q.trigo) return `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}><summary><h2><span class="pid">${q.id}</span>${esc(q.nom)}</h2></summary>
+        <div class="parcours"><button class="etape" onclick="lancer('${q.id}','methode')"><span class="num">1</span><span class="txt"><strong>La fiche corrigée</strong><small>Méthode, 7 exercices dessinés, corrigé à déplier · avec ta calculatrice</small></span></button></div></details>`;
+      const p = PA.completerPalier(pr[q.id]), n = PA.CONTENU[q.id].guide.length;
       const b = (sec, num, titre, detail, fait) => `<button class="etape" onclick="lancer('${q.id}','${sec}')"><span class="num">${num}</span><span class="txt"><strong>${titre}</strong><small>${detail}</small></span>${fait ? '<span class="tag fait">Fait</span>' : ""}</button>`;
       return `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}><summary><h2><span class="pid">${q.id}</span>${esc(q.nom)}</h2>${p.fait.seul ? '<span class="tag fait">Fait</span>' : ""}</summary>
         <div class="parcours">${b("methode", 1, "La méthode", "La formule et un exercice de la fiche, corrigé", false)}${b("guide", 2, "Avec aide", n + " exercices · chaque étape vérifiée", p.fait.guide)}${b("seul", 3, "Sans aide", n + " exercices · comme au contrôle, corrigé à la fin", p.fait.seul)}</div></details>`; };
@@ -606,6 +619,7 @@ let MET = null;
 function ouvrirMethode(id) { activite(); MET = id; aller("methode"); }
 function renderMethode() {
   const q = PA.REVISION.find(g => g.id === MET); if (!q) return aller("accueil");
+  if (q.trigo) return renderTrigo(q);
   let exo; try { exo = GEN.creer("georef", q.fiche, 0); } catch (e) { toast("Méthode indisponible."); return aller("accueil"); }
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>${esc(q.nom)}</h1><span class="pill">${q.id} · méthode</span></div>
@@ -619,6 +633,60 @@ function renderMethode() {
       <div class="row"><button class="btn" onclick="lancer('${q.id}','guide')">Avec aide</button><button class="btn ghost" onclick="lancer('${q.id}','seul')">Sans aide</button></div></section>
   </div>`;
 }
+
+/* ---------- G7 : la fiche trigo (js/trigo.js), triangles dessinés, corrigé à déplier ---------- */
+/* Un triangle rectangle : X l'angle étudié (en bas à gauche), R l'angle droit (en bas à droite), Y en haut.
+   methode : les côtés en couleur et nommés ; sinon, les données de l'énoncé et « ? » sur ce qu'on cherche. */
+function triangleSVG(fig, methode) {
+  const [X, R, Y] = fig.sommets, A = X + "\u0302", coul = { adj: "var(--good)", opp: "var(--star)", hyp: "var(--primary)" };
+  const lab = methode ? { adj: "adjacent à " + A, opp: "opposé à " + A, hyp: "hypoténuse" } : fig.cotes;
+  const trait = (x1, y1, x2, y2, k) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${methode ? coul[k] : "var(--ink)"}" stroke-width="${methode ? 4 : 2.5}" stroke-linecap="round"/>`;
+  const txt = (x, y, t, ancre, k) => t ? `<text x="${x}" y="${y}" text-anchor="${ancre}"${t === "?" ? ' class="q"' : methode ? ` style="fill:${coul[k]};font-weight:700"` : ""}>${esc(t)}</text>` : "";
+  const angle = methode ? A : fig.angle;
+  return `<svg class="fig" viewBox="0 0 300 186" role="img" aria-label="Triangle ${esc(fig.sommets.join(""))} rectangle en ${esc(R)}">
+    ${trait(34, 150, 226, 150, "adj")}${trait(226, 150, 226, 38, "opp")}${trait(34, 150, 226, 38, "hyp")}
+    <path d="M210 150V134H226" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+    <path d="M62 150A28 28 0 0 0 58.2 135.9" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+    ${txt(130, 172, lab.adj, "middle", "adj")}${methode ? `<text x="236" y="92" style="fill:${coul.opp};font-weight:700">opposé<tspan x="236" dy="18">à ${esc(A)}</tspan></text>` : txt(236, 100, lab.opp, "start", "opp")}${txt(122, 82, lab.hyp, "end", "hyp")}
+    ${angle ? `<text x="70" y="143"${angle === "?" ? ' class="q"' : ""}>${esc(angle)}</text>` : ""}
+    <text x="20" y="166" class="s">${esc(X)}</text><text x="234" y="166" class="s">${esc(R)}</text><text x="234" y="34" class="s">${esc(Y)}</text></svg>`;
+}
+function renderTrigo(q) {
+  const TR = MM.trigo, fiche = TR.fiche(), metFig = { sommets: ["A", "B", "C"], cotes: {}, angle: "" };
+  const ligne = l => `<div class="mscroll">${maths(l)}</div>`;
+  const exo = (r, i) => `<details class="pas" data-k="t${i}"><summary>Exercice ${i + 1}${r.parties ? " · combiné" : " · " + esc(r.question)}</summary>
+      ${triangleSVG(r.figure)}<p>${esc(r.enonce)}</p><p><strong>${esc(r.question)}</strong></p>
+      <p class="note">Fais-le sur ton cahier avec ta calculatrice, puis vérifie.</p>
+      <button class="btn ghost small" onclick="voirCorrige(${i}, this)">Voir le corrigé</button>
+      <div class="corrige" id="corr${i}"><p class="sub">${esc(r.reperage)}</p>
+        ${r.parties ? r.parties.map(p => `<p><strong>${esc(p.q)}</strong></p>${p.lignes.map(ligne).join("")}`).join("") : r.lignes.map(ligne).join("")}
+        ${r.parties ? `<p class="resultat-trigo">${esc(r.resultat)}</p>` : ""}</div></details>`;
+  $("#app").innerHTML = `<div class="wrap">
+    <div class="top"><h1>Trigonométrie</h1><span class="pill">G7 · fiche corrigée</span></div>
+    <section class="bloc"><h2><span class="num">1</span>Repère les côtés</h2>
+      <p>Dans un triangle rectangle, on se place sur un angle aigu, ici ${esc("A\u0302")}.</p>
+      ${triangleSVG(metFig, true)}
+      <ul class="cotes"><li><span class="cote-hyp">L'hypoténuse</span> est en face de l'angle droit : c'est le plus long côté.</li>
+        <li><span class="cote-opp">L'opposé</span> est en face de l'angle.</li><li><span class="cote-adj">L'adjacent</span> touche l'angle, et ce n'est pas l'hypoténuse.</li></ul></section>
+    <section class="bloc"><h2><span class="num">2</span>Choisis la formule</h2>
+      <p>Prends celle qui contient le côté connu et ce que tu cherches.</p>
+      <div class="formules3"><div class="formule">sin ${esc("A\u0302")} = <span class="cote-opp">opposé</span> ÷ <span class="cote-hyp">hypoténuse</span></div>
+        <div class="formule">cos ${esc("A\u0302")} = <span class="cote-adj">adjacent</span> ÷ <span class="cote-hyp">hypoténuse</span></div>
+        <div class="formule">tan ${esc("A\u0302")} = <span class="cote-opp">opposé</span> ÷ <span class="cote-adj">adjacent</span></div></div>
+      <p class="note">Pour t'en souvenir : SOH CAH TOA (Sinus Opposé Hypoténuse, Cosinus Adjacent Hypoténuse, Tangente Opposé Adjacent).</p></section>
+    <section class="bloc"><h2><span class="num">3</span>Ta calculatrice</h2>
+      <ul class="cotes"><li><strong>Mode degrés d'abord.</strong> Tape sin 30 : elle doit afficher ${esc(TR.testCalculatrice())}. Sinon, elle est en radians (sin 35 afficherait ${esc(TR.radians(35))}).</li>
+        <li><strong>Côté cherché en haut</strong> de la fraction : multiplie. BC = 12 × sin 35°.</li>
+        <li><strong>Côté cherché en bas</strong> : divise. AC = 5 ÷ cos 52°.</li>
+        <li><strong>Angle cherché</strong> : SHIFT, puis sin, cos ou tan (sin⁻¹, cos⁻¹, tan⁻¹).</li>
+        <li>Arrondis au centième, à la fin seulement.</li></ul>
+      <p class="note">Deux côtés connus et le troisième cherché : ce n'est pas de la trigo, c'est Pythagore (G6).</p></section>
+    <section class="bloc"><h2><span class="num">4</span>Les 7 exercices</h2>
+      <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
+      <div class="pas-a-pas">${fiche.map(exo).join("")}</div></section>
+  </div>`;
+}
+function voirCorrige(i, b) { const d = document.getElementById("corr" + i); if (!d) return; const vu = d.classList.toggle("vu"); b.textContent = vu ? "Cacher le corrigé" : "Voir le corrigé"; activite(); }
 
 /* ---------- module Leçons ---------- */
 async function chargerLecon(id) {
@@ -736,13 +804,13 @@ function ouvrirExo(repr) {
     try {
       Object.assign(Q, { acceptees: clone(repr.acceptees || []), journal: clone(repr.journal || []), libres: clone(repr.libres || []), essais: repr.essais || 0, codePrec: repr.codePrec || null,
         indice: !!repr.indice, trous: repr.trous ? clone(repr.trous) : null, recopie: repr.recopie || null, jumeau: !!repr.jumeau });
-      if (p5 && repr.p5) { Q.p5 = clone(repr.p5); if (m !== "diag") Q.etapes = M5.etapes(exo, modeP5, Q.p5); }   // le chemin suit SES valeurs
+      if (p5 && repr.p5) { Q.p5 = Object.assign(M5.etatInitial(exo), clone(repr.p5)); /* une table vide n'est pas gardée par la base */ if (m !== "diag") Q.etapes = M5.etapes(exo, modeP5, Q.p5); }   // le chemin suit SES valeurs
       Q.k = Math.min(repr.k || 0, Q.etapes.length ? Q.etapes.length - 1 : 0);
       entrerEtape();
       if (repr.prevTexte && Q.etapes[Q.k]) Q.prev = lireLigne(typeEtape(Q.etapes[Q.k]), repr.prevTexte);
       if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie };
       if (Q.trous && (!Q.trous.coefs || Q.trous.marche3)) Q.fb = { t: "trous" };
-    } catch (e) { Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart, p5: p5 ? M5.etatInitial(exo) : null, etapes }); entrerEtape(); }
+    } catch (e) { console.error("reprise illisible : " + (e && e.message)); Object.assign(Q, { acceptees: [], journal: [], libres: [], k: 0, essais: 0, trous: null, recopie: null, prev: depart, p5: p5 ? M5.etatInitial(exo) : null, etapes }); entrerEtape(); }
   } else entrerEtape();
   sauverReprise();
   vue = "exo"; render();

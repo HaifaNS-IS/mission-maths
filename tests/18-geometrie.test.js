@@ -135,3 +135,44 @@ test("générateurs : ce que chaque niveau promet", () => {
     vrai(!F(Gn.creer("pyth", 3, g).valeurs.p2).racine(), "pyth 3 : au centième");
   }
 });
+
+/* ---------- relecture du 25/11 : ce qu'un élève tape vraiment ---------- */
+test("relecture : le nom recopié devant la ligne est accepté (AB² =, AB =, d =, xM =, m =, y =)", () => {
+  egal(statuts(jouer(fiche(1), ["AB² = (5 − 1)² + (5 − 2)²", "AB² = 25", "AB = 5"])), "incomplet | juste | juste");
+  egal(statuts(jouer(fiche(1), ["d² = 25", "d = √25", "d = 5"])), "juste | incomplet | juste");
+  egal(statuts(jouer(fiche(9), ["xM = 3", "yM = 6"])), "juste | juste");
+  egal(statuts(jouer(fiche(4), ["20", "√20", "m = 0,5"])), "juste | juste | juste");
+  egal(statuts(jouer(fiche(8), ["y = 12"])), "juste");
+  vrai(/seulement des nombres/.test(jouer(fiche(9), ["M(3;6)"]).illisibles[0] || ""), "point tapé à la place de xM");
+});
+test("relecture : « √41 ≈ 6,40 » et « √25 = 5 », chaque morceau jugé", () => {
+  egal(statuts(jouer(fiche(3), ["41", "√41 ≈ 6,40"])), "juste | juste");
+  egal(statuts(jouer(fiche(3), ["41", "√41 ≈ 6,41"])), "juste | faux");
+  egal(statuts(jouer(fiche(1), ["25", "√25 = 5"])), "juste | juste");
+  egal(statuts(jouer(fiche(1), ["25", "√24 = 5"])), "juste | faux");
+});
+test("relecture : erreurs typiques reconnues (moins d'un négatif, ordre de la soustraction, arrondi de pente, développement de la droite)", () => {
+  const sorte = (exo, lignes) => { const Q = jouer(exo, lignes), a = Q.acceptees[Q.acceptees.length - 1]; return (a.code || "") + "/" + (a.diag && a.diag.detail.sorte); };
+  egal(sorte(fiche(2), ["(4 − 2)² + (−4 − 4)²"]), "/moinsMoins");                       // 4 − (−2) écrit 4 − 2
+  egal(sorte(G.construire({ sorte: "pythagore", hyp: false, a: 10, b: 6 }), ["6² − 10²"]), "/ordreHyp");
+  egal(sorte(fiche(6), ["25", "5", "25", "5", "3", "0", "16", "4", "1,3"]), "/arrondiM");
+  egal(sorte(fiche(4), ["20", "√20", "0,5", "y − 1 = 0,5(x − 1)", "y − 1 = 0,5x − 1"]), "DIST-PART/distPart");
+  egal(sorte(fiche(4), ["20", "√20", "0,5", "y − 1 = 0,5(x − 1)", "y − 1 = 0,5x + 0,5"]), "SIG-PAR/sigPar");
+  egal(sorte(fiche(4), ["20", "√20", "0,5", "y − 1 = 0,5x − 0,5", "y = 0,5x − 1,5"]), "TRANS-SIG/transSig");
+  vrai(/remplace m, x₁ et y₁/.test(jouer(fiche(4), ["20", "√20", "0,5", "y − y1 = m(x − x1)"]).illisibles[0] || ""), "formule littérale");
+});
+test("relecture : Pythagore, l'angle droit est dans l'énoncé (la consigne est cachée quand le clavier est ouvert)", () => {
+  egal(fiche(11).enonce, "Triangle ABC rectangle en B : AB = 6 ; BC = 8");
+  egal(fiche(12).enonce, "Triangle DEF rectangle en E : DE = 5 ; EF = 12");
+  for (let g = 1; g <= 30; g++) for (const n of [1, 2, 3]) vrai(/^Triangle [A-Z]{3} rectangle en [A-Z] : /.test(Gn.creer("pyth", n, g).enonce), "pyth " + n + "/" + g);
+});
+test("relecture : une valeur décimale tapée s'écrit en décimal dans l'explication (1,3 et non 13/10)", () => {
+  const d = MM.nombres.diagnostiquer(MM.expr.arbre("(7 + 0) ÷ 2"), MM.expr.arbre("3,4"));
+  const x = MM.nombres.expliquer(d, 1), txt = [x.titre, x.bon, x.ou, x.regle].join(" ");
+  vrai(!/17\/5/.test(txt), txt);
+});
+test("reprise : un état sans la table v (la base ne garde pas une table vide) se juge comme l'état initial", () => {
+  const exo = fiche(1), e = G.etapes(exo, "guide")[1], s = { points: exo.points };
+  egal(G.juger(e, s, null, true, "5", exo).statut, "juste");
+  egal(G.apres(s, G.etapes(exo, "guide")[0], { valeur: "25" }).v.AB2, "25");
+});

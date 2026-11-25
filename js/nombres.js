@@ -264,7 +264,8 @@
   }
 
   /* ---------- l'explication du prof (variante 2 : une autre image, ou un exemple chiffré) ---------- */
-  const t = v => v.texte();
+  // un décimal s'écrit en décimal (1,3 et non 13/10), comme il l'a tapé (recette du 25/11)
+  const t = v => v.estEntier() ? v.texte() : (v.decimal() || v.texte());
   function expliquer(d, variante) {
     const CAT = MM.diag ? MM.diag.CATALOGUE : {};
     const code = d && d.code, x = (d && d.detail) || {}, v2 = variante === 2, cacher = !!(d && d.cacher);

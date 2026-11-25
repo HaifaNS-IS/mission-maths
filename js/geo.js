@@ -69,7 +69,8 @@
   const clone = o => JSON.parse(JSON.stringify(o));
   function etatInitial(exo) { return { points: clone(exo.points), v: {} }; }
   const pt = (s, nom) => s.points[nom].map(F);
-  const valeurDe = (s, exo, id) => s.v[id] != null ? F(s.v[id]) : exo ? F(exo.valeurs[id]) : null;
+  // la base ne garde pas une table vide : après « Reprendre », s.v peut manquer (recette du 25/11)
+  const valeurDe = (s, exo, id) => s.v && s.v[id] != null ? F(s.v[id]) : exo ? F(exo.valeurs[id]) : null;
 
   /* ---------- le chemin : toutes les étapes du plan (pas de chemin qui change, sauf les valeurs) ---------- */
   function etapes(exo, mode, etat) {
@@ -132,6 +133,9 @@
     const bon = attenduValeur(e, s, exo);
     if (e.sorte === "carres") {
       const p = pt(s, e.P), q = pt(s, e.Q), dx = q[0].moins(p[0]), dy = q[1].moins(p[1]), sx = q[0].plus(p[0]), sy = q[1].plus(p[1]);
+      // « 4 − (−2) » écrit « 4 − 2 » : le moins d'un nombre négatif perdu, sur un écart ou sur les deux
+      const ex = p[0].signe() < 0 ? [dx, sx] : [dx], ey = p[1].signe() < 0 ? [dy, sy] : [dy];
+      for (const a of ex) for (const b of ey) if (a !== dx || b !== dy) aj(null, a.fois(a).plus(b.fois(b)), { sorte: "moinsMoins" });
       aj(null, dx.plus(dy), { sorte: "sansCarre" });
       aj(null, sx.fois(sx).plus(sy.fois(sy)), { sorte: "somme" });
       if (dx.signe() < 0 || dy.signe() < 0) aj("SIG-REL", dx.fois(dx).fois(dx.signe() < 0 ? -1 : 1).plus(dy.fois(dy).fois(dy.signe() < 0 ? -1 : 1)), { sorte: "carre-neg" });
@@ -139,6 +143,7 @@
     } else if (e.sorte === "pyth") {
       const a = F(e.a), b = F(e.b);
       aj("HYPO", e.hyp ? a.fois(a).moins(b.fois(b)).abs() : a.fois(a).plus(b.fois(b)), { sorte: "hypo", hyp: !!e.hyp });
+      if (!e.hyp) aj(null, b.fois(b).moins(a.fois(a)), { sorte: "ordreHyp" });
       aj(null, e.hyp ? a.plus(b) : a.moins(b), { sorte: "sansCarreP" });
       aj("CALC", e.hyp ? a.fois(2).plus(b.fois(2)) : a.fois(2).moins(b.fois(2)), { sorte: "carre2" });
     } else if (e.sorte === "milieu") {
@@ -150,6 +155,9 @@
       const p = pt(s, e.P), q = pt(s, e.Q), dy = q[1].moins(p[1]), dx = q[0].moins(p[0]);
       if (!dy.estNul()) aj(null, dx.sur(dy), { sorte: "inverse" });
       aj("PENTE-ORD", dy.oppose().sur(dx), { sorte: "ordre" });
+      const sx = q[0].plus(p[0]), sy = q[1].plus(p[1]);
+      if (p[1].signe() < 0 && !sx.estNul()) aj(null, sy.sur(dx), { sorte: "moinsMoins" });
+      if (p[0].signe() < 0 && !sx.estNul()) aj(null, dy.sur(sx), { sorte: "moinsMoins" });
     } else if (e.sorte === "axeY") {
       if (!F(e.m).estNul()) aj("AXE-INV", F(e.b).oppose().sur(F(e.m)), { sorte: "axeInv", axe: "y" });
       aj(null, F(e.m).plus(F(e.b)), { sorte: "remplace0" });
@@ -169,10 +177,20 @@
     return v;
   }
   function juger(e, s, prev, premiere, entree, exo) {
-    if (e.sorte === "racine") return jugerRacine(e, s, entree, exo);
     if (e.sorte === "droite") return jugerDroite(e, s, prev, premiere, entree, exo);
     if (e.sorte === "axeX") return jugerAxeX(e, s, prev, entree);
-    return jugerCalcul(e, s, prev, premiere, entree, exo);
+    const t = sansPrefixe(e, entree);
+    if (e.sorte === "racine") return jugerRacine(e, s, t, exo);
+    if (/[a-zA-Zα-ωΔ]/.test(t)) return illisible("Ici, écris seulement des nombres et des opérations" + (e.prefixe ? " : le calcul de " + e.prefixe.replace(/\s*=\s*$/, "") + "." : "."));
+    return jugerCalcul(e, s, prev, premiere, t, exo);
+  }
+  /* Recopie du nom écrit devant le champ (« AB² = », « d = », « xM = », « m = », « y = ») : il est accepté et retiré (recette du 25/11). */
+  const norme = t => String(t == null ? "" : t).replace(/\s+/g, "").replace(/_/g, "").replace(/\^2/g, "²");
+  function sansPrefixe(e, texte) {
+    const t = norme(texte), nom = norme(e.prefixe || "").replace(/=$/, "");
+    const noms = [nom].concat(e.sorte === "racine" ? ["d"] : e.sorte === "carres" ? ["d²"] : []).filter(Boolean);
+    for (const n of noms) if (t.toLowerCase().startsWith(n.toLowerCase() + "=")) return t.slice(n.length + 1);
+    return String(texte == null ? "" : texte);
   }
   const precisionNombre = (e, bon, faux) => (e.prefixe || "") + (bon != null ? ecr(bon) : "?") + " attendu, pas " + ecr(faux);
 
@@ -193,6 +211,8 @@
     const bon = attenduValeur(e, s, exo);
     o.attendu = ecr(bon);
     if (v.egal(bon) || pente(bon)) return verdict(e, fini ? "juste" : "incomplet", o);
+    // pente 4/3 arrondie de travers (1,3 ; 1,34) : c'est l'arrondi qui coince, pas le calcul
+    if (e.sorte === "pente" && fini && !decimalExact(bon) && proche(v, bon, F("0.05"))) return verdict(e, "faux", Object.assign(o, { diag: { geo: true, code: null, detail: { geo: true, sorte: "arrondiM" } }, precision: precisionNombre(e, bon, v) }));
     // ordre : les codes de géométrie, puis ceux du moteur des nombres (signe, priorités, calcul), puis les sortes sans code
     // une erreur de géométrie reconnue (pente à l'envers, ÷ 2 oublié…) est plus précise qu'une « erreur de calcul »
     const ks = candidats(e, s, exo).filter(k => v.egal(k.valeur)), k = ks.find(x => x.code) || ks[0];
@@ -219,6 +239,17 @@
   function jugerRacine(e, s, texte, exo) {
     const t = String(texte == null ? "" : texte).replace(/\s+/g, "");
     if (!t) return illisible("Écris la longueur : √… ou un nombre.");
+    // « √41 ≈ 6,40 » ou « √25 = 5 », comme dans le corrigé : chaque morceau est jugé ; juste seulement si les deux le sont
+    const deux = /^(√[^=≈]+)([=≈])([^=≈]+)$/.exec(t);
+    if (deux) {
+      const a = jugerRacine(e, s, deux[1], exo), b = jugerRacine(e, s, deux[3], exo);
+      if (a.statut === "illisible") return a;
+      if (b.statut === "illisible") return b;
+      const ecrit = a.ecrit.replace(e.prefixe || "", "") + " " + deux[2] + " " + b.ecrit.replace(e.prefixe || "", "");
+      const pire = a.statut === "faux" ? a : b.statut === "faux" ? b : null;
+      if (pire) return Object.assign({}, pire, { ecrit: (e.prefixe || "") + ecrit, saisie: (e.prefixe || "") + ecrit, ast: ecrit });
+      return verdict(e, "juste", { ecrit, ast: ecrit, valeur: b.valeur, attendu: a.attendu, fin: true });
+    }
     const R = valeurDe(s, exo, e.de), r = R && R.signe() >= 0 ? R.racine() : null;
     const o = { attendu: racineTexte(R), fin: true };
     if (/^√/.test(t)) {
@@ -262,6 +293,7 @@
     const c = t.split("=");
     if (c.length !== 2 || !c[0].trim() || !c[1].trim()) return { erreur: "Écris une égalité avec un seul signe =, par exemple y = …" };
     const mauvais = [...t].find(ch => !PERMIS.test(ch));
+    if (mauvais && /[a-zA-Z₁₂]/.test(mauvais)) return { erreur: "Dans l'équation, il ne reste que x et y : remplace m, x₁ et y₁ par leurs nombres." };
     if (mauvais) return { erreur: "Je ne connais pas le symbole « " + mauvais + " »." };
     const val = (cote, x, y) => { const l = N.lire(cote.replace(/x/g, "(" + x + ")").replace(/y/g, "(" + y + ")")); if (!l.ok) throw new Error(l.message); return l.valeur; };
     const f = (x, y) => val(c[0], x, y).moins(val(c[1], x, y));
@@ -292,11 +324,23 @@
     // ce qui ne va pas : la pente, le point (souvent un signe), ou la ligne d'avant mal transformée
     const p = pt(s, e.P), r = reduite(u);
     let sorte = "remplaceDroite";
-    if (ref && base !== w) sorte = r && reduite(base) && r.m.egal(reduite(base).m) ? "constante" : "ligne";
+    let code = null;
+    if (ref && base !== w) {
+      sorte = r && reduite(base) && r.m.egal(reduite(base).m) ? "constante" : "ligne";
+      // sa ligne d'avant était la bonne droite : l'erreur de développement ou de changement de côté se reconnaît à son nombre seul
+      if (sorte === "constante" && memeDroite(base, w) && r.m.egal(att.m)) {
+        const [x1, y1] = p, m = att.m, bonB = y1.moins(m.fois(x1)), K = [];
+        if (!x1.estNul() && !m.egal(1)) K.push({ code: "DIST-PART", b: y1.moins(x1), sorte: "distPart" });
+        if (!x1.estNul()) K.push({ code: "SIG-PAR", b: y1.plus(m.fois(x1)), sorte: "sigPar" });
+        if (!y1.estNul()) K.push({ code: "TRANS-SIG", b: m.fois(x1).oppose().moins(y1), sorte: "transSig" });
+        const ok = K.filter(k => !k.b.egal(bonB) && k.b.egal(r.b));
+        if (ok.length && ok.every(k => k.code === ok[0].code)) { code = ok[0].code; sorte = ok[0].sorte; }
+      }
+    }
     else if (passePar(u, p) && r && !r.m.egal(att.m)) sorte = "pente";
     else if (r && r.m.egal(att.m) && [[-1, -1], [-1, 1], [1, -1]].some(([a, b]) => passePar(u, [p[0].fois(a), p[1].fois(b)]))) sorte = "signePoint";
     else if (r && r.m.egal(att.m)) sorte = "point";
-    return verdict(e, "faux", Object.assign(o, { diag: { geo: true, code: null, detail: { geo: true, sorte } }, precision: o.attendu + " attendu, pas " + lu.ecrit }));
+    return verdict(e, "faux", Object.assign(o, { code, diag: { geo: true, code, detail: { geo: true, sorte } }, precision: o.attendu + " attendu, pas " + lu.ecrit }));
   }
 
   /* y = 0 : une équation en x, jugée par le moteur des équations (P3, P4) ; x = b (l'ordonnée à l'origine) est AXE-INV. */
@@ -307,12 +351,12 @@
     if (r.statut !== "faux") return verdict(e, r.statut, o);
     const sol = T.FORMES.solution(r.eq) ? MM.saisie.lireSolution(texte) : null;
     if (sol && sol.ok && sol.valeur.egal(F(e.b))) return verdict(e, "faux", Object.assign(o, { code: "AXE-INV", diag: { geo: true, code: "AXE-INV", detail: { geo: true, sorte: "axeInv", axe: "x" } }, precision: "x = " + ecr(F(e.b).oppose().sur(F(e.m))) + " attendu, pas x = " + ecr(sol.valeur) }));
-    return verdict(e, "faux", Object.assign(o, { code: r.code || null, diag: r.diag, precision: null }));
+    return verdict(e, "faux", Object.assign(o, { code: r.code || null, diag: r.diag, precision: r.attendu ? r.attendu + " attendu, pas " + r.ecrit : null }));
   }
 
   /* ---------- après une étape finie : SES valeurs deviennent l'état ---------- */
   function apres(s, e, v) {
-    const o = clone(s);
+    const o = clone(s); o.v = o.v || {};
     if (["carres", "pyth", "milieu", "pente", "axeY"].includes(e.sorte) && v.valeur != null) o.v[e.id] = F(v.valeur).cle();
     if (e.sorte === "milieu" && e.sortie) o.points[e.sortie][e.axe === "x" ? 0 : 1] = F(v.valeur).cle();
     return o;
@@ -453,12 +497,12 @@
       consigne = "Segment [" + A + B + "]. 1) Calcule les coordonnées de son milieu M. 2) Calcule " + A + B + " et " + A + "M. 3) Écris l'équation de (" + A + B + ").";
       enonce = pts([A, B]); formules = "milieu : (x₁ + x₂) ÷ 2 · d = √((x₂ − x₁)² + (y₂ − y₁)²) · m = (y₂ − y₁) ÷ (x₂ − x₁)";
     } else if (m.sorte === "pythagore") {
-      const [h, a, b] = m.noms || ["AC", "AB", "BC"], angle = m.angle || "B";
+      const [h, a, b] = m.noms || ["AC", "AB", "BC"], angle = m.angle || "B", tri = "Triangle " + [...new Set((h + a + b).split(""))].sort().join("") + " rectangle en " + angle + " : ";
       if (m.hyp) { plan.push({ id: "p2", sorte: "pyth", hyp: true, a: F(m.a).cle(), b: F(m.b).cle(), nom: "Pythagore", prefixe: h + "² = " }, { id: "p", sorte: "racine", de: "p2", nom: "Calcule " + h, prefixe: h + " = " });
-        consigne = "Le triangle est rectangle en " + angle + ". Calcule " + h + " (au centième si besoin)."; enonce = a + " = " + ecr(m.a) + " ; " + b + " = " + ecr(m.b); }
+        consigne = "Le triangle est rectangle en " + angle + ". Calcule " + h + " (au centième si besoin)."; enonce = tri + a + " = " + ecr(m.a) + " ; " + b + " = " + ecr(m.b); }
       else { if (F(m.a).cmp(F(m.b)) <= 0) return null;
         plan.push({ id: "p2", sorte: "pyth", hyp: false, a: F(m.a).cle(), b: F(m.b).cle(), nom: "Pythagore", prefixe: b + "² = " }, { id: "p", sorte: "racine", de: "p2", nom: "Calcule " + b, prefixe: b + " = " });
-        consigne = "Le triangle est rectangle en " + angle + ". Calcule " + b + " (au centième si besoin)."; enonce = h + " = " + ecr(m.a) + " ; " + a + " = " + ecr(m.b); }
+        consigne = "Le triangle est rectangle en " + angle + ". Calcule " + b + " (au centième si besoin)."; enonce = tri + h + " = " + ecr(m.a) + " ; " + a + " = " + ecr(m.b); }
       formules = "Hypoténuse² = côté² + côté²";
     } else return null;
     const exo = { type: "geo", modele: m.sorte, consigne, enonce, formules, points, plan, conclusions, valeurs };
@@ -503,6 +547,13 @@
     const fin = (titre, bon, ou, regle, suite) => ({ code, titre, bon, ou, regle, suite: suite || "", reflexe: code && CAT[code] ? CAT[code].reflexe : "", variante: v2 ? 2 : 1 });
     const nom = c => (CAT[c] && CAT[c].nom) || "Erreur";
     switch (x.sorte) {
+      case "moinsMoins": return fin("Le moins d'un négatif", "Tu as bien posé la formule.", "Mais une coordonnée négative a perdu son signe dans la soustraction.",
+        v2 ? "Mets la coordonnée négative entre parenthèses : 5 − (−3) = 5 + 3." : "Soustraire un nombre négatif, c'est ajouter son opposé.");
+      case "ordreHyp": return fin("L'ordre de la soustraction", "Tu as bien choisi de soustraire.", "Mais on part du carré de l'hypoténuse, le plus grand.", v2 ? "Un carré de longueur n'est jamais négatif : le plus grand carré vient en premier." : "Côté² = hypoténuse² − autre côté².");
+      case "arrondiM": return fin("Arrondi au centième", "Ta pente est presque juste.", "Mais l'arrondi au centième garde 2 chiffres après la virgule.", v2 ? "Ou garde la fraction exacte, sans arrondir." : "Fais la division à la calculatrice, puis arrondis au centième.");
+      case "distPart": return fin(nom("DIST-PART"), "Ta ligne d'avant était juste.", "Mais en développant, m doit multiplier les deux termes de la parenthèse.", v2 ? "Trace une flèche de m vers x, puis une autre vers x₁." : "m(x − x₁) = m × x − m × x₁.");
+      case "sigPar": return fin(nom("SIG-PAR"), "Ta ligne d'avant était juste.", "Mais en développant, le signe de m × x₁ s'est perdu.", v2 ? "Un moins dans la parenthèse garde son moins après la multiplication." : "m(x − x₁) = mx − m × x₁ : le moins reste.");
+      case "transSig": return fin(nom("TRANS-SIG"), "Ta ligne d'avant était juste.", "Mais y₁ a changé de côté sans changer de signe.", v2 ? "Pour isoler y, fais l'opération inverse des deux côtés." : "Un nombre qui change de côté change de signe.");
       case "sansCarre": return fin("Le carré a disparu", "Tu as les bons écarts.", "Mais chaque écart doit être mis au carré.", v2 ? "Dans la formule, chaque parenthèse porte un ² : l'écart fois lui-même." : "(x₂ − x₁)² : l'écart, puis son carré. Pareil pour les y.");
       case "somme": return fin("Une somme au lieu d'un écart", "Tu as bien pris les coordonnées.", "Mais dans la formule, c'est x₂ − x₁, pas x₂ + x₁.", v2 ? "La distance mesure un écart : on soustrait." : "Dans chaque parenthèse : la coordonnée du 2e point moins celle du 1er.");
       case "carre-neg": return fin(nom("SIG-REL"), "Tu as bien remplacé.", "Mais " + (x.carre ? x.carre + " est un carré : il" : "un carré") + " n'est jamais négatif.", v2 ? "Un nombre fois lui-même : deux signes pareils, donc un résultat positif." : "Moins par moins donne plus.");

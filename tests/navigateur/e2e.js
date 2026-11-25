@@ -241,12 +241,12 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     vrai(!/Appareil parent/.test(await pe.textContent("#app")));
     egal(JSON.stringify(await pe.evaluate(() => JSON.parse(localStorage.getItem("mm.famille")))), JSON.stringify({ cle: CLE, role: "eleve" }));
   });
-  await verif("accueil : révision du 29/11 (6 fiches), 11 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
+  await verif("accueil : révision du 29/11 (7 fiches), 11 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
     const etat = await pe.$$eval("#app details.panel", ds => ds.map(d => [d.dataset.k, d.open]));
-    egal(etat.length, 19); egal(etat.slice(0, 7).map(([k]) => k).join(), "rev,G1,G2,G3,G4,G5,G6"); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
+    egal(etat.length, 20); egal(etat.slice(0, 8).map(([k]) => k).join(), "rev,G1,G2,G3,G4,G5,G6,G7"); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
   });
   await verif("Tout déplier puis Tout replier", async () => {
-    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 19);
+    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 20);
     await pe.getByRole("button", { name: "Tout replier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 0);
     await pe.getByRole("button", { name: "Tout déplier" }).tap();
   });
@@ -648,7 +648,7 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
   await verif("révision 29/11 : panneau G1 à G6 ouvert d'office, la méthode montre la formule et l'exercice de la fiche corrigé", async () => {
     await pp.tap("#bRetour").catch(() => {});
     await ouvrirPalier(pp, "rev"); await ouvrirPalier(pp, "G1");
-    egal(await pp.locator("details[data-k='rev'] details.panel").count(), 6);
+    egal(await pp.locator("details[data-k='rev'] details.panel").count(), 7);
     await pp.locator("details[data-k='G1'] .etape", { hasText: "La méthode" }).tap();
     const t = await pp.textContent("#app");
     vrai(/√\(\(x₂ − x₁\)² \+ \(y₂ − y₁\)²\)/.test(t) && /E\(−3, −1\)/.test(t) && /√41 ≈ 6,40/.test(t), t.slice(0, 400));
@@ -667,6 +667,18 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     await vider(pp); await ligne(pp, "√41");
     vrai(await pp.evaluate(() => Q.fini), "√41 pas accepté");
     const b = await boites(pp); vrai(visible(b.enonce, b.hauteur), JSON.stringify(b));
+  });
+  await verif("G1 avec aide : « Reprendre » au milieu de AB² ramène à sa ligne ; le nom recopié (AB =) est accepté", async () => {
+    await suite(pp).catch(() => {});
+    await fiche(pp, "guide", 1);
+    await ligne(pp, "(5-1)²+(5-2)²");
+    const avant = await pp.evaluate(() => [Q.etapes[Q.k].id, Q.acceptees.length, MM.nombres.ecrire(Q.prev)].join(" | "));
+    await pause(300);
+    await pp.reload({ waitUntil: "domcontentloaded" }); await pastilleOK(pp);
+    await pp.tap("#bReprendre");
+    egal(await pp.evaluate(() => [Q.etapes[Q.k].id, Q.acceptees.length, MM.nombres.ecrire(Q.prev)].join(" | ")), avant);
+    await ligne(pp, "25"); await pp.fill("#champ", "AB = 5"); await valider(pp);
+    vrai(await pp.evaluate(() => Q.fini), "AB = 5 refusé");
   });
   await verif("G3 avec aide (partie B, ex. 1) : pente puis droite tapée avec la touche y ; 5 erreurs sur la droite → ligne à recopier (D74)", async () => {
     await suite(pp).catch(() => {});
@@ -693,6 +705,23 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     egal(await pp.evaluate(() => Q.tentative.codeErreur + " " + Q.tentative.palier), "RAC-OUB G1");
     await pp.screenshot({ path: SHOTS + "/9-g5-seul.png", fullPage: true });
     await pp.tap("#bRetour").catch(() => {});
+  });
+  await verif("G7 trigo : méthode dessinée, 7 exercices avec figure, corrigé caché même après « Tout déplier », puis montré à la demande", async () => {
+    await pp.evaluate(() => aller("accueil"));
+    await ouvrirPalier(pp, "rev"); await ouvrirPalier(pp, "G7");
+    await pp.locator("details[data-k='G7'] .etape", { hasText: "La fiche corrigée" }).tap();
+    egal(await pp.textContent("h1"), "Trigonométrie");
+    egal(await pp.locator("svg.fig").count(), 8);
+    egal(await pp.locator("details.pas").count(), 7);
+    await pp.getByRole("button", { name: "Tout déplier" }).tap();
+    vrai(!(await pp.isVisible("#corr1")), "corrigé visible sans le demander");
+    vrai(!/6,88/.test(await pp.evaluate(() => [...document.querySelectorAll("#app details.pas")].map(d => d.innerText).join(" "))), "réponse visible avant le corrigé");
+    await pp.locator("details[data-k='t1'] button", { hasText: "Voir le corrigé" }).tap();
+    vrai(await pp.isVisible("#corr1")); vrai(/BC = 12 × sin 35° ≈ 6,88/.test(await pp.textContent("#corr1")), await pp.textContent("#corr1"));
+    vrai(/sin 30 : elle doit afficher 0,5/.test(await pp.textContent("#app")), "test de la calculatrice absent");
+    vrai(await pasDeDefilementHorizontal(pp)); egal((await petitsBoutons(pp)).join(" | "), "");
+    await pp.screenshot({ path: SHOTS + "/9-g7-trigo.png", fullPage: true });
+    await pp.tap("#bRetour"); egal(await pp.evaluate(() => vue), "accueil");
   });
   /* ================= clé oubliée, lien abîmé, refus de la base ================= */
   await verif("clé oubliée sur le téléphone de l'élève : écran d'appairage, puis lien rouvert → rien de perdu", async () => {
