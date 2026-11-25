@@ -723,6 +723,16 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     await pp.screenshot({ path: SHOTS + "/9-g7-trigo.png", fullPage: true });
     await pp.tap("#bRetour"); egal(await pp.evaluate(() => vue), "accueil");
   });
+  await verif("D81 : P5 ouvert d'office chez l'élève jusqu'au 29/11 inclus, même verrouillé ; P6 reste fermé", async () => {
+    const avant = await pe.evaluate(() => new Date().toISOString().slice(0, 10) <= "2026-11-29");
+    egal(await pe.evaluate(() => ouvertDoffice("P5")), avant); egal(await pe.evaluate(() => ouvertDoffice("P6")), false);
+    await pe.evaluate(() => { const o = clone(prog()); o.P5 = PA.completerPalier(Object.assign({}, o.P5, { statut: "verrouille" })); ecrirePaliers(o); aller("accueil"); });
+    await ouvrirPalier(pe, "P5");
+    const t = await pe.textContent("details[data-k='P5']");
+    if (avant) { vrai(/Ouvert pour le contrôle du 29\/11/.test(t), t); egal(await pe.locator("details[data-k='P5'] .etape").count() > 0, true);
+      await pe.locator("details[data-k='P5'] .etape", { hasText: "Série guidée" }).tap(); egal(await pe.evaluate(() => vue + " " + X.palier), "exo P5"); await pe.tap("#bRetour"); }
+    else vrai(/S'ouvre quand le palier/.test(t), t);
+  });
   /* ================= clé oubliée, lien abîmé, refus de la base ================= */
   await verif("clé oubliée sur le téléphone de l'élève : écran d'appairage, puis lien rouvert → rien de perdu", async () => {
     await pe.evaluate(() => localStorage.clear());
