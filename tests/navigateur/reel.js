@@ -158,6 +158,20 @@ const code = async (page, c) => { for (const k of c) await page.getByRole("butto
     await attendre(async () => (await pe.$$eval(".etape .tag.fait", t => t.length)) >= 1, 10000, "leçon marquée Fait");
     vrai(!(await pe.isDisabled("#bReprendre")), "Reprendre inactif : point de reprise perdu");
   });
+  await verif("lot 4a : P6, un point placé au toucher dans le repère ; la tentative P6 arrive dans la vraie base", async () => {
+    const n0 = (await lister("suivi/app/tentatives")).length;
+    await pe.evaluate(() => { X = { palier: "P6", section: "guide", mode: "guide", exos: [{ gen: "placer", niveau: 2, graine: 4 }], i: 0, resultats: [], lecon: null, fiche: null }; ouvrirExo(null); });
+    const [x, y] = await pe.evaluate(() => Q.exo.pt);
+    const b = await pe.locator("svg[data-repere]").boundingBox(), f = v => (16 + (v + 6) * 24) / 320;
+    await pe.touchscreen.tap(b.x + f(x) * b.width, b.y + (1 - f(y)) * b.height);
+    await pe.getByRole("button", { name: "Valider" }).tap();
+    await attendre(() => pe.evaluate(() => Q.fini), 5000, "point accepté");
+    const tentatives = async () => (await lister("suivi/app/tentatives")).map(d => decoder({ mapValue: { fields: d.fields || {} } }));
+    await attendre(async () => { const l = await tentatives(); return l.length === n0 + 1 && l.some(t => t.palier === "P6" && t.juste === true && /^Placer /.test(t.enonce)); }, 15000, "tentative P6");
+    await pe.tap("#bRetour").catch(() => {});
+    await pe.evaluate(() => aller("accueil"));
+    vrai(/Leçon/.test(await pe.textContent("details[data-k='P8']")), "leçon P8 absente de l'accueil");
+  });
   await verif("aucune erreur JavaScript", async () => { egal(erreursPage.join(" | "), ""); });
 
   await nav.close(); if (serveur) serveur.close();
