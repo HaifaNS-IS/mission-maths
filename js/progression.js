@@ -17,6 +17,10 @@
     { id: "P7", nom: "Fonctions affines", resume: "y = mx + b, pente, sens de variation." },
     { id: "P8", nom: "Intersections et pente", resume: "Couper les axes, pente entre deux points." },
     { id: "P9", nom: "Deux droites et triangle", resume: "Intersection, hauteur, aire." },
+    { id: "P10", nom: "Équation d'une droite", resume: "Avec la pente et un point, ou deux points." },
+    { id: "P11", nom: "Milieu et distance", resume: "Milieu d'un segment, longueur, exercices combinés." },
+    { id: "P12", nom: "Pythagore", resume: "Repérer l'hypoténuse, calculer un côté." },
+    { id: "P13", nom: "Trigonométrie", resume: "sin, cos, tan : un côté ou un angle, en degrés." },
     { id: "FINAL", nom: "Examen blanc", resume: "5 exercices, 50 minutes, démarche exigée." }
   ];
   const STATUTS = { verrouille: "Verrouillé", en_cours: "En cours", valide: "Validé", a_consolider: "À consolider" };

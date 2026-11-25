@@ -6,12 +6,12 @@ const ouvert = id => { const e = P.etatInitial(); e.P0.statut = "valide"; for (c
 
 test("contenu : 1 leçon par palier, séries non vides, examen de 10 exercices (D44) et de 5 en P5 (D55), diagnostic de 14 questions dont 5 sur les signes et 2 sur P5", () => {
   const index = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "lecons", "index.json"), "utf8"));
-  egal(R.LIVRES.join(), "P0,P1,P2,P3,P4,P5");
-  for (const id of ["P1", "P2", "P3", "P4", "P5"]) {
+  egal(R.LIVRES.join(), "P0,P1,P2,P3,P4,P5,P6,P7");
+  for (const id of ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]) {
     const c = R.CONTENU[id];
     vrai(index.lecons.some(m => m.pack_id === c.lecon && m.palier === id), "leçon absente : " + id);
     for (const s of ["guide", "semi", "seul"]) vrai(c[s].length >= 3, id + " " + s);
-    egal(c.examen.length, id === "P5" ? 5 : 10, id);
+    egal(c.examen.length, id === "P5" || id === "P7" ? 5 : 10, id);
     for (const sp of [].concat(c.guide, c.semi, c.seul, c.examen)) egal(Gn.def(sp.gen).palier, id, id + " : " + sp.gen + " appartient à un autre palier");
   }
   // P5 : l'examen ressemble au contrôle (équations complètes), avec au moins un a ≠ 1 et un Δ ≤ 0 possibles

@@ -457,7 +457,7 @@
     const mil = (a, b, M) => { plan.push({ id: "x" + M, sorte: "milieu", axe: "x", P: a, Q: b, sortie: M, nom: "Calcule x" + M, prefixe: "x" + M + " = " }, { id: "y" + M, sorte: "milieu", axe: "y", P: a, Q: b, sortie: M, nom: "Calcule y" + M, prefixe: "y" + M + " = " }); };
     const dro = (a, b) => { plan.push({ id: "m" + a + b, sorte: "pente", P: a, Q: b, nom: "Calcule la pente de (" + a + b + ")", prefixe: "m = " }, { id: "eq" + a + b, sorte: "droite", P: a, de: "m" + a + b, nom: "Équation de (" + a + b + ")", prefixe: "" }); };
     const pts = l => l.map(k => point(k, points[k])).join(" et ");
-    if (["distance", "milieu", "droite", "ldroite", "isocele", "segment"].includes(m.sorte)) {
+    if (["distance", "milieu", "droite", "ldroite", "isocele", "segment", "pente", "mildist"].includes(m.sorte)) {
       for (const [k, p] of Object.entries(m.points)) points[k] = F2(p);
       for (const p of Object.values(points)) if (p.some(v => F(v).abs().cmp(12) > 0)) return null;
     }
@@ -469,6 +469,15 @@
     } else if (m.sorte === "milieu") {
       mil(A, B, "M"); points.M = F2(points[A].map((v, i) => F(v).plus(F(points[B][i])).sur(2)));
       consigne = "Calcule les coordonnées du milieu M de [" + A + B + "]."; enonce = pts([A, B]); formules = "xM = (x₁ + x₂) ÷ 2 · yM = (y₁ + y₂) ÷ 2";
+    } else if (m.sorte === "pente") {                                                 // lot 4a, P8 (D95) : la pente seule
+      if (F(points[A][0]).egal(F(points[B][0]))) return null;
+      plan.push({ id: "m" + A + B, sorte: "pente", P: A, Q: B, nom: "Calcule la pente de (" + A + B + ")", prefixe: "m = " });
+      consigne = "Calcule la pente de la droite (" + A + B + ")."; enonce = pts([A, B]); formules = "m = (y₂ − y₁) ÷ (x₂ − x₁)";
+    } else if (m.sorte === "mildist") {                                               // lot 4a, P11 (D95) : milieu, puis longueur
+      if (points[A].every((v, i) => F(v).egal(F(points[B][i])))) return null;
+      mil(A, B, "M"); points.M = F2(points[A].map((v, i) => F(v).plus(F(points[B][i])).sur(2))); dist(A, B, A + B);
+      consigne = "Segment [" + A + B + "]. 1) Calcule les coordonnées de son milieu M. 2) Calcule la longueur " + A + B + "."; enonce = pts([A, B]);
+      formules = "milieu : (x₁ + x₂) ÷ 2 · d = √((x₂ − x₁)² + (y₂ − y₁)²)";
     } else if (m.sorte === "droite") {
       if (F(points[A][0]).egal(F(points[B][0]))) return null;
       dro(A, B); consigne = "Calcule la pente de (" + A + B + "), puis son équation."; enonce = pts([A, B]); formules = "m = (y₂ − y₁) ÷ (x₂ − x₁) · y − y₁ = m(x − x₁)";
@@ -592,7 +601,34 @@
     }
   }
 
+  /* ---------- le piège d'une leçon (lot 4a : P8, P10, P11) : la ligne piégée, calculée sur l'exemple ---------- */
+  function piege(exo, code, parade) {
+    const CAT = MM.diag.CATALOGUE, s = etatInitial(exo), es = etapes(exo, "guide", s);
+    const fin = (depart, faux, bon, detail) => ({ code, nom: CAT[code] ? CAT[code].nom : code, type: "geo", depart, faux, bon, explication: expliquer({ geo: true, code, detail: Object.assign({ geo: true }, detail) }), parade });
+    const pt0 = (x, y) => "(" + ecr(x) + ", " + ecr(y) + ")";
+    if (code === "AXE-INV") {
+      const e = es.find(x => x.sorte === "axeY"); if (!e) return null;
+      const m = F(e.m), b = F(e.b), x0 = b.oppose().sur(m);
+      return fin("y = " + affine(m, b), x0.estEntier() ? pt0(x0, 0) : "(" + ecr(x0) + " ; 0)", pt0(0, b), { sorte: "axeInv", axe: "y" });
+    }
+    if (code === "SIG-PAR") {
+      const e = es.find(x => x.sorte === "droite"); if (!e) return null;
+      const st = clone(s); st.v = {}; st.v[e.de] = exo.valeurs[e.de];
+      const m = F(exo.valeurs[e.de]), p = pt(st, e.P);
+      if (p[0].estNul() || m.estNul()) return null;
+      const g = "y " + (p[1].signe() < 0 ? "+ " + ecr(p[1].abs()) : MOINS + " " + ecr(p[1]));
+      if (p[1].estNul()) return null;
+      return fin(departEtape(e, st, exo), g + " = " + affine(m, m.fois(p[0])), g + " = " + affine(m, m.fois(p[0]).oppose()), { sorte: "sigPar" });
+    }
+    if (code === "RAC-OUB") {
+      const e = es.find(x => x.sorte === "racine"); if (!e) return null;
+      const R = F(exo.valeurs[e.de]), carre = es.find(x => x.id === e.de);
+      return fin(carre.prefixe + ecr(R), e.prefixe + ecr(R), e.prefixe + racineTexte(R), { sorte: "rac", cas: "oubli", R: R.cle(), saisi: R.cle(), carre: R.fois(R).cle() });
+    }
+    return null;
+  }
+
   MM.geo = { SORTES, etape, etatInitial, etapes, attenduValeur, attenduTexte, departEtape, lireDepart, candidats, juger, apres, lireDroite,
-    entrer, terminer, pas, nouveau, jouer, score, premiereLigne, reponsesFausses, corrige, construire, expliquer, ecr, affine, racineTexte };
+    entrer, terminer, pas, nouveau, jouer, score, premiereLigne, reponsesFausses, corrige, construire, expliquer, ecr, affine, racineTexte, piege };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;
 })(typeof globalThis !== "undefined" ? globalThis : this);

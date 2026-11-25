@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N07-A",
+  "categorie": "lecon",
+  "palier": "P7",
+  "niveau": 7,
+  "version": "1.0",
+  "source": "Mission Maths, lot 4a : leçon du palier P7",
+  "verifie_le": "2026-11-25",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "fonction-affine",
+    "titre": "y = mx + b : la pente et le départ",
+    "duree_min": 5,
+    "idee": "Dans y = mx + b, m est la pente, b le point de départ.",
+    "exemple": {
+      "gen": "ligne",
+      "niveau": 2,
+      "graine": 19
+    },
+    "piege": {
+      "code": "ORD-INV",
+      "parade": "Avant de lire m, réécris l'équation : le terme en x d'abord."
+    },
+    "a_toi": [
+      {
+        "gen": "ligne",
+        "niveau": 1
+      },
+      {
+        "gen": "tracer",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-ORD-INV",
+      "texte": "m est le nombre devant x, b le nombre seul, signes compris."
+    }
+  },
+  "questions": []
+}

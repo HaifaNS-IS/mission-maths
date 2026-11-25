@@ -67,6 +67,23 @@
     return fait({ sorte: "pythagore", hyp: false, a: c, b: x, noms, angle });
   } });
 
+  /* Lot 4a (D95) : la pente seule (P8) et « milieu puis distance » (P11), pour les leçons. G1 à G6 ne changent pas. */
+  GEN.definir("pseule", { palier: "P8", niveaux: [1, 2], tirer(niveau, rnd) {
+    let dx, dy;
+    if (niveau === 1) { dx = rnd.entier(1, 4) * signe(rnd); dy = dx * rnd.nonNul(-3, 3); }
+    else { dx = rnd.choix([2, 4, 5, 3, 3]) * signe(rnd); dy = rnd.nonNul(-8, 8); if (dy % dx === 0) return null; }
+    const p = [rnd.entier(-4, 4), rnd.entier(-4, 4)], q = [p[0] + dx, p[1] + dy];
+    return fait({ sorte: "pente", points: deux(rnd, p, q) });
+  } });
+  GEN.definir("mildist", { palier: "P11", niveaux: [1, 2], tirer(niveau, rnd) {
+    let dx, dy, p;
+    if (niveau === 1) { [dx, dy] = rnd.choix([[6, 8], [8, 6], [6, -8], [-8, 6], [3, 4], [4, -3]]); p = [rnd.entier(-4, 2), rnd.entier(-4, 2)]; if ((dx % 2) || (dy % 2)) { if (rnd.suivant() < 0.5) return null; } }
+    else { dx = rnd.nonNul(-7, 7); dy = rnd.nonNul(-7, 7); if (carre(dx * dx + dy * dy)) return null; p = [rnd.entier(-5, 5), rnd.entier(-5, 5)]; }
+    const q = [p[0] + dx, p[1] + dy];
+    if (niveau === 2 && ![...p, ...q].some(v => v < 0)) return null;
+    return fait({ sorte: "mildist", points: deux(rnd, p, q) });
+  } });
+
   /* Les fiches de la prof (photos du 25/11), dans l'ordre. */
   const FICHES = [
     { sorte: "distance", points: { A: [1, 2], B: [5, 5] } },

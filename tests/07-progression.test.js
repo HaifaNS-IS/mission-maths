@@ -3,8 +3,8 @@ const { MM, test, egal, vrai } = require("./_harnais.js");
 const P = MM.progression;
 const ouvert = () => { const e = P.etatInitial(); e.P0.statut = "valide"; e.P1.statut = "en_cours"; return e; };
 
-test("11 lignes : P0 à P9 puis l'examen blanc ; seul P0 est ouvert au départ", () => {
-  egal(P.PALIERS.map(p => p.id).join(), "P0,P1,P2,P3,P4,P5,P6,P7,P8,P9,FINAL");
+test("15 lignes : P0 à P13 puis l'examen blanc (P10 à P13 ajoutés au cahier des charges le 25/11) ; seul P0 est ouvert au départ", () => {
+  egal(P.PALIERS.map(p => p.id).join(), "P0,P1,P2,P3,P4,P5,P6,P7,P8,P9,P10,P11,P12,P13,FINAL");
   const e = P.etatInitial(); egal(e.P0.statut, "en_cours"); vrai(P.PALIERS.slice(1).every(p => e[p.id].statut === "verrouille")); egal(P.palierActuel(e), "P0");
 });
 test("80 % valide le palier et ouvre le suivant", () => {

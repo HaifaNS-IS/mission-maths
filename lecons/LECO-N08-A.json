@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N08-A",
+  "categorie": "lecon",
+  "palier": "P8",
+  "niveau": 8,
+  "version": "1.0",
+  "source": "Mission Maths, lot 4a : leçon du palier P8",
+  "verifie_le": "2026-11-25",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "axes-pente",
+    "titre": "Où la droite coupe les axes",
+    "duree_min": 4,
+    "idee": "Sur l'axe des y, x vaut 0 ; sur l'axe des x, y vaut 0.",
+    "exemple": {
+      "gen": "axes",
+      "niveau": 1,
+      "graine": 18
+    },
+    "piege": {
+      "code": "AXE-INV",
+      "parade": "Dis-toi : axe des ordonnées, x = 0 ; axe des abscisses, y = 0."
+    },
+    "a_toi": [
+      {
+        "gen": "axes",
+        "niveau": 1
+      },
+      {
+        "gen": "pseule",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-AXE-INV",
+      "texte": "Axe des ordonnées : x = 0 ; axe des abscisses : y = 0."
+    }
+  },
+  "questions": []
+}

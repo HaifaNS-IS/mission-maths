@@ -1,5 +1,5 @@
 {
-  "version_lecons": "2026.11.24",
+  "version_lecons": "2026.11.25",
   "lecons": [
     {
       "pack_id": "LECO-N01-A",
@@ -30,6 +30,36 @@
       "palier": "P5",
       "version": "1.0",
       "fichier": "lecons/LECO-N05-A.json"
+    },
+    {
+      "pack_id": "LECO-N06-A",
+      "palier": "P6",
+      "version": "1.0",
+      "fichier": "lecons/LECO-N06-A.json"
+    },
+    {
+      "pack_id": "LECO-N07-A",
+      "palier": "P7",
+      "version": "1.0",
+      "fichier": "lecons/LECO-N07-A.json"
+    },
+    {
+      "pack_id": "LECO-N08-A",
+      "palier": "P8",
+      "version": "1.0",
+      "fichier": "lecons/LECO-N08-A.json"
+    },
+    {
+      "pack_id": "LECO-N10-A",
+      "palier": "P10",
+      "version": "1.0",
+      "fichier": "lecons/LECO-N10-A.json"
+    },
+    {
+      "pack_id": "LECO-N11-A",
+      "palier": "P11",
+      "version": "1.0",
+      "fichier": "lecons/LECO-N11-A.json"
     }
   ]
 }

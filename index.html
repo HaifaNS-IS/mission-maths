@@ -175,6 +175,21 @@ mark.pointe{background:transparent;color:inherit;border:2.5px solid var(--trap);
 .fig text{font-family:var(--f-display),system-ui,sans-serif;font-size:15px;fill:var(--ink)}
 .fig text.q{fill:var(--primary);font-weight:700;font-size:18px}
 .fig text.s{font-weight:700;fill:var(--muted)}
+.repere{display:block;width:100%;max-width:360px;margin:4px auto;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.repere .grille line{stroke:var(--line);stroke-width:1}
+.repere .axes line{stroke:var(--ink);stroke-width:1.6}.repere .axes path{fill:var(--ink)}
+.repere .grad text{font-family:var(--f-display),system-ui,sans-serif;font-size:12.5px;font-weight:600;fill:var(--muted)}
+.repere .grad text.nomaxe{font-size:14px;font-style:italic;fill:var(--ink);font-family:Georgia,"Times New Roman",serif}
+.repere .droite{stroke:var(--primary);stroke-width:2.6;stroke-linecap:round}
+.repere .pt circle{fill:var(--primary)}.repere .pt text,.repere .candidat text{font-family:var(--f-display),system-ui,sans-serif;font-size:15px;font-weight:700;fill:var(--ink)}
+.repere .pt.sien circle{fill:var(--muted)}
+.repere .candidat circle{fill:var(--star);stroke:var(--ink);stroke-width:1.5}
+.repere.actif{cursor:crosshair;border:2px solid var(--primary);border-radius:12px;background:var(--surface)}
+.enonce .figure .repere{max-width:300px}
+.enonce.compact .figure .repere{max-height:clamp(130px,calc(100vh - 545px),300px);max-height:clamp(130px,calc(100dvh - 545px),300px);width:auto;max-width:100%}
+.placer{display:flex;flex-direction:column;align-items:center;gap:8px}
+.choix{display:flex;flex-wrap:wrap;gap:8px}
+.choix .btn{flex:1 1 30%;min-height:48px}
 .formules3{display:grid;gap:8px}
 .formule{background:var(--bg);border-radius:12px;padding:10px 12px;font-size:1.05rem;font-family:var(--f-display)}
 .cote-adj{color:var(--good);font-weight:700}.cote-opp{color:var(--star);font-weight:700}.cote-hyp{color:var(--primary);font-weight:700}
@@ -249,41 +264,44 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 </div>
 <div id="toast" class="hidden" role="status"></div>
 
-<script src="js/fraction.js?v=0.5.3"></script>
-<script src="js/expr.js?v=0.5.3"></script>
-<script src="js/saisie.js?v=0.5.3"></script>
-<script src="js/etapes.js?v=0.5.3"></script>
-<script src="js/diag.js?v=0.5.3"></script>
-<script src="js/outils.js?v=0.5.3"></script>
-<script src="js/nombres.js?v=0.5.3"></script>
-<script src="js/gen/algebre.js?v=0.5.3"></script>
-<script src="js/gen/nombres.js?v=0.5.3"></script>
-<script src="js/second.js?v=0.5.3"></script>
-<script src="js/gen/second.js?v=0.5.3"></script>
-<script src="js/geo.js?v=0.5.3"></script>
-<script src="js/gen/geo.js?v=0.5.3"></script>
-<script src="js/trigo.js?v=0.5.3"></script>
-<script src="js/aide.js?v=0.5.3"></script>
-<script src="js/lecon.js?v=0.5.3"></script>
-<script src="js/progression.js?v=0.5.3"></script>
-<script src="js/parcours.js?v=0.5.3"></script>
-<script src="js/rapport.js?v=0.5.3"></script>
-<script src="js/file.js?v=0.5.3"></script>
-<script src="js/config.js?v=0.5.3"></script>
-<script src="js/base.js?v=0.5.3"></script>
+<script src="js/fraction.js?v=0.6.0"></script>
+<script src="js/expr.js?v=0.6.0"></script>
+<script src="js/saisie.js?v=0.6.0"></script>
+<script src="js/etapes.js?v=0.6.0"></script>
+<script src="js/diag.js?v=0.6.0"></script>
+<script src="js/outils.js?v=0.6.0"></script>
+<script src="js/nombres.js?v=0.6.0"></script>
+<script src="js/gen/algebre.js?v=0.6.0"></script>
+<script src="js/gen/nombres.js?v=0.6.0"></script>
+<script src="js/second.js?v=0.6.0"></script>
+<script src="js/gen/second.js?v=0.6.0"></script>
+<script src="js/geo.js?v=0.6.0"></script>
+<script src="js/gen/geo.js?v=0.6.0"></script>
+<script src="js/trigo.js?v=0.6.0"></script>
+<script src="js/repere.js?v=0.6.0"></script>
+<script src="js/affine.js?v=0.6.0"></script>
+<script src="js/gen/affine.js?v=0.6.0"></script>
+<script src="js/aide.js?v=0.6.0"></script>
+<script src="js/lecon.js?v=0.6.0"></script>
+<script src="js/progression.js?v=0.6.0"></script>
+<script src="js/parcours.js?v=0.6.0"></script>
+<script src="js/rapport.js?v=0.6.0"></script>
+<script src="js/file.js?v=0.6.0"></script>
+<script src="js/config.js?v=0.6.0"></script>
+<script src="js/base.js?v=0.6.0"></script>
 <script>
 "use strict";
 /* Mission Maths — écrans, navigation, synchro. Issu de Mission Logique v0.1.1 (synchro, espace parent à code, panneaux dépliables).
    Lot 1 bis : site statique (GitHub Pages), base Firebase, appairage par clé de famille (lien élève, lien parent).
    Lot 2 : paliers P0 à P4, échelle d'aide (D37 à D40), examen de palier, remédiation, diagnostic, cadre d'attention.
    Lot 3 : palier P5 (second degré) : a, b, c en trois cases, Δ, nombre de solutions, √Δ, x₁ et x₂, jugés à partir de SES valeurs. */
-const APP_VERSION = "0.5.3";
+const APP_VERSION = "0.6.0";
 const RACINE = "suivi/app";                         // sous familles/<clé>/ : espace commun aux appareils de la famille
 const PIN_DEFAUT = "48a126798de6eb4e6312ca9a21493040ae7526d622e7d4a94baf1415000b528a";
 const E = MM.expr, T = MM.etapes, D = MM.diag, GEN = MM.gen, P = MM.progression, R = MM.rapport, O = MM.outils, L = MM.lecon;
-const N = MM.nombres, A = MM.aide, PA = MM.parcours, S2 = MM.second, GEO = MM.geo;
+const N = MM.nombres, A = MM.aide, PA = MM.parcours, S2 = MM.second, GEO = MM.geo, AFF = MM.affine, REP = MM.repere;
 /* Lot express : la géométrie (G1 à G6) a la même interface que P5 ; le moteur se choisit selon l'exercice. */
-const moteurDe = exo => exo && exo.type === "geo" ? GEO : S2;
+const moteurDe = exo => exo && exo.type === "geo" ? GEO : exo && exo.type === "affine" ? AFF : S2;
 const MOT = () => moteurDe(Q && Q.exo);
 
 const SEMI = ["reduit", "solution"];
@@ -512,19 +530,19 @@ function retour() {
 }
 function plier(ouvrir) { document.querySelectorAll("#app details.panel, #app details.pas").forEach(d => { d.open = ouvrir; }); }
 function suivrePanneaux() { document.querySelectorAll("#app details.panel").forEach(d => d.addEventListener("toggle", () => { d.open ? ouverts.add(d.dataset.k) : ouverts.delete(d.dataset.k); })); }
-/* Le palier sur lequel il travaille, parmi ceux livrés (P0 à P5). */
+/* Le palier sur lequel il travaille, parmi ceux livrés (P0 à P7). */
 function palierCourant() { const id = P.palierActuel(prog()); return PA.LIVRES.includes(id) ? id : null; }
 function sectionSuivante() {
   const id = palierCourant();
-  if (!id) { toast("P0 à P5 sont validés. Les graphiques (P6) arrivent au prochain lot."); return; }
+  if (!id) { toast("P0 à P7 sont validés. La suite arrive au prochain lot."); return; }
   const s = PA.sectionSuivante(id, prog()[id]);
   if (!s) { toast("Rien de nouveau ici pour l'instant."); return; }
   lancer(id, s);
 }
-/* D81-D82 (Kevin, 25/11) : P1 à P5 ouverts d'office jusqu'au contrôle du 29/11 inclus, même si le palier d'avant n'est pas validé.
+/* D81-D82-D85 (Kevin, 25/11) : séries de P1 à P7 ouvertes d'office jusqu'au contrôle du 29/11 inclus (règle dans js/parcours.js).
    Le statut des paliers ne change pas : les séries faites restent cochées ; après le 29/11, la progression normale reprend. */
-const OUVERT_JUSQUA = { P1: "2026-11-29", P2: "2026-11-29", P3: "2026-11-29", P4: "2026-11-29", P5: "2026-11-29" };
-const ouvertDoffice = id => !!OUVERT_JUSQUA[id] && new Date().toISOString().slice(0, 10) <= OUVERT_JUSQUA[id];
+const jourLocal = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const ouvertDoffice = id => PA.ouvertDoffice(id, jourLocal());
 function lancer(palier, section) {
   if (/^G\d$/.test(palier)) return section === "methode" ? ouvrirMethode(palier) : lancerSerie(palier, section, PA.CONTENU[palier][section]);   // révision du 29/11 : ouverte d'office
   const p = PA.completerPalier(prog()[palier]);
@@ -532,8 +550,8 @@ function lancer(palier, section) {
     if (p.statut === "valide") { toast("Le test diagnostic est déjà fait."); return; }
     return lancerSerie(palier, "diagnostic", PA.CONTENU.P0.diagnostic);
   }
+  if (section === "lecon" && PA.leconOuverte(palier)) return ouvrirLecon(palier, PA.CONTENU[palier].lecon);     // D85 : une leçon s'ouvre toujours
   if (p.statut === "verrouille" && !ouvertDoffice(palier)) { toast("Ce palier s'ouvre quand le précédent est validé."); return; }
-  if (section === "lecon") return ouvrirLecon(palier, PA.CONTENU[palier].lecon);
   if (section === "remedLecon") return ouvrirRemediation(palier);
   if (section === "remed") return lancerSerie(palier, "remed", PA.specsRemediation(palier, p.remediation ? p.remediation.codes : []));
   if (section === "examen") {
@@ -562,8 +580,12 @@ const DETAIL = {
   P2: { guide: "4 exercices · chaque étape vérifiée", semi: "4 exercices · le résultat réduit", seul: "4 exercices · tu écris ta démarche", examen: "10 exercices · 80 % pour passer" },
   P3: { guide: "4 équations · chaque étape vérifiée", semi: "4 équations · 2 étapes demandées", seul: "4 équations · tu écris ta démarche", examen: "10 équations · 80 % pour passer" },
   P4: { guide: "3 équations · avec la vérification", semi: "3 équations · 2 étapes demandées", seul: "3 équations · tu écris ta démarche", examen: "10 équations · pause possible entre deux" },
-  P5: { guide: "a, b, c · puis Δ · puis une équation entière", semi: "3 équations · Δ, puis les solutions", seul: "3 équations · étapes sans aide, corrigé à la fin", examen: "5 équations · 80 % pour passer" }
+  P5: { guide: "a, b, c · puis Δ · puis une équation entière", semi: "3 équations · Δ, puis les solutions", seul: "3 équations · étapes sans aide, corrigé à la fin", examen: "5 équations · 80 % pour passer" },
+  P6: { guide: "6 points · lire, puis placer au doigt", semi: "4 points · le point directement", seul: "6 points · sans aide, corrigé à la fin", examen: "5 points à placer, 5 à lire · 80 % pour passer" },
+  P7: { guide: "5 droites · m, b, l'axe, le sens · tracer", semi: "4 droites · une à tracer", seul: "4 droites · sans aide, corrigé à la fin", examen: "le tableau de l'ex. 3a · 80 % pour passer" }
 };
+/* P8, P10, P11 (lot 4a) : la leçon seule ; en attendant leurs séries, la révision du 29/11 entraîne la même chose. */
+const ENTRAINE = { P8: "G4 (axes) et G3 (pente)", P10: "G3 (pente et équation)", P11: "G1 (distance) et G2 (milieu)" };
 function detailSection(palier, s, p) {
   if (s.id === "lecon") return (LECONS_TITRES[PA.CONTENU[palier].lecon] || "Leçon courte") + " · 4 min";
   if (s.id === "remedLecon") return "Sur : " + (p.remediation.codes.length ? p.remediation.codes.map(c => D.CATALOGUE[c].nom.toLowerCase()).join(", ") : "reprendre pas à pas");
@@ -584,7 +606,16 @@ function renderAccueil() {
     return `<details class="panel${id === cour ? " encours" : ""}" data-k="${id}"${ouverts.has(id) ? " open" : ""}>
       <summary><h2><span class="pid">${id}</span>${esc(meta.nom)}</h2>${score}${p.statut === "verrouille" && ouvertDoffice(id) ? '<span class="tag essai">Ouvert</span>' : TAG_STATUT[p.statut] || ""}</summary>
       <p class="sub">${esc(meta.resume)}</p>
-      ${p.statut === "verrouille" && !ouvertDoffice(id) ? '<p class="note">S\'ouvre quand le palier d\'avant est validé.</p>' : `${p.statut === "verrouille" ? '<p class="note">Ouvert pour le contrôle du 29/11.</p>' : ""}<div class="parcours">${secs.map((s, i) => etape(s, i + 1)).join("")}</div>`}</details>`;
+      ${p.statut === "verrouille" && !ouvertDoffice(id) ? (PA.leconOuverte(id) ? `<div class="parcours">${etape(secs[0], 1)}</div><p class="note">La leçon est ouverte. Les séries s'ouvrent quand le palier d'avant est validé.</p>` : '<p class="note">S\'ouvre quand le palier d\'avant est validé.</p>')
+        : `${p.statut === "verrouille" ? '<p class="note">Ouvert pour le contrôle du 29/11.</p>' : ""}<div class="parcours">${secs.map((s, i) => etape(s, i + 1)).join("")}</div>`}</details>`;
+  };
+  const palierLecon = q => {
+    const p = PA.completerPalier(pr[q.id]), s = { id: "lecon", fait: !!p.fait.lecon, ouvert: true };
+    return `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}>
+      <summary><h2><span class="pid">${q.id}</span>${esc(q.nom)}</h2>${p.fait.lecon ? '<span class="tag fait">Leçon lue</span>' : '<span class="tag essai">Leçon</span>'}</summary>
+      <p class="sub">${esc(q.resume)}</p>
+      <div class="parcours"><button class="etape" onclick="lancer('${q.id}','lecon')"><span class="num">1</span><span class="txt"><strong>Leçon</strong><small>${esc(detailSection(q.id, s, p))}</small></span>${s.fait ? '<span class="tag fait">Fait</span>' : ""}</button></div>
+      <p class="note">Séries et examen : après le contrôle. En attendant, entraîne-toi avec ${esc(ENTRAINE[q.id])} dans la révision.</p></details>`;
   };
   const bientot = q => `<details class="panel" data-k="${q.id}"${ouverts.has(q.id) ? " open" : ""}>
       <summary><h2><span class="pid">${q.id === "FINAL" ? "Final" : q.id}</span>${esc(q.nom)}</h2><span class="tag soon">Bientôt</span></summary>
@@ -603,18 +634,18 @@ function renderAccueil() {
   const textes = LS.lire("mm.fiches") || {}, fiches = fichesVues().map(id => textes[id]).filter(Boolean);
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>Salut${S.eleve.nom ? " " + esc(S.eleve.nom) : ""}</h1>${pastille()}</div>
-    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève. P0 à P5 sont ouverts pour tester.</p>' : ""}
+    ${enEssai() ? '<p class="note">Appareil parent : tes essais ne changent pas la progression de l\'élève. P0 à P7 sont ouverts pour tester.</p>' : ""}
     ${j != null ? `<p class="compte">Prochain contrôle ${j === 0 ? "<strong>aujourd'hui</strong>" : `dans <strong>${j}</strong> jour${j > 1 ? "s" : ""}`}.</p>` : ""}
     ${refuse ? '<p class="compte">Tes exercices restent sur cet appareil : demande à ton parent de te renvoyer ton lien.</p>' : ""}
     <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
     ${revision()}
-    ${P.PALIERS.map(q => PA.LIVRES.includes(q.id) ? palierLivre(q.id) : bientot(q)).join("")}
+    ${P.PALIERS.map(q => PA.LIVRES.includes(q.id) ? palierLivre(q.id) : PA.LECONS_SEULES.includes(q.id) ? palierLecon(q) : bientot(q)).join("")}
     <details class="panel" data-k="memo"${ouverts.has("memo") ? " open" : ""}>
       <summary><h2>Mémo</h2><span class="tag soon">${pluriel(fiches.length, "fiche")}</span></summary>
       ${fiches.length ? `<ul class="fiches">${fiches.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : '<p class="sub">Chaque leçon terminée ajoute ici sa fiche réflexe.</p>'}
     </details>
     <button class="linkbtn" onclick="ouvrirParent()">Espace parent</button>
-    <p class="note">Mission Maths ${APP_VERSION} · lot express : révision du contrôle du 29/11 (G1 à G6), paliers P0 à P5.</p></div>`;
+    <p class="note">Mission Maths ${APP_VERSION} · lot 4a : repère, P6 et P7, leçons de P8, P10 et P11 ; révision du contrôle du 29/11 (G1 à G7).</p></div>`;
   suivrePanneaux();
 }
 
@@ -735,7 +766,7 @@ function renderLecon() {
     <div class="top"><h1>${esc(l.titre)}</h1><span class="pill">${l.remed ? "Mini-leçon" : "Leçon"} · ${l.duree} min</span></div>
     <section class="bloc"><h2><span class="num">1</span>L'idée</h2><p class="idee">${esc(l.idee)}</p></section>
     <section class="bloc"><h2><span class="num">2</span>Un exemple, pas à pas</h2>
-      <p class="sub">${esc(l.exemple.consigne)}</p><div class="mscroll">${maths(l.exemple.enonce)}</div>
+      <p class="sub">${esc(l.exemple.consigne)}</p><div class="mscroll">${maths(l.exemple.enonce)}</div>${l.exemple.figure ? REP.svg(Object.assign({ titre: "Repère de l'exemple" }, l.exemple.figure)) : ""}
       <div class="row"><button class="btn ghost small" onclick="plier(true)">Tout déplier</button><button class="btn ghost small" onclick="plier(false)">Tout replier</button></div>
       <div class="pas-a-pas">${l.exemple.lignes.map((p, i) => `<details class="pas"><summary>Étape ${i + 1} · ${esc(p.nom)}</summary><div class="mscroll">${maths(p.ligne)}</div><p class="sub">${esc(p.pourquoi)}</p></details>`).join("")}</div>
     </section>
@@ -781,6 +812,7 @@ function entrerEtape() {
   const et = Q.etapes[Q.k];
   if (et && et.p5) {
     if (et.id === "coefs") { Q.prev = null; if (!(Q.trous && Q.trous.coefs) && Q.mode !== "diag") Q.trous = casesCoefs(); return; }
+    if (et.aff) { Q.prev = null; return; }                                    // lot 4a : chaque étape est une seule réponse
     if (et.geo) { Q.prev = GEO.lireDepart(et, Q.p5, Q.exo); return; }
     const d = S2.departEtape(et, Q.p5); Q.prev = d == null ? null : E.arbre(d); return;
   }
@@ -790,7 +822,7 @@ function ouvrirExo(repr) {
   const sp = X.exos[X.i];
   let exo; try { exo = GEN.creer(sp.gen, sp.niveau, sp.graine); } catch (e) { toast("Exercice indisponible."); return aller("accueil"); }
   // P5, série seul : étapes nommées, sans aide ni correction avant la fin, puis la démarche modèle (D56)
-  const p5 = exo.type === "second" || exo.type === "geo", seulP5 = p5 && X.mode === "seul" && !sp.jumeau, M5 = moteurDe(exo);
+  const p5 = exo.type === "second" || exo.type === "geo" || exo.type === "affine", seulP5 = p5 && X.mode === "seul" && !sp.jumeau, M5 = moteurDe(exo);
   const m = sp.jumeau || seulP5 ? "controle" : X.mode, modeP5 = m === "guide" || m === "semi" ? m : "complet";
   let etapes = exo.etapes;
   if (p5) etapes = M5.etapes(exo, modeP5, M5.etatInitial(exo));
@@ -884,9 +916,32 @@ function fbHTML() {
 }
 function corrigeHTML(ouvert) {
   return `<details class="panel"${ouvert ? " open" : ""}><summary><h2>Démarche modèle à recopier</h2></summary>
-    <div class="modele">${Q.exo.corrige.map(p => `<div class="pas"><div class="mscroll">${maths(p.ligne)}</div><small>${esc(p.pourquoi)}</small></div>`).join("")}</div></details>`;
+    <div class="modele">${Q.exo.corrige.map(p => `<div class="pas"><div class="mscroll">${maths(p.ligne)}</div><small>${esc(p.pourquoi)}</small></div>`).join("")}</div>
+    ${Q.exo.figureCorrige ? REP.svg(Object.assign({ titre: "Le repère corrigé" }, Q.exo.figureCorrige)) : ""}</details>`;
 }
+/* Lot 4a : placer un point (le repère à toucher, D90) ou choisir le sens de variation (3 boutons, D89). */
+const etapeActive = () => Q && !Q.fini ? Q.etapes[Q.k] : null;
+const sansClavier = et => !!et && (et.type === "placer" || et.type === "choix");
+function repereActif() {
+  const et = etapeActive(), deja = [];
+  if (et && et.id === "t2" && Q.p5 && Q.p5.v && Q.p5.v.t1) deja.push({ nom: "", x: Number(Q.p5.v.t1[0]), y: Number(Q.p5.v.t1[1]), cls: "sien" });
+  const nom = et && et.id === "pl" ? Q.exo.nom : "";
+  return REP.svg({ points: deja, candidat: Q.candidat ? { nom, x: Q.candidat.x, y: Q.candidat.y } : null, interactif: true, titre: "Repère : touche pour placer le point" });
+}
+function brancherRepere() {
+  const r = document.querySelector("svg[data-repere]"); if (!r) return;
+  r.addEventListener("pointerdown", ev => {
+    ev.preventDefault(); activite();
+    const b = r.getBoundingClientRect(); if (!b.width) return;
+    Q.candidat = REP.accroche((ev.clientX - b.left) / b.width * REP.VUE, (ev.clientY - b.top) / b.height * REP.VUE);
+    r.outerHTML = repereActif(); brancherRepere();
+  });
+}
+function choisir(mot) { if (!Q || Q.fini) return; Q.choixMot = mot; validerLigne(); }
 function champHTML(cv) {
+  const et0 = etapeActive();
+  if (et0 && et0.type === "placer") return `<div class="placer">${repereActif()}<button class="btn" onclick="validerLigne()">Valider</button></div>`;
+  if (et0 && et0.type === "choix") return `<div class="choix" role="group" aria-label="Sens de variation">${(et0.choix || []).map(m => `<button class="btn ghost" onclick="choisir('${m}')">${esc(m)}</button>`).join("")}</div>`;
   if (Q.trous) return `<div class="trous m" id="trous">${Q.trous.jetons.map(j => j.fixe != null ? `<span class="c">${esc(j.fixe)}</span>`
     : `<input class="trou${(Q.trous.fautes || []).includes(j.trou) ? " ko" : ""}" data-i="${j.trou}" data-sorte="${j.sorte}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${j.label ? "Valeur de " + j.label : "Case " + (j.trou + 1) + (j.sorte === "signe" ? " : un signe" : "")}"${cv && tactile ? ' inputmode="none"' : ""} size="${j.sorte === "signe" ? 1 : 4}" value="${esc((Q.trous.valeurs || [])[j.trou] || "")}">`).join("")}</div>
     ${cv ? "" : '<button class="btn small" onclick="validerLigne()">Valider</button>'}`;
@@ -902,9 +957,9 @@ function barreBloc() {
 }
 function renderExo() {
   montrer("focus"); majBarre();
-  const exo = Q.exo, n = X.exos.length, cv = clavierVisible(), sp = X.exos[X.i];
+  const exo = Q.exo, n = X.exos.length, sp = X.exos[X.i], cv = clavierVisible() && !sansClavier(etapeActive());
   const dots = X.exos.map((_, k) => `<span class="dot ${k < X.i ? "done" : k === X.i ? "now" : ""}"></span>`).join("");
-  const outils = (avecIndice) => `<div class="outils">${avecIndice ? '<button class="linkbtn" onclick="indice()">Un indice</button>' : ""}${tactile ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div>`;
+  const outils = (avecIndice) => `<div class="outils">${avecIndice ? '<button class="linkbtn" onclick="indice()">Un indice</button>' : ""}${tactile || sansClavier(etapeActive()) ? "" : `<button class="linkbtn" onclick="basculerClavier()">${clavierPC ? "Masquer le clavier maths" : "Afficher le clavier maths"}</button>`}</div>`;
   let corps = "";
   if (Q.mode === "guide" || Q.mode === "semi" || Q.mode === "controle") {
     const ctl = Q.mode === "controle";
@@ -931,10 +986,10 @@ function renderExo() {
   const titre = sp.jumeau ? "Exercice jumeau · sans aide" : (X.section === "lecon" ? "À toi" : PA.NOMS[X.section] || "À toi") + " · " + (X.section === "diagnostic" ? "question " : "exercice ") + (X.i + 1) + " sur " + n;
   $("#focus").innerHTML = `
     <div class="xtete"><span class="titre">${esc(titre)}</span>${barreBloc()}<div class="dots" aria-hidden="true">${dots}</div></div>
-    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div>${exo.formules && Q.mode !== "diag" ? `<div class="formules">${esc(typeof exo.formules === "string" ? exo.formules : "Δ = b² − 4ac · x = (−b ± √Δ) ÷ 2a")}</div>` : ""}</div></div>
+    <div class="enonce${cv && !Q.fini ? " compact" : ""}"><div class="in"><div class="cons">${esc(exo.consigne)}</div><div class="mscroll">${maths(exo.enonce)}</div>${exo.figure ? `<div class="figure">${REP.svg(Object.assign({ titre: "Repère avec le point " + (exo.nom || "") }, exo.figure))}</div>` : ""}${exo.formules && Q.mode !== "diag" ? `<div class="formules">${esc(typeof exo.formules === "string" ? exo.formules : "Δ = b² − 4ac · x = (−b ± √Δ) ÷ 2a")}</div>` : ""}</div></div>
     <div id="lignes"><div class="in">${corps}<div id="fb" aria-live="polite">${Q.fini ? "" : fbHTML()}</div>${fin}</div></div>
     ${cv && !Q.fini ? clavierHTML() : ""}`;
-  brancherClavier();
+  brancherClavier(); brancherRepere();
   const c = $("#champ");
   if (c) {
     c.value = Q.brouillon || "";
@@ -956,7 +1011,7 @@ function cadrer(versBas) {
   const z = $("#lignes"); if (!z) return;
   if (Q.fini) { z.scrollTop = 0; const s = $("#suite"); if (s) s.scrollIntoView({ block: "nearest" }); return; }
   const a = $("#active"); if (!a) return;
-  const avant = a.previousElementSibling;
+  const avant = Q.exo && Q.exo.figure ? null : a.previousElementSibling;      // une figure dans l'énoncé : la ligne active tout en haut
   z.scrollTop = Math.max(0, (avant || a).offsetTop - z.offsetTop - 8);
   if (versBas) { const f = $("#fb"); if (f && f.firstElementChild) f.firstElementChild.scrollIntoView({ block: "nearest" }); }
 }
@@ -986,7 +1041,13 @@ const BRAVO = {
   droite: ["Équation juste : y = mx + b.", "Bonne droite, bien réduite."],
   axeY: ["x = 0 : bien vu.", "Point sur l'axe des ordonnées trouvé."],
   axeX: ["y = 0, équation résolue.", "Point sur l'axe des abscisses trouvé."],
-  pyth: ["Pythagore bien posé.", "Hypoténuse bien repérée."]
+  pyth: ["Pythagore bien posé.", "Hypoténuse bien repérée."],
+  abscisse: ["Bonne rue : x est juste.", "Abscisse juste, signe compris."], ordonnee: ["Bon étage : y est juste.", "Ordonnée juste, signe compris."],
+  point: ["x d'abord, puis y : le bon ordre.", "Point bien écrit, dans le bon ordre."], placer: ["Point au bon endroit.", "Bien placé : la rue, puis l'étage."],
+  reecrire: ["Bien réécrit : le terme en x d'abord.", "Même droite, dans le bon ordre."], m: ["Bonne pente, signe compris.", "m juste : le nombre collé au x."],
+  b: ["b juste, avec son signe.", "Bon départ : b garde son signe."], oy: ["x = 0 sur cet axe : bien vu.", "Bon point sur l'axe des ordonnées."],
+  variation: ["Le signe de m a parlé : bon sens.", "Bonne lecture de la pente."], equation: ["Équation juste : m devant x, b seul.", "Bonne droite."],
+  t1: ["Bon départ, sur l'axe vertical.", "Point de départ bien placé."], t2: ["2e point sur la droite : bien tracé.", "La pente est respectée."]
 };
 let tourBravo = 0;
 function bravo(id, avant) {
@@ -1015,6 +1076,10 @@ function validerLigne() {
     const a = A.assembler(Q.trous.jetons, Q.trous.valeurs || []);
     if (a.incomplet) { Q.fb = { t: "lecture", message: "Remplis chaque case avant de valider." }; return majFb(); }
     texte = a.texte;
+  } else if (sansClavier(etapeActive()) && Q.mode !== "seul" && Q.mode !== "diag") {
+    const et0 = etapeActive();
+    if (et0.type === "placer") { if (!Q.candidat) { Q.fb = { t: "lecture", message: "Touche le repère pour placer le point, puis valide." }; return majFb(); } texte = "(" + Q.candidat.x + " ; " + Q.candidat.y + ")"; }
+    else { if (!Q.choixMot) return; texte = Q.choixMot; Q.choixMot = null; }
   } else { const c = $("#champ"); if (!c) return; texte = c.value; Q.brouillon = texte; }
   activite();
   if (Q.mode === "seul") return ligneLibre(texte);
@@ -1060,7 +1125,7 @@ function validerLigne() {
 function accepter(et, v, type, niv, avant) {
   Q.acceptees.push({ etape: et.id, nom: et.nom, texte: v.ecrit, niveau: niv });
   Q.prev = ligneDe(v, type);
-  Object.assign(Q, { essais: 0, indice: false, trous: null, recopie: null, codePrec: null, brouillon: "" });
+  Object.assign(Q, { essais: 0, indice: false, trous: null, recopie: null, codePrec: null, brouillon: "", candidat: null });
   if (et.p5) {
     // P5 : SES valeurs deviennent l'état, le chemin peut changer (Δ = 0, Δ < 0), l'étape suivante part de la formule remplacée
     const direct = et.multi && Q.acceptees.filter(a => a.etape === et.id).length === 1;
@@ -1101,12 +1166,16 @@ function aideCoefs(v, marche) {
 /* Lot express, √ et droite (D74) : pas de terme à entourer. Marches 1 et 2 : l'explication, puis l'autre façon de voir ;
    marche 3 : la même, avec l'indice de l'étape ; marche 4 : la ligne attendue à recopier, puis un exercice jumeau. */
 function aideSimple(et, v, marche) {
-  if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: "Ce n'est pas tout à fait la ligne. Recopie-la exactement, puis valide." };
+  if (Q.recopie) Q.fb = { t: "recopie", attendu: Q.recopie, message: et.type === "placer" ? "Ce n'est pas tout à fait ce point. Place-le exactement, puis valide." : et.type === "choix" ? "Choisis exactement ce mot." : "Ce n'est pas tout à fait la ligne. Recopie-la exactement, puis valide." };
   else if (marche <= 3) {
     const va = marche === 1 ? A.variante(Q.essais, v.code || null, Q.codePrec) : 2, x = Object.assign({}, A.expliquer(et.type, v.diag, va));
     if (marche === 3) x.suite = "Indice : " + et.indice;
     Q.fb = { t: "faux", x, variante: va };
-  } else { Q.recopie = v.attendu; Q.brouillon = ""; Q.fb = { t: "recopie", attendu: Q.recopie }; }
+  } else {
+    Q.recopie = v.attendu; Q.brouillon = "";
+    Q.fb = { t: "recopie", attendu: Q.recopie, message: et.type === "placer" ? "Place ce point dans le repère, puis valide. Un exercice jumeau t'attend juste après."
+      : et.type === "choix" ? "Choisis ce mot. Un exercice jumeau t'attend juste après." : undefined };
+  }
   Q.codePrec = v.code || null;
   sauverReprise();
   if (marche >= 4) return renderExo();
@@ -1120,7 +1189,7 @@ function ligneControleP5(entree) {
   const v = MOT().pas(Q, entree);
   if (!v) return;
   if (v.statut === "illisible") { Q.fb = { t: "lecture", message: v.message }; return majFb(); }
-  Q.brouillon = ""; Q.fb = null;
+  Q.brouillon = ""; Q.fb = null; Q.candidat = null;
   const et = Q.etapes[Q.k];
   if (!et || et.id !== "coefs") Q.trous = null;
   if (Q.fini || Q.k >= Q.etapes.length) return finExo();
@@ -1220,7 +1289,7 @@ function finExo() {
     else if (nbErreurs === 1) bilan = { cls: "faux", titre: "Une seule erreur, à la ligne " + (r.premiereErreur + 1) + ".", texte: "Le reste est juste à partir de ta ligne. Résultat attendu : " + exo.reponseTexte + "." };
     else bilan = { cls: "faux", titre: nbErreurs > 1 ? nbErreurs + " lignes à revoir." : "Ce n'est pas le bon résultat.", texte: "Résultat attendu : " + exo.reponseTexte + "." };
   } else if (Q.mode === "controle") {
-    if (Q.type === "second" || Q.type === "geo") { const sc = MOT().score(Q.journal, Q.etapes); points = sc.points; total = sc.total; }       // 1 point par étape de SON chemin (D54)
+    if (Q.type === "second" || Q.type === "geo" || Q.type === "affine") { const sc = MOT().score(Q.journal, Q.etapes); points = sc.points; total = sc.total; }       // 1 point par étape de SON chemin (D54)
     else { points = Q.journal.filter(l => l.juste).length; total = Q.etapes.length; }
     resultatJuste = points === total;
     if (Q.seulP5) bilan = resultatJuste ? { cls: "bon", titre: "Tout juste, sans aide.", texte: "Sur ta copie, écris chaque ligne comme ici." }
@@ -1240,12 +1309,12 @@ function finExo() {
   const niveaux = Q.journal.filter(l => l.niveau != null).map(l => l.niveau);
   const premier = Q.journal.find(l => l.juste === false && l.code);
   const aide = niveaux.some(n => n > 0);
-  const tent = { id: O.uid("t"), sid: SEANCE.id, t: Date.now(), palier: X.palier, section: X.section, generateur: exo.gen, niveau: exo.niveau, graine: exo.graine, enonce: exo.enonce,
+  const tent = { id: O.uid("t"), sid: SEANCE.id, t: Date.now(), palier: X.palier, section: X.section, generateur: exo.gen, niveau: exo.niveau, graine: exo.graine, enonce: exo.enonceRapport || exo.enonce,
     mode: Q.mode, jumeau: !!sp.jumeau, lignes: clone(Q.journal), juste: !nbErreurs && !aide && resultatJuste, resultatJuste, codeErreur: premier ? premier.code : null, nbErreurs,
     aideMax: niveaux.length ? Math.max(...niveaux) : 0, points, total, tempsMs: Math.max(0, SEANCE.dureeActive - Q.actif0), aideUtilisee: aide, parent: estParent() };
   FILE.ajouter({ id: O.uid("w"), type: "set", chemin: RACINE + "/tentatives/" + tent.id, donnees: tent });
   SEANCE.nbQuestions++; SEANCE.palier = X.palier; LS.ecrire(LF("seance"), SEANCE); envoyerSeance();
-  X.resultats.push({ enonce: exo.enonce, nbErreurs, juste: tent.juste, resultatJuste, aide, niveaux, jumeau: !!sp.jumeau, points, total, notion: sp.notion || null,
+  X.resultats.push({ enonce: exo.enonceRapport || exo.enonce, nbErreurs, juste: tent.juste, resultatJuste, aide, niveaux, jumeau: !!sp.jumeau, points, total, notion: sp.notion || null,
     codes: [...new Set(Q.journal.filter(l => l.code).map(l => l.code))], lignes: X.section === "examen" ? clone(Q.journal) : [], tempsMs: tent.tempsMs });
   // erreur 5 sur une ligne : l'exercice jumeau (même générateur, autres nombres) arrive juste après, sans aide (D42)
   if (Q.jumeau && (Q.mode === "guide" || Q.mode === "semi") && !sp.jumeau) X.exos.splice(X.i + 1, 0, { gen: exo.gen, niveau: exo.niveau, graine: O.nouvelleGraine(), jumeau: true });
@@ -1454,7 +1523,7 @@ function renderParent() {
   const etapesFaites = (id, p) => PA.sections(id, p).filter(x => x.fait).map(x => PA.NOMS[x.id].toLowerCase()).join(", ");
   const paliers = `<div class="tablewrap"><table><thead><tr><th>Palier</th><th>Statut</th><th>Meilleur examen</th></tr></thead><tbody>
       ${P.PALIERS.map(q => { const p = PA.completerPalier(S.paliers[q.id]), livre = PA.LIVRES.includes(q.id);
-        return `<tr><td>${q.id === "FINAL" ? "Final" : q.id} · ${esc(q.nom)}</td><td>${esc(P.STATUTS[p.statut])}${p.parDiagnostic ? " (par le diagnostic)" : ""}${livre ? (etapesFaites(q.id, p) ? `<br><span class="note">Fait : ${esc(etapesFaites(q.id, p))}</span>` : "") + (p.remediation ? `<br><span class="note">Remédiation : ${esc(p.remediation.codes.map(c => D.CATALOGUE[c] ? D.CATALOGUE[c].nom : c).join(", ") || "pas à pas")}</span>` : "") : ' <span class="note">(contenu à venir)</span>'}</td><td>${p.meilleurExamen == null ? "—" : p.meilleurExamen + " %"}${p.examens ? `<br><span class="note">${pluriel(p.examens, "examen")}</span>` : ""}</td></tr>`; }).join("")}</tbody></table></div>`;
+        return `<tr><td>${q.id === "FINAL" ? "Final" : q.id} · ${esc(q.nom)}</td><td>${esc(P.STATUTS[p.statut])}${p.parDiagnostic ? " (par le diagnostic)" : ""}${PA.LECONS_SEULES.includes(q.id) && p.fait.lecon ? '<br><span class="note">Leçon lue</span>' : ""}${livre ? (etapesFaites(q.id, p) ? `<br><span class="note">Fait : ${esc(etapesFaites(q.id, p))}</span>` : "") + (p.remediation ? `<br><span class="note">Remédiation : ${esc(p.remediation.codes.map(c => D.CATALOGUE[c] ? D.CATALOGUE[c].nom : c).join(", ") || "pas à pas")}</span>` : "") : ' <span class="note">(contenu à venir)</span>'}</td><td>${p.meilleurExamen == null ? "—" : p.meilleurExamen + " %"}${p.examens ? `<br><span class="note">${pluriel(p.examens, "examen")}</span>` : ""}</td></tr>`; }).join("")}</tbody></table></div>`;
   const nAtt = FILE.taille(), nRej = FILE.rejets().length;
   $("#app").innerHTML = `<div class="wrap">
     <div class="top"><h1>Espace parent</h1>${pastille()}</div>
@@ -1517,7 +1586,7 @@ async function demarrerFamille(initial) {
   S = completer(S); LS.ecrire(LF("etat"), S);
   if (vue === "appairage" || vue === "pin") vue = "accueil";
   render();
-  Promise.all(PA.LIVRES.filter(id => PA.CONTENU[id].lecon).map(id => chargerLecon(PA.CONTENU[id].lecon).catch(() => null))).then(() => { if (vue === "accueil") render(); });
+  Promise.all(PA.LIVRES.concat(PA.LECONS_SEULES).filter(id => PA.CONTENU[id].lecon).map(id => chargerLecon(PA.CONTENU[id].lecon).catch(() => null))).then(() => { if (vue === "accueil") render(); });
   await initSync();
   if (vue === "accueil" || vue === "parent") render(); else majPastille();
 }

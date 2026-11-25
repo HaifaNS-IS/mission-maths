@@ -4,7 +4,7 @@
 (function (G) {
   "use strict";
   const MM = G.MM || (G.MM = {});
-  if (typeof require === "function") { if (!MM.gen) require("./gen/algebre.js"); if (!MM.nombres) require("./nombres.js"); }
+  if (typeof require === "function") { if (!MM.gen) require("./gen/algebre.js"); if (!MM.nombres) require("./nombres.js"); if (!MM.affine) require("./affine.js"); }
   const E = MM.expr, T = MM.etapes, D = MM.diag;
 
   const mots = p => (p.match(/[A-Za-zÀ-ÿ]{2,}/g) || []).length;
@@ -79,13 +79,14 @@
     const depart = MM.gen.depart(exo);
     let piege = null;
     if (l.piege && l.piege.code) {
-      const f = exo.type === "equation" ? piegeEquation : exo.type === "expression" ? piegeExpression : exo.type === "second" ? (d, c, p) => MM.second.piege(exo, c, p) : piegeNombre;
+      const f = exo.type === "equation" ? piegeEquation : exo.type === "expression" ? piegeExpression : exo.type === "second" ? (d, c, p) => MM.second.piege(exo, c, p)
+        : exo.type === "geo" ? (d, c, p) => MM.geo.piege(exo, c, p) : exo.type === "affine" ? (d, c, p) => MM.affine.piege(exo, c, p) : piegeNombre;
       piege = f(depart, l.piege.code, l.piege.parade);
       if (!piege) throw new Error("piège : l'erreur " + l.piege.code + " ne peut pas se produire sur l'exemple");
     }
     return {
       id: l.id, pack: pack.pack_id, palier: pack.palier, titre: l.titre, duree: l.duree_min || 4, idee: l.idee,
-      exemple: { consigne: exo.consigne, type: exo.type, enonce: exo.enonce, lignes: exo.corrige, reponse: exo.reponseTexte },
+      exemple: { consigne: exo.consigne, type: exo.type, enonce: exo.enonce, lignes: exo.corrige, reponse: exo.reponseTexte, figure: exo.figure || exo.illustration || null },
       piege, aToi: (l.a_toi || []).map(q => ({ gen: q.gen, niveau: q.niveau })), fiche: { id: l.fiche.id, texte: l.fiche.texte }
     };
   }

@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N11-A",
+  "categorie": "lecon",
+  "palier": "P11",
+  "niveau": 11,
+  "version": "1.0",
+  "source": "Mission Maths, lot 4a : leçon du palier P11",
+  "verifie_le": "2026-11-25",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "milieu-distance",
+    "titre": "Milieu et distance",
+    "duree_min": 5,
+    "idee": "Le milieu, c'est la moyenne ; la distance, c'est Pythagore dans le repère.",
+    "exemple": {
+      "gen": "mildist",
+      "niveau": 1,
+      "graine": 12
+    },
+    "piege": {
+      "code": "RAC-OUB",
+      "parade": "La formule commence par √ : finis toujours par la racine."
+    },
+    "a_toi": [
+      {
+        "gen": "mil",
+        "niveau": 1
+      },
+      {
+        "gen": "dist",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-RAC-OUB",
+      "texte": "La distance, c'est la racine du résultat."
+    }
+  },
+  "questions": []
+}

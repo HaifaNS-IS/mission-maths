@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N10-A",
+  "categorie": "lecon",
+  "palier": "P10",
+  "niveau": 10,
+  "version": "1.0",
+  "source": "Mission Maths, lot 4a : leçon du palier P10",
+  "verifie_le": "2026-11-25",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "equation-droite",
+    "titre": "L'équation d'une droite",
+    "duree_min": 5,
+    "idee": "Une pente et un point suffisent pour écrire l'équation d'une droite.",
+    "exemple": {
+      "gen": "pente",
+      "niveau": 1,
+      "graine": 95
+    },
+    "piege": {
+      "code": "SIG-PAR",
+      "parade": "Le moins de la parenthèse reste : il touche aussi le nombre multiplié."
+    },
+    "a_toi": [
+      {
+        "gen": "pseule",
+        "niveau": 1
+      },
+      {
+        "gen": "pente",
+        "niveau": 1
+      }
+    ],
+    "fiche": {
+      "id": "F-SIG-PAR",
+      "texte": "Le moins se colle à chaque terme de la parenthèse."
+    }
+  },
+  "questions": []
+}

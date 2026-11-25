@@ -7,7 +7,7 @@
 (function (G) {
   "use strict";
   const MM = G.MM || (G.MM = {});
-  if (typeof require === "function") { if (!MM.progression) require("./progression.js"); if (!MM.gen) require("./gen/algebre.js"); if (!MM.second) require("./gen/second.js"); }
+  if (typeof require === "function") { if (!MM.progression) require("./progression.js"); if (!MM.gen) require("./gen/algebre.js"); if (!MM.second) require("./gen/second.js"); if (!MM.affine || !MM.gen.def("lire")) require("./gen/affine.js"); }
   const P = MM.progression;
   const s = (gen, niveau) => ({ gen, niveau });
   const serie = (...l) => l.map(([g, n]) => s(g, n));
@@ -45,7 +45,23 @@
       guide: serie(["abc", 1], ["delta", 1], ["deg2", 1]),
       semi: serie(["deg2", 1], ["deg2", 2], ["deg2", 3]),
       seul: serie(["deg2", 1], ["deg2", 3], ["deg2", 2]),
-      examen: serie(["deg2", 1], ["deg2", 1], ["deg2", 2], ["deg2", 3], ["deg2", 1]) }
+      examen: serie(["deg2", 1], ["deg2", 1], ["deg2", 2], ["deg2", 3], ["deg2", 1]) },
+    /* Lot 4a : P6 et P7 complets ; examen P6 = 5 points à placer, 5 à lire (CDC) ; examen P7 = le tableau de l'ex. 3a
+       (2 lignes y = mx + b, une constante, une forme inversée, la ligne vide). */
+    P6: { lecon: "LECO-N06-A",
+      guide: serie(["lire", 1], ["placer", 1], ["lire", 2], ["placer", 2], ["lire", 3], ["placer", 3]),
+      semi: serie(["lire", 2], ["placer", 2], ["lire", 3], ["placer", 3]),
+      seul: serie(["lire", 2], ["placer", 2], ["lire", 3], ["placer", 3], ["lire", 2], ["placer", 2]),
+      examen: serie(["placer", 1], ["placer", 2], ["placer", 2], ["placer", 3], ["placer", 3], ["lire", 1], ["lire", 2], ["lire", 2], ["lire", 3], ["lire", 3]) },
+    P7: { lecon: "LECO-N07-A",
+      guide: serie(["ligne", 1], ["ligne", 2], ["ligne", 3], ["tracer", 1], ["eqmb", 1]),
+      semi: serie(["ligne", 1], ["ligne", 4], ["tracer", 2], ["eqmb", 1]),
+      seul: serie(["ligne", 2], ["ligne", 3], ["ligne", 4], ["eqmb", 1]),
+      examen: serie(["ligne", 1], ["ligne", 1], ["ligne", 3], ["ligne", 2], ["eqmb", 1]) },
+    /* Lot 4a (D83) : la leçon seule ; séries et examens au lot 4b (reprise de G1 à G5). */
+    P8: { lecon: "LECO-N08-A" },
+    P10: { lecon: "LECO-N10-A" },
+    P11: { lecon: "LECO-N11-A" }
   };
   /* Lot express (contrôle du 29/11, D69) : une révision G1 à G6 hors paliers, ouverte d'office, sans leçon ni examen.
      Chaque fiche : la méthode (formule + exercice de la prof corrigé), une série avec aide, une série sans aide (corrigé à la fin). */
@@ -60,7 +76,13 @@
     { id: "G7", nom: "Trigonométrie : sin, cos, tan", trigo: true }
   ];
   for (const g of REVISION) if (!g.trigo) CONTENU[g.id] = { guide: g.guide, seul: g.seul };
-  const LIVRES = ["P0", "P1", "P2", "P3", "P4", "P5"];
+  const LIVRES = ["P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7"];
+  const LECONS_SEULES = ["P8", "P10", "P11"];
+  /* D85 (Kevin, 25/11) : une leçon s'ouvre toujours, même palier fermé (lire ne valide rien). */
+  const leconOuverte = id => !!(CONTENU[id] && CONTENU[id].lecon);
+  /* D81-D82-D85 : séries de P1 à P7 ouvertes d'office jusqu'au contrôle du 29/11 inclus ; ensuite, la progression normale. */
+  const OUVERT_JUSQUA = { P1: "2026-11-29", P2: "2026-11-29", P3: "2026-11-29", P4: "2026-11-29", P5: "2026-11-29", P6: "2026-11-29", P7: "2026-11-29" };
+  const ouvertDoffice = (id, jour) => !!OUVERT_JUSQUA[id] && String(jour) <= OUVERT_JUSQUA[id];
   const SECTIONS = ["lecon", "guide", "semi", "seul", "examen"];
   const NOMS = { diagnostic: "Test diagnostic", lecon: "Leçon", guide: "Série guidée", semi: "Série semi-guidée", seul: "Série seul", examen: "Examen de palier",
     remedLecon: "Mini-leçon ciblée", remed: "Série de remédiation" };
@@ -77,6 +99,11 @@
     "DELTA-SQ": "b négatif : des parenthèses avant le carré, et −b change de signe.",
     "SOL-NB": "Avant la suite, dis à voix haute le signe de Δ.",
     "RAC-SQ": "Racine : cherche le nombre qui, fois lui-même, redonne Δ.",
+    "XY-INV": "Pose le doigt sur l'axe horizontal d'abord : c'est x.",
+    "M-MX": "Entoure le nombre collé au x, puis écris-le sans le x.",
+    "B-SIG": "Entoure le nombre seul avec le signe juste devant.",
+    "ORD-INV": "Avant de lire m, réécris l'équation : le terme en x d'abord.",
+    "M-ZERO": "Pas de x dans l'équation : la droite est plate.",
     "CALC": "Pose chaque calcul au brouillon, un à la fois."
   };
 
@@ -185,7 +212,7 @@
     return sans;
   }
 
-  MM.parcours = { CONTENU, REVISION, LIVRES, SECTIONS, NOMS, PARADES, completerPalier, sections, sectionSuivante, examenOuvert, codesDominants,
+  MM.parcours = { CONTENU, REVISION, LIVRES, LECONS_SEULES, OUVERT_JUSQUA, leconOuverte, ouvertDoffice, SECTIONS, NOMS, PARADES, completerPalier, sections, sectionSuivante, examenOuvert, codesDominants,
     apresExamenPalier, apresDiagnostic, specsRemediation, packRemediation };
   if (typeof module !== "undefined" && module.exports) module.exports = MM;
 })(typeof globalThis !== "undefined" ? globalThis : this);

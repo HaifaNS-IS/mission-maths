@@ -28,12 +28,12 @@
     /* Le nom et le réflexe s'affichent à l'élève dès la 1re erreur : ils ne donnent ni a = 1, ni la règle complète du signe de Δ (D50). */
     "SOL-NB":    { nom: "Nombre de solutions mal déduit de Δ", exemple: "Δ = −23 → deux solutions", reflexe: "Le signe de Δ décide du nombre de solutions.", actif: true, ajout: "2026-11-24" },
     "A-UN":      { nom: "Nombre caché devant x², lu comme 0", exemple: "x² − 13x + 30 = 0 → a = 0", reflexe: "Un x² seul cache un nombre, jamais 0.", actif: true, ajout: "2026-11-24" },
-    "M-MX":      { nom: "m confondu avec mx", exemple: "m = −3x", reflexe: "m est le nombre devant x, sans le x.", lot: 4 },
-    "B-SIG":     { nom: "b sans son signe", exemple: "y = −3x − 5 → b = 5", reflexe: "b garde son signe.", lot: 4 },
-    "ORD-INV":   { nom: "Forme inversée mal lue", exemple: "y = 6 − 5x → m = 6", reflexe: "On réécrit d'abord y = −5x + 6.", lot: 4 },
-    "M-ZERO":    { nom: "Fonction constante", exemple: "y = 8 → m = 8", reflexe: "Pas de x, donc m = 0.", lot: 4 },
-    "XY-INV":    { nom: "Coordonnées inversées", exemple: "(−1 ; 4) au lieu de (4 ; −1)", reflexe: "x d'abord : la rue, puis l'étage.", lot: 4 },
-    /* Lot express du 29/11 (géométrie, js/geo.js) : AXE-INV et PENTE-ORD détectés. */
+    "M-MX":      { nom: "m confondu avec mx", exemple: "m = −3x", reflexe: "m est le nombre devant x, sans le x.", actif: true, ajout: "2026-11-25" },
+    "B-SIG":     { nom: "b sans son signe", exemple: "y = −3x − 5 → b = 5", reflexe: "b garde son signe.", actif: true, ajout: "2026-11-25" },
+    "ORD-INV":   { nom: "Forme inversée mal lue", exemple: "y = 6 − 5x → m = 6", reflexe: "On réécrit d'abord y = −5x + 6.", actif: true, ajout: "2026-11-25" },
+    "M-ZERO":    { nom: "Fonction constante", exemple: "y = 8 → m = 8", reflexe: "Pas de x, donc m = 0.", actif: true, ajout: "2026-11-25" },
+    "XY-INV":    { nom: "Coordonnées inversées", exemple: "(−1 ; 4) au lieu de (4 ; −1)", reflexe: "x d'abord : la rue, puis l'étage.", actif: true, ajout: "2026-11-25" },
+    /* Lot 4a (js/affine.js) : M-MX, B-SIG, ORD-INV, M-ZERO et XY-INV détectés. Lot express du 29/11 (géométrie, js/geo.js) : AXE-INV et PENTE-ORD. */
     "AXE-INV":   { nom: "Mauvais axe pour l'intersection", exemple: "axe des ordonnées avec y = 0", reflexe: "Sur l'axe des ordonnées, x vaut 0.", actif: true },
     "PENTE-ORD": { nom: "Ordre des points mélangé", exemple: "(11 − 5) / (1 − 4)", reflexe: "Même point en premier en haut et en bas.", actif: true },
     "AIRE-2":    { nom: "Oubli du / 2", exemple: "aire = 24", reflexe: "Un triangle, c'est la moitié d'un rectangle.", lot: 4 },
@@ -42,7 +42,7 @@
     "HYPO":      { nom: "Hypoténuse mal repérée", exemple: "côté² = 10² + 6²", reflexe: "L'hypoténuse est en face de l'angle droit.", actif: true, ajout: "2026-11-25" }
   };
   /* À égalité, le code le plus précis l'emporte : une faute de signe sur une parenthèse est toujours SIG-PAR. */
-  const PRIORITE = ["SIG-PAR", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "SIG-REL", "A-UN", "ABC-SIG", "DELTA-SQ", "SOL-NB", "RAC-SQ", "HYPO", "PENTE-ORD", "AXE-INV", "RAC-OUB"];
+  const PRIORITE = ["SIG-PAR", "DIST-PART", "RED-MIX", "TRANS-SIG", "DIV-INV", "SIG-REL", "A-UN", "ABC-SIG", "DELTA-SQ", "SOL-NB", "RAC-SQ", "HYPO", "PENTE-ORD", "AXE-INV", "RAC-OUB", "XY-INV", "ORD-INV", "M-ZERO", "M-MX", "B-SIG"];
   /* Doublons de structure, pas des coïncidences : un signe retourné sur un produit de parenthèse est aussi une faute de signe,
      un terme qui change de côté sans changer de signe aussi. Le code précis garde la réponse, SIG-REL la lâche. */
   const STRUCTUREL = [["SIG-PAR", "SIG-REL"], ["TRANS-SIG", "SIG-REL"]];

@@ -1,0 +1,40 @@
+{
+  "pack_id": "LECO-N06-A",
+  "categorie": "lecon",
+  "palier": "P6",
+  "niveau": 6,
+  "version": "1.0",
+  "source": "Mission Maths, lot 4a : leçon du palier P6",
+  "verifie_le": "2026-11-25",
+  "statut": "vérifié (script)",
+  "lecon": {
+    "id": "repere-points",
+    "titre": "Repère et points : l'adresse d'un point",
+    "duree_min": 4,
+    "idee": "Un point, c'est une adresse : d'abord la rue x, puis l'étage y.",
+    "exemple": {
+      "gen": "lire",
+      "niveau": 2,
+      "graine": 15
+    },
+    "piege": {
+      "code": "XY-INV",
+      "parade": "Avant d'écrire, pose le doigt sur l'axe horizontal : c'est le premier nombre."
+    },
+    "a_toi": [
+      {
+        "gen": "lire",
+        "niveau": 1
+      },
+      {
+        "gen": "placer",
+        "niveau": 2
+      }
+    ],
+    "fiche": {
+      "id": "F-XY-INV",
+      "texte": "x d'abord : la rue, puis l'étage."
+    }
+  },
+  "questions": []
+}

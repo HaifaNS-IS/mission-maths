@@ -6,11 +6,11 @@ const E = MM.expr, T = MM.etapes, L = MM.lecon;
 const dossier = path.join(__dirname, "..", "lecons");
 const index = JSON.parse(fs.readFileSync(path.join(dossier, "index.json"), "utf8"));
 
-test("index des leçons : une leçon par palier P1 à P5, chaque fichier existe et porte le bon identifiant", () => {
-  egal(index.lecons.map(m => m.palier).join(), "P1,P2,P3,P4,P5");
+test("index des leçons : une leçon par palier P1 à P5 (P6 à P11 : 22-lecons-lot4), chaque fichier existe et porte le bon identifiant", () => {
+  egal(index.lecons.map(m => m.palier).slice(0, 5).join(), "P1,P2,P3,P4,P5");
   for (const m of index.lecons) { const p = JSON.parse(fs.readFileSync(path.join(__dirname, "..", m.fichier), "utf8")); egal(p.pack_id, m.pack_id); egal(p.palier, m.palier); egal(p.version, m.version); }
 });
-for (const m of index.lecons) {
+for (const m of index.lecons.filter(x => ["P1", "P2", "P3", "P4", "P5"].includes(x.palier))) {      // P6 à P11 (repère, géométrie) : 22-lecons-lot4
   const pack = JSON.parse(fs.readFileSync(path.join(__dirname, "..", m.fichier), "utf8"));
   test(m.pack_id + " : pack accepté par le validateur", () => { egal(L.valider(pack).join(" ; "), ""); });
   test(m.pack_id + " : exemple résolu juste, ligne après ligne", () => {

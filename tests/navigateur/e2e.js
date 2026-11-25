@@ -241,12 +241,12 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     vrai(!/Appareil parent/.test(await pe.textContent("#app")));
     egal(JSON.stringify(await pe.evaluate(() => JSON.parse(localStorage.getItem("mm.famille")))), JSON.stringify({ cle: CLE, role: "eleve" }));
   });
-  await verif("accueil : révision du 29/11 (7 fiches), 11 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
+  await verif("accueil : révision du 29/11 (7 fiches), 15 paliers + mémo repliés, seul le palier en cours (P0) ouvert", async () => {
     const etat = await pe.$$eval("#app details.panel", ds => ds.map(d => [d.dataset.k, d.open]));
-    egal(etat.length, 20); egal(etat.slice(0, 8).map(([k]) => k).join(), "rev,G1,G2,G3,G4,G5,G6,G7"); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
+    egal(etat.length, 24); egal(etat.slice(0, 8).map(([k]) => k).join(), "rev,G1,G2,G3,G4,G5,G6,G7"); egal(etat.filter(([, o]) => o).map(([k]) => k).join(), "P0");
   });
   await verif("Tout déplier puis Tout replier", async () => {
-    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 20);
+    await pe.getByRole("button", { name: "Tout déplier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 24);
     await pe.getByRole("button", { name: "Tout replier" }).tap(); egal(await pe.$$eval("#app details.panel", ds => ds.filter(d => d.open).length), 0);
     await pe.getByRole("button", { name: "Tout déplier" }).tap();
   });
@@ -723,10 +723,129 @@ const code = async (page, chiffres) => { for (const k of chiffres) await page.ge
     await pp.screenshot({ path: SHOTS + "/9-g7-trigo.png", fullPage: true });
     await pp.tap("#bRetour"); egal(await pp.evaluate(() => vue), "accueil");
   });
-  await verif("D81-D82 : P1 à P5 ouverts d'office chez l'élève jusqu'au 29/11 inclus, même verrouillé ; P6 reste fermé", async () => {
-    const avant = await pe.evaluate(() => new Date().toISOString().slice(0, 10) <= "2026-11-29");
-    for (const k of ["P1", "P2", "P3", "P4", "P5"]) egal(await pe.evaluate(id => ouvertDoffice(id), k), avant, k);
-    egal(await pe.evaluate(() => ouvertDoffice("P6")), false);
+  /* ================= lot 4a : repère, P6, P7, leçons de géométrie ================= */
+  const exoP = async (page, palier, sec, gen, niveau, graine) => { await page.evaluate(([p, s, g, n, k]) => { lancer(p, s); X.exos[0] = { gen: g, niveau: n, graine: k }; ouvrirExo(null); }, [palier, sec, gen, niveau, graine]); };
+  /* Toucher le nœud (x, y) du repère actif, comme au doigt. */
+  const toucher = async (page, x, y) => {
+    const b = await page.locator("svg[data-repere]").boundingBox();
+    const f = v => (16 + (v + 6) * 24) / 320;
+    await page.touchscreen.tap(b.x + f(x) * b.width, b.y + (1 - f(y)) * b.height);
+    await pause(60);
+  };
+  await verif("D85 : chez l'élève, la leçon P8 s'ouvre alors que P8 est fermé ; une 2e leçon nouvelle dans la même séance attend (règle gardée)", async () => {
+    await pe.evaluate(() => { SEANCE.leconNouvelle = null; aller("accueil"); });       // une séance qui commence
+    await ouvrirPalier(pe, "P8");
+    const t = await pe.textContent("details[data-k='P8']");
+    vrai(/Séries et examen : après le contrôle/.test(t) && /G4/.test(t), t);
+    await pe.locator("details[data-k='P8'] .etape", { hasText: "Leçon" }).tap();
+    await attendre(() => pe.evaluate(() => vue === "lecon"), 5000, "leçon P8");
+    egal(await pe.textContent("h1"), "Où la droite coupe les axes");
+    vrai(/\(0, 9\)/.test(await pe.textContent(".bloc.piege")), "piège AXE-INV : la bonne ligne (0, 9)");
+    vrai(await pasDeDefilementHorizontal(pe));
+    await pe.tap("#bRetour");
+    await ouvrirPalier(pe, "P10");
+    await pe.locator("details[data-k='P10'] .etape", { hasText: "Leçon" }).tap(); await pause(300);
+    egal(await pe.evaluate(() => vue), "accueil", "une 2e notion nouvelle dans la même séance");
+  });
+  await verif("leçon P6 : le repère de l'exemple dessiné avec le point, le piège XY-INV calculé, puis « À toi »", async () => {
+    await pp.evaluate(() => aller("accueil"));
+    await pp.evaluate(() => lancer("P6", "lecon"));
+    await attendre(() => pp.evaluate(() => vue === "lecon"), 5000, "leçon P6");
+    egal(await pp.locator("svg.repere").count(), 1);
+    vrai(/M\(−1, 3\)/.test(await pp.textContent(".bloc.piege")) && /M\(3, −1\)/.test(await pp.textContent(".bloc.piege")), await pp.textContent(".bloc.piege"));
+    await pp.screenshot({ path: SHOTS + "/10-lecon-p6.png", fullPage: true });
+    vrai(await pasDeDefilementHorizontal(pp)); egal((await petitsBoutons(pp)).join(" | "), "");
+  });
+  await verif("P6 guidé, lire : le point dessiné dans l'énoncé ; x, puis y, puis M(3, −1) au clavier maths ; énoncé et champ visibles", async () => {
+    await exoP(pp, "P6", "guide", "lire", 2, 15);
+    egal(await pp.evaluate(() => Q.etapes.map(e => e.id).join()), "x,y,pt");
+    egal(await pp.locator(".enonce svg.repere").count(), 1);
+    egal(await pp.textContent(".saisie .pre"), "x =");
+    await ligne(pp, "-1"); egal(await titreFb(pp), "Coordonnées inversées");
+    vrai(!/\b3\b/.test(await pp.textContent("#fb")), "valeur juste donnée");
+    await vider(pp); await ligne(pp, "3");
+    const b = await boites(pp); vrai(visible(b.enonce, b.hauteur) && visible(b.champ, b.hauteur), JSON.stringify(b));
+    const fig = await pp.evaluate(() => { const r = document.querySelector(".enonce svg.repere").getBoundingClientRect(); return { haut: r.top, bas: r.bottom }; });
+    vrai(b.champ.bas <= b.clavier.haut + 1 && b.champ.haut >= b.enonce.bas - 1, "champ caché par le clavier ou sous l'énoncé : " + JSON.stringify(b));
+    vrai(fig.bas <= b.enonce.bas + 1 && fig.bas - fig.haut >= 120, "figure trop petite ou coupée : " + JSON.stringify(fig));
+    await pp.screenshot({ path: SHOTS + "/10-p6-lire-clavier.png" });
+    await pp.setViewportSize({ width: 375, height: 667 }); await pp.evaluate(() => renderExo()); await pause(150);       // petit téléphone (iPhone SE)
+    const p = await boites(pp);
+    vrai(p.champ.bas <= p.clavier.haut + 1 && p.champ.haut >= p.enonce.bas - 1, "375 × 667 : champ caché : " + JSON.stringify(p));
+    await pp.screenshot({ path: SHOTS + "/10-p6-lire-petit.png" });
+    await pp.setViewportSize({ width: 380, height: 800 }); await pp.evaluate(() => renderExo());
+    await ligne(pp, "-1"); await ligne(pp, "(3;-1)");
+    vrai(await pp.evaluate(() => Q.fini), "point refusé");
+    await pp.screenshot({ path: SHOTS + "/10-p6-lire.png" });
+  });
+  await verif("P6, placer au toucher (D90) : pas de clavier ; le point suit le doigt, sans ses coordonnées ; inversé → XY-INV ; puis juste", async () => {
+    await suite(pp).catch(() => {});
+    await exoP(pp, "P6", "guide", "placer", 2, 4);
+    egal(await pp.evaluate(() => Q.exo.enonce), "A(−3, −2)");
+    egal(await pp.locator("#clavier").count(), 0);
+    await toucher(pp, -2, -3);
+    egal(await pp.evaluate(() => Q.candidat.x + "," + Q.candidat.y), "-2,-3");
+    await pp.screenshot({ path: SHOTS + "/10-p6-placer-encours.png" });
+    vrai(!/\(−2|−2, −3/.test(await pp.textContent("svg[data-repere]")), "coordonnées affichées");
+    await pp.getByRole("button", { name: "Valider" }).tap(); await pause(60);
+    egal(await titreFb(pp), "Coordonnées inversées");
+    await toucher(pp, -3, -2); await pp.getByRole("button", { name: "Valider" }).tap(); await pause(60);
+    vrai(await pp.evaluate(() => Q.fini), "point bien placé refusé");
+    vrai(await pasDeDefilementHorizontal(pp));
+    await pp.screenshot({ path: SHOTS + "/10-p6-placer.png", fullPage: true });
+  });
+  await verif("P7 guidé, y = 6 − 5x : réécrire, puis m = 6 → ORD-INV sans la valeur ; « Reprendre » au milieu ; puis les 3 boutons du sens", async () => {
+    await suite(pp).catch(() => {});
+    await exoP(pp, "P7", "guide", "affref", 4, 0);
+    egal(await pp.evaluate(() => Q.etapes.map(e => e.id).join()), "eq0,m,b,oy,var");
+    await ligne(pp, "y=-5x+6");
+    await ligne(pp, "6"); egal(await titreFb(pp), "Forme inversée mal lue");
+    vrai(!/−5/.test(await pp.textContent("#fb")), "valeur juste donnée : " + await pp.textContent("#fb"));
+    await vider(pp); await ligne(pp, "-5");
+    const avant = await pp.evaluate(() => [Q.etapes[Q.k].id, Q.acceptees.length].join(" | "));
+    await pause(300);
+    await pp.reload({ waitUntil: "domcontentloaded" }); await pastilleOK(pp);
+    await pp.tap("#bReprendre");
+    egal(await pp.evaluate(() => [Q.etapes[Q.k].id, Q.acceptees.length].join(" | ")), avant);
+    await ligne(pp, "6"); await ligne(pp, "(0,6)");
+    egal(await pp.locator("#clavier").count(), 0);
+    egal(await pp.locator(".choix .btn").count(), 3);
+    await pp.screenshot({ path: SHOTS + "/10-p7-choix.png" });
+    egal((await petitsBoutons(pp)).join(" | "), "");
+    await pp.getByRole("button", { name: "croissante", exact: true }).tap(); await pause(60);
+    egal(await titreFb(pp), "Le sens de variation");
+    vrai(!/décroissante/.test(await pp.textContent("#fb")), "le mot juste est donné");
+    await pp.getByRole("button", { name: "décroissante", exact: true }).tap(); await pause(60);
+    vrai(await pp.evaluate(() => Q.fini), "exercice pas fini");
+    await pp.screenshot({ path: SHOTS + "/10-p7-ligne.png", fullPage: true });
+  });
+  await verif("P7, tracer depuis m et b : deux points au toucher ; le 2e jugé à partir du 1er ; repère corrigé avec la droite", async () => {
+    await suite(pp).catch(() => {});
+    await exoP(pp, "P7", "guide", "tracer", 1, 2);
+    const [m, b] = await pp.evaluate(() => [Q.exo.droite.m, Q.exo.droite.b]);
+    await toucher(pp, 0, b); await pp.getByRole("button", { name: "Valider" }).tap(); await pause(60);
+    egal(await pp.evaluate(() => Q.etapes[Q.k].id), "t2");
+    egal(await pp.locator("svg[data-repere] .pt.sien").count(), 1, "le 1er point reste dessiné");
+    await toucher(pp, 1, b + m); await pp.getByRole("button", { name: "Valider" }).tap(); await pause(60);
+    vrai(await pp.evaluate(() => Q.fini), "2e point refusé");
+    vrai(await pp.evaluate(() => !!document.querySelector("#lignes svg.repere .droite")), "repère corrigé sans la droite");
+  });
+  await verif("P7 sans aide (série seul) : la ligne vide (m = −1, b = 7), (7, 0) → XY-INV marqué à la fin, 2 étapes sur 3", async () => {
+    await suite(pp).catch(() => {});
+    await exoP(pp, "P7", "seul", "affref", 5, 0);
+    egal(await pp.evaluate(() => Q.mode), "controle");
+    await ligne(pp, "y=-x+7"); await ligne(pp, "(7,0)");
+    vrai(!(await pp.isVisible(".fb.faux")), "correction montrée en route");
+    await pp.getByRole("button", { name: "décroissante", exact: true }).tap(); await pause(60);
+    const t = await pp.textContent("#lignes");
+    vrai(/2 étapes justes sur 3/.test(t) && /Coordonnées inversées/.test(t), t.slice(0, 300));
+    egal(await pp.evaluate(() => Q.tentative.codeErreur + " " + Q.tentative.palier), "XY-INV P7");
+    await pp.tap("#bRetour").catch(() => {});
+  });
+  await verif("D81-D82-D85 : P1 à P7 ouverts d'office chez l'élève jusqu'au 29/11 inclus, même verrouillé ; P8 reste fermé", async () => {
+    const avant = await pe.evaluate(() => jourLocal() <= "2026-11-29");
+    for (const k of ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]) egal(await pe.evaluate(id => ouvertDoffice(id), k), avant, k);
+    egal(await pe.evaluate(() => ouvertDoffice("P8")), false);
     await pe.evaluate(() => { const o = clone(prog()); o.P5 = PA.completerPalier(Object.assign({}, o.P5, { statut: "verrouille" })); ecrirePaliers(o); aller("accueil"); });
     await ouvrirPalier(pe, "P5");
     const t = await pe.textContent("details[data-k='P5']");
