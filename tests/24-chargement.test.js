@@ -29,3 +29,10 @@ test("les fichiers du site portent tous la version de l'app (?v=…), égale à 
   const versions = new Set((HTML.match(/\?v=[0-9.]+/g) || []).map(s => s.slice(3)));
   egal([...versions].join(), v, "versions des scripts");
 });
+test("diag.html (diagnostic réseau) : aucune ressource externe, elle s'affiche dès que github.io répond", () => {
+  const D = fs.readFileSync(path.join(__dirname, "..", "diag.html"), "utf8");
+  egal((D.match(/<link\b[^>]*rel="stylesheet"[^>]*>/g) || []).length, 0, "feuille de style liée");
+  egal((D.match(/<script\b[^>]*\bsrc=/g) || []).length, 0, "script externe");
+  vrai(!/@import/.test(D), "@import");
+  vrai(/Cette page s'affiche : github\.io répond/.test(D.slice(0, D.indexOf("<script>"))), "verdict github.io écrit dans la page, sans attendre le code");
+});

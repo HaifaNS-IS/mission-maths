@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Maths · diagnostic réseau</title>
+<!-- Page de diagnostic (26/11, écran blanc en Wi-Fi seulement). Aucune ressource externe ici : elle s'affiche dès que github.io répond.
+     Elle teste un à un les services dont l'app a besoin, sur le réseau où le téléphone se trouve. Aucune donnée de la famille n'est lue ni écrite. -->
+<style>
+  body{font:16px/1.4 -apple-system,system-ui,sans-serif;margin:0;padding:16px;background:#EEF2F8;color:#1B2440}
+  h1{font-size:20px;margin:0 0 4px} p{margin:6px 0}
+  .ok{color:#1C7C46} .ko{color:#B3261E} .att{color:#8A5A00}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;margin:12px 0}
+  td{padding:9px 8px;border-bottom:1px solid #E2E7F0;vertical-align:top;font-size:15px}
+  td.e{width:2.2em;text-align:center;font-weight:700}
+  .note{font-size:13px;color:#5A6480}
+  button,a.btn{display:inline-block;min-height:44px;padding:10px 16px;border-radius:12px;border:0;background:#2F3E9E;color:#fff;font:600 16px -apple-system,system-ui,sans-serif;text-decoration:none}
+  textarea{width:100%;height:9em;font:12px ui-monospace,monospace;margin-top:8px;box-sizing:border-box}
+</style>
+</head>
+<body>
+<h1>Diagnostic réseau</h1>
+<p class="ok"><strong>✓ Cette page s'affiche : github.io répond sur ce réseau.</strong></p>
+<p class="note">Chaque ligne attend au plus 10 secondes. Ne ferme pas la page avant « Terminé ».</p>
+<table id="t"></table>
+<p id="fin" class="att">Tests en cours…</p>
+<button onclick="copier()">Copier le résultat</button>
+<a class="btn" href="./" style="background:#5A6480;margin-left:6px">Ouvrir l'app</a>
+<textarea id="txt" readonly aria-label="Résultat à copier"></textarea>
+<script>
+"use strict";
+var DELAI = 10000, debut = Date.now(), lignes = [];
+var VERSION_FB = "13.3.0";
+var TESTS = [
+  { nom: "Page de l'app (github.io)", f: function () { return memeSite("./?diag=" + Date.now(), /Mission Maths/); } },
+  { nom: "Code de l'app (25 fichiers, github.io)", f: codeApp },
+  { nom: "Leçons (github.io)", f: function () { return memeSite("./lecons/LECO-N01-A.json?diag=" + Date.now(), /lecon|titre/i); } },
+  { nom: "Polices Google (fonts.googleapis.com)", f: function () { return externe("https://fonts.googleapis.com/css2?family=Fredoka:wght@500&display=swap"); } },
+  { nom: "Fichiers des polices (fonts.gstatic.com)", f: function () { return externe("https://fonts.gstatic.com/"); } },
+  { nom: "Firebase, le code (www.gstatic.com)", f: function () { return externe("https://www.gstatic.com/firebasejs/" + VERSION_FB + "/firebase-app.js"); } },
+  { nom: "Firebase, connexion (identitytoolkit.googleapis.com)", f: function () { return externe("https://identitytoolkit.googleapis.com/"); } },
+  { nom: "Firebase, jeton (securetoken.googleapis.com)", f: function () { return externe("https://securetoken.googleapis.com/"); } },
+  { nom: "Firebase, la base (firestore.googleapis.com)", f: function () { return externe("https://firestore.googleapis.com/"); } },
+  { nom: "Firebase, sonde Google (www.google.com)", f: function () { return externe("https://www.google.com/images/cleardot.gif?zx=" + Date.now()); } }
+];
+function avecDelai(p, ctrl) {
+  return new Promise(function (ok, ko) {
+    var t = setTimeout(function () { if (ctrl) ctrl.abort(); ko({ delai: true }); }, DELAI);
+    p.then(function (v) { clearTimeout(t); ok(v); }, function (e) { clearTimeout(t); ko(e); });
+  });
+}
+function requete(url, opts) {
+  var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+  if (ctrl) opts.signal = ctrl.signal;
+  return avecDelai(fetch(url, opts), ctrl);
+}
+function memeSite(url, motif) {
+  return requete(url, { cache: "no-store" }).then(function (r) {
+    if (!r.ok) throw { msg: "réponse " + r.status };
+    return r.text().then(function (t) { if (motif && !motif.test(t)) throw { msg: "contenu inattendu (page de filtrage ?) : " + t.slice(0, 60).replace(/\s+/g, " ") }; return "réponse " + r.status; });
+  });
+}
+function externe(url) {
+  return requete(url, { mode: "no-cors", cache: "no-store" }).then(function () { return "joignable"; });
+}
+function codeApp() {
+  return requete("./?diag=src" + Date.now(), { cache: "no-store" }).then(function (r) {
+    if (!r.ok) throw { msg: "page de l'app : réponse " + r.status };
+    return r.text();
+  }).then(function (html) {
+    var src = (html.match(/src="js\/[^"]+"/g) || []).map(function (s) { return s.slice(5, -1); });
+    if (!src.length) throw { msg: "liste des fichiers introuvable" };
+    return Promise.all(src.map(function (s) {
+      return memeSite("./" + s.split("?")[0] + "?diag=" + Date.now()).then(function () { return null; }, function (e) { return s.split("?")[0] + " : " + texteErreur(e); });
+    })).then(function (r) {
+      var ko = r.filter(Boolean);
+      if (ko.length) throw { msg: ko.length + " sur " + src.length + " en échec : " + ko.join(" ; ") };
+      return src.length + " sur " + src.length + " reçus";
+    });
+  });
+}
+function texteErreur(e) {
+  if (e && e.delai) return "pas de réponse en " + DELAI / 1000 + " s";
+  if (e && e.msg) return e.msg;
+  return "refusé ou coupé (" + (e && e.message ? e.message : e) + ")";
+}
+function ligne(i, etat, detail, ms) {
+  var cls = etat === "✓" ? "ok" : etat === "…" ? "att" : "ko";
+  var tr = document.getElementById("l" + i);
+  tr.innerHTML = '<td class="e ' + cls + '">' + etat + '</td><td>' + TESTS[i].nom + '<div class="note">' + detail + (ms != null ? " · " + ms + " ms" : "") + "</div></td>";
+  lignes[i] = etat + " " + TESTS[i].nom + " : " + detail + (ms != null ? " (" + ms + " ms)" : "");
+}
+function resume() {
+  var ua = navigator.userAgent;
+  var ios = (ua.match(/OS (\d+[_\d]*) like Mac/) || [])[1];
+  return [
+    "Diagnostic Mission Maths, " + new Date().toLocaleString("fr-FR"),
+    "Appareil : " + (ios ? "iOS " + ios.replace(/_/g, ".") : ua),
+    "Ouvert depuis l'icône de l'écran d'accueil : " + (navigator.standalone ? "oui" : "non"),
+    "En ligne selon le téléphone : " + (navigator.onLine ? "oui" : "non")
+  ].concat(lignes.filter(Boolean)).join("\n");
+}
+function copier() {
+  var t = document.getElementById("txt"); t.value = resume();
+  var fait = function () { document.getElementById("fin").textContent = "Résultat copié : colle-le dans la conversation."; };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(fait, function () { t.select(); document.execCommand("copy"); fait(); });
+  else { t.select(); document.execCommand("copy"); fait(); }
+}
+(function lancer() {
+  var t = document.getElementById("t");
+  TESTS.forEach(function (x, i) { var tr = document.createElement("tr"); tr.id = "l" + i; t.appendChild(tr); ligne(i, "…", "en cours"); });
+  Promise.all(TESTS.map(function (x, i) {
+    var d = Date.now();
+    return x.f().then(function (v) { ligne(i, "✓", v, Date.now() - d); }, function (e) { ligne(i, e && e.delai ? "⏳" : "✗", texteErreur(e), Date.now() - d); });
+  })).then(function () {
+    var ko = lignes.filter(function (l) { return l && l[0] !== "✓"; }).length;
+    var fin = document.getElementById("fin");
+    fin.className = ko ? "ko" : "ok";
+    fin.textContent = "Terminé en " + Math.round((Date.now() - debut) / 1000) + " s : " + (ko ? ko + " service(s) en échec sur ce réseau." : "tout répond sur ce réseau.");
+    document.getElementById("txt").value = resume();
+  });
+})();
+</script>
+</body>
+</html>
